@@ -11,7 +11,10 @@ CFLAGS=-g -Wall -Wextra -std=c17 -O2
 all: main.out
 
 clean:
-	rm -f *.out
+	rm -f *.out *.o
 
-main.out: main.c
-	${CC} ${CFLAGS} -o $@ $<
+main.out: main.o dll.o parser.o scanner.o strR.o symtable.o
+	${CC} ${CFLAGS} -o $@ $?
+
+%.o: %.c
+	${CC} ${CFLAGS} -c $?
