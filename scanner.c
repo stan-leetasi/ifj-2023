@@ -6,7 +6,7 @@
  */
 
 #include "scanner.h"
-#include "stdlib.h"
+#include <stdlib.h>
 
 token_T *storage = NULL; ///< úschovňa pre jeden token
 

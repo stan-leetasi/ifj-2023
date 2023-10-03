@@ -49,6 +49,7 @@ enum token_ids
 
 /**
  * @brief Token
+ * @warning atr treba potom neskôr nahradiť so str_T dátovým typom
  */
 typedef struct token
 {
@@ -73,7 +74,8 @@ token_T *getToken();
 /**
  * @brief Uloží token do pamäte skenera
  * @details Hodnota je uschovaná v globálnej premennej. NULL značí, že pamäť je prázdna.
-*/
+ */
 void storeToken(token_T *tkn);
 
 #endif // ifndef _SCANNER_H_
+/* Koniec súboru scanner.h */
