@@ -33,6 +33,7 @@ enum token_ids
     RETURN,          ///< return
     NIL,             ///< nil
     UNDERSCORE,      ///< podtržítko _
+    ARROW,           ///< šípka ->
     BRT_RND_L,       ///< bracket round left (
     BRT_RND_R,       ///< bracket round left )
     BRT_CUR_L,       ///< bracket curly left {
@@ -48,6 +49,7 @@ enum token_ids
     LT,              ///< porovnanie <
     LTEQ,            ///< porovnanie <=
     EXCL,            ///< výkričník !
+    TEST_NIL,        ///< test nil hodnoty ??
     SEMICOLON,       ///< bodkočiarka ;
     COMMA,           ///< čiarka ,
     COLON,           ///< dvojbodka :
