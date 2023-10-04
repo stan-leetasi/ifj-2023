@@ -1,4 +1,10 @@
 #!/bin/bash
+
+# Ako spustiť test:
+# bash test.sh scanner
+
+# Niekedy treba extra spustiť make
+
 make || exit 1
 if [ $# -gt 0 ]; then
     for f in *.o

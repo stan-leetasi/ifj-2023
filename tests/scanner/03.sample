@@ -1,0 +1,3 @@
+abc = b + g,
+let h = abc * n + c,
+var t = Func(abc)
