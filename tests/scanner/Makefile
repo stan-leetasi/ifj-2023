@@ -9,7 +9,7 @@ clean:
 	rm -f *.out *.o
 
 test.out: test.o scanner.o
-	${CC} ${CFLAGS} -o $@ $?
+	${CC} ${CFLAGS} -o $@ $^
 
 %.o: %.c
 	${CC} ${CFLAGS} -c $?
