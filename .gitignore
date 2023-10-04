@@ -2,3 +2,5 @@
 *.o
 # Executables
 *.out
+# Test results
+*.result
