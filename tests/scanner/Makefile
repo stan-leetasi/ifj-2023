@@ -5,6 +5,9 @@ CFLAGS=-g -Wall -Wextra -std=c17 -O2
 
 all: test.out
 
+clean:
+	rm -f *.out *.o
+
 test.out: test.o scanner.o
 	${CC} ${CFLAGS} -o $@ $?
 

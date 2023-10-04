@@ -13,9 +13,6 @@ all: main.out
 clean:
 	rm -f *.out *.o
 
-test:
-	$(bash tests/test.sh)
-
 main.out: main.o dll.o parser.o scanner.o strR.o symtable.o
 	${CC} ${CFLAGS} -o $@ $?
 

@@ -40,7 +40,7 @@ char *tkn_ids[] = {
 int main()
 {
     token_T *tkn = NULL;
-    while ((tkn = getToken()) != EOF_TKN)
+    while ((tkn = getToken())->type != EOF_TKN)
     {
         if (tkn != NULL)
         {
