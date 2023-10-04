@@ -41,6 +41,13 @@ enum token_ids
     OP_MINUS,        ///< operátor -
     OP_MUL,          ///< operátor *
     OP_DIV,          ///< operátor /
+    ASSIGN,          ///< priradenie =
+    EQ,              ///< porovnanie ==
+    GT,              ///< porovnanie >
+    GTEQ,            ///< porovnanie >=
+    LT,              ///< porovnanie <
+    LTEQ,            ///< porovnanie <=
+    EXCL,            ///< výkričník !
     SEMICOLON,       ///< bodkočiarka ;
     COMMA,           ///< čiarka ,
     COLON,           ///< dvojbodka :
