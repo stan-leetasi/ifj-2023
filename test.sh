@@ -16,8 +16,7 @@ if [ $# -gt 0 ]; then
         cp "${f}" "tests/$1"
     done
     cd "tests/$1" || exit 1
-    rm -f "test.result"
-    bash "test.sh" 2> "test.result"
+    bash "test.sh"
 else
     echo "enter test name"
 fi
