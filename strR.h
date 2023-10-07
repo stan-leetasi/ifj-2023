@@ -23,10 +23,9 @@ typedef struct stringR {
 } str_T;
 
 /**
- * @brief Inicializuje reťazec s kapacitou STR_INIT_SIZE
- * @return Ukazateľ na inicializovaný reťazec
+ * @brief Inicializuje reťazec s kapacitou STR_INIT_SIZE a zapíše do neho prázdny reťazec, znak \0
 */
-str_T *StrInit();
+void StrInit(str_T *s);
 
 /**
  * @brief Dealokuje dátovú štruktúru str_T
