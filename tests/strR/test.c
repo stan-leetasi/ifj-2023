@@ -40,5 +40,7 @@ int main()
     else{
         printf("Everything OK\n");
     }
+    StrDestroy(&s);
+    StrDestroy(&alphabet);
     return 0;
 }
