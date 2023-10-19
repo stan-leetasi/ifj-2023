@@ -23,7 +23,7 @@ int main()
     TEST(strcmp(StrRead(&s), "C retazec") == 0);
     
     str_T alphabet;
-    StrInit(&s);
+    StrInit(&alphabet);
     for(char c='a'; c<='z'; c++)
     {
         StrAppend(&alphabet, c);
