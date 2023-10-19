@@ -9,6 +9,8 @@
 #define _STRR_H_
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #define STR_INIT_SIZE 16 ///< veľkosť novo inicializovaného str_T
 
@@ -33,7 +35,7 @@ void StrInit(str_T *s);
 void StrDestroy(str_T *s);
 
 /**
- * @brief Prečíta reťazec
+ * @brief Prečíta reťazec, vrati ukazatel na data
  * @return ukazateľ na reťazec, s->data
 */
 char *StrRead(str_T *s);
