@@ -8,6 +8,8 @@
 #ifndef _SCANNER_H_
 #define _SCANNER_H_
 
+#include "strR.h"
+
 /**
  * @brief ID tokenov
  */
@@ -44,13 +46,14 @@ enum token_ids
     OP_DIV,          ///< operátor /
     ASSIGN,          ///< priradenie =
     EQ,              ///< porovnanie ==
+    NEQ,             ///< negace porovnanie !=   
     GT,              ///< porovnanie >
     GTEQ,            ///< porovnanie >=
     LT,              ///< porovnanie <
     LTEQ,            ///< porovnanie <=
     EXCL,            ///< výkričník !
+    QUEST_MARK,      ///< otazník ?   
     TEST_NIL,        ///< test nil hodnoty ??
-    SEMICOLON,       ///< bodkočiarka ;
     COMMA,           ///< čiarka ,
     COLON,           ///< dvojbodka :
     EOF_TKN          ///< Koniec súboru
@@ -63,7 +66,7 @@ enum token_ids
 typedef struct token
 {
     int type;      ///< typ tokenu
-    char atr[100]; ///< atribut tokenu, prečítaný reťazec
+    str_T *atr;     ///< atribut tokenu, prečítaný reťazec
     int ln;        ///< riadok tokenu
     int col;       ///< pozícia prvého charakteru tokenu v riadku
 } token_T;
@@ -85,6 +88,14 @@ token_T *getToken();
  * @details Hodnota je uschovaná v globálnej premennej. NULL značí, že pamäť je prázdna.
  */
 void storeToken(token_T *tkn);
+
+/*TATO FUNKCE SE ASI ZRUŠÍ*/
+/**
+ * @brief Nastaví zdrojový soubor do globální proměnné source
+ * 
+ * @param f 
+ */
+void setSourceFile(FILE *f);
 
 #endif // ifndef _SCANNER_H_
 /* Koniec súboru scanner.h */
