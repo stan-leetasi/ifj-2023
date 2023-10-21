@@ -61,7 +61,6 @@ enum token_ids
 
 /**
  * @brief Token
- * @warning atr treba potom neskôr nahradiť so str_T dátovým typom
  */
 typedef struct token
 {
@@ -89,13 +88,12 @@ token_T *getToken();
  */
 void storeToken(token_T *tkn);
 
-/*TATO FUNKCE SE ASI ZRUŠÍ*/
 /**
- * @brief Nastaví zdrojový soubor do globální proměnné source
+ * @brief Dealokuje datovou strukturu token
  * 
- * @param f 
+ * @param tkn token
  */
-void setSourceFile(FILE *f);
+void destroyToken(token_T *tkn);
 
 #endif // ifndef _SCANNER_H_
 /* Koniec súboru scanner.h */

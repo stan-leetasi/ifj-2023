@@ -16,23 +16,7 @@
 #include <string.h>
 #include "scanner.h"
 
-#define END_OF_MULITINE_STRING 3 //Počet uvozovek které jsou třeba k uknčení víceřádkového řetězce
-#define NUM_OF_KEYWORDS 11       //Počet klíčových slov v tabulce klíčových slov
-
-/*Tabulka klíčových slov*/
-static const char *key_words[] = {
-    "Double", 
-    "else",
-    "func",
-    "if",
-    "Int",
-    "let",
-    "var",
-    "nil",
-    "return",
-    "String",
-    "while"
-};
+#define END_OF_MULTILINE_STRING 3 //Počet uvozovek které jsou třeba k uknčení víceřádkového řetězce
 
 //stavy automatu
 typedef enum state {
@@ -63,43 +47,11 @@ typedef enum state {
     QUEST_MARK_S
 } state_t;
 
-//Globální proměnná reprezentující vstupní soubor
-FILE *source;
-
 ///< úschovňa pre jeden token
 token_T *storage = NULL; 
 
 /**
- * @brief Načte do globální proměnné "source" vstupní soubor
- * 
- * @param f Vstupní soubor
- */
-void setSourceFile(FILE *f)
-{
-  source = f;
-}
-
-/**
- * @brief Zjistí, jestli se v tabulce klíčových slov nachází konkrétní řetězec
- * 
- * @param key_words Tabulka klíčových slov
- * @param word Hledaný řetězec
- * @param size velikost tabulky klíčových slov
- * @return true 
- * @return false 
- */
-bool find_key_word(const char ** const key_words, const char * word, unsigned size) {
-    for (unsigned i = 0; i < size; i++) {
-        //řetězce se rovnají
-        if (strcmp(key_words[i], word) == 0) {
-            return true;
-        } 
-    }
-    return false;
-}
-
-/**
- * @brief Převede řetězec, který odpovídá klíčovému slovu na odpovídající token id
+ * @brief Převede řetězec, který odpovídá klíčovému slovu na odpovídající token id. Tedy funkce slouží jako tabulka klíčových slov
  * 
  * @param string 
  * @return int, 0 pokud string neodpovídá žádnému klíčovému slovu
@@ -164,12 +116,11 @@ token_T* init_token(token_T **token) {
  * @param col_begin_token 
  * @return token_T*
  */
-token_T* set_token(int type, str_T *atr, int ln, int col) {
-    storage->type = type;
-    storage->atr = atr;
-    storage->ln = ln;
-    storage->col = col;
-    return storage;
+void set_token(token_T* token, int type, str_T *atr, int ln, int col) {
+    token->type = type;
+    token->atr = atr;
+    token->ln = ln;
+    token->col = col;
 }
 
 /**
@@ -181,7 +132,7 @@ token_T* set_token(int type, str_T *atr, int ln, int col) {
 int escape_seq_process(char c) {
     static int state = 0; //Stav -- stavy jsou celkem tři {0,1,2}
     static int num_of_digits = 0; //Zde bude uložen počet hexadecimálních číslic (může jich být maximálně 8)
-    int result = 0; //Výsledek procesu, 0 = false, 1 = true, -1 = je v procesu
+    int result = 0; //Výsledek procesu (zpracování escape sekvence), 0 = false, 1 = true, -1 = je v procesu
     switch (state)
     {
     case 0: //jednoduché (jednoznakové) escape sekvence
@@ -238,73 +189,91 @@ token_T *getToken()
     state_t state = 0;
     //čtený znak
     int c;
+    //Proměnná reprezentuje konkrétní token, pokud je rovna -1, znamená to, že token ještě nebyl zpracován
+    int id_token = -1;
 
     //Lokální statické proměnné pro řádek a sloupec začínajícího tokenu
     static int ln = 1;          //řádek
     static int col = 0;         //sloupec
 
     //Pomocné proměnné pro některé stavy
-    int col_begin_token = 0;    //speciální proměnná pro uložení pozice, kde začíná víceznakový token (string, identifikátor,...)
-    int quote_mark_num = 0;     //speciální proměnná, která indikuje počet za sebou jdoucích uvozovek
+    int col_begin_token = 0;        //speciální proměnná pro uložení pozice, kde začíná víceznakový token (string, identifikátor,...)
+    int line_begin_token = 0;       //speciální proměnná pro uložení pozice, kde začíná víceznakový token (string, identifikátor,...)
+    int quote_mark_num = 0;         //speciální proměnná, která indikuje počet za sebou jdoucích uvozovek
     bool is_multi_line_string = 0;  //speciální proměnná, která indikuje zda se přešlo do stavu ESCAPE_SEKV_S z víceřádkového řetězce nebo z jednořádkového řetězce
 
-    //inicializace řetězce, kam se budou ukládat víceznakové tokeny
-    str_T str; 
-    str_T *string = &str;
-    StrInit(string);
+    //zde bude uložený nový token
+    token_T *tkn;
+
+    if (storage != NULL) {
+        tkn = storage;
+        storage = NULL;
+        return tkn;
+    }
+    
     //inicializace struktury
-    if (init_token(&storage) == NULL) {
+    if (init_token(&tkn) == NULL) {
         return NULL;
     }
+    //inicializace řetězce, kam se budou ukládat víceznakové tokeny
+    str_T string;
+    StrInit(&string);
     
 /*===============================================================HLAVNÍ SMYČKA===============================================================*/
     while(true) {
         //načtení znaku ze souboru
-        c = fgetc(source);
+        c = getc(stdin);
 
         //přečtený další znak na jednom řádku
         col++;
-        
         //Znak nového řádku, je třeba inkrementovat ln = line number
         if (c == '\n') {
             ln++;
             col = 0;
         }
 
+        //proměnná indikuje, jestli se má vložit znak zpět do streamu nebo ne
+        bool push_to_stream = false;
+
         switch (state)
         {
 /*=======================================STATE=======================================*/
             case INIT_STATE_S:
-                
+
                 col_begin_token = col;
+                line_begin_token = ln;
 
                 if (isspace(c)) {
                     //Na vstupu jsou bílé znaky, které je třeba přeskočit
                     //Ignorujeme
                     state = INIT_STATE_S;
+                    continue;
                 } else if (c == '/') {
                     //komentář - bude se ignorovat
                     state = COMMENT_SLASH_S;
                 } else if (isdigit(c)) {
                     //číslo
                     state = INT_NUMBER_S;
+                    StrAppend(&string, c);
                 } else if (c == '"') {
                     //Řetězec
                     state = STRING_S;
+                    StrAppend(&string, c);
                 } else if (isalpha(c)) {
                     //Identifikátor nebo klíčové slovo
                     state = ID_S;
+                    StrAppend(&string, c);
                 } else if (c == '-') {
                     //Minus/pomlčka
                     state = DASH_MINUS_S;
                 }
                 //operátory plus a krát
-                else if (c == '+') return set_token(OP_PLUS, NULL, ln, col_begin_token);
-                else if (c == '*') return set_token(OP_MUL, NULL, ln, col_begin_token);
+                else if (c == '+') id_token = OP_PLUS;
+                else if (c == '*') id_token = OP_MUL;
                 //dvojtečka
-                else if (c == ':') return set_token(COLON, NULL, ln, col_begin_token);
+                else if (c == ':') id_token = COLON;
                 //čárka
-                else if (c == ',') return set_token(COMMA, NULL, ln, col_begin_token);
+                else if (c == ',') id_token = COMMA;
                 else if (c == '!') {
                     //vykřičník
                     state = EXCL_S;   
@@ -325,19 +294,15 @@ token_T *getToken()
                     state = QUEST_MARK_S;
                 }
                 //Závorky 
-                else if (c == '(') return set_token(BRT_RND_L, NULL, ln, col_begin_token);
-                else if (c == ')') return set_token(BRT_RND_R, NULL, ln, col_begin_token);
-                else if (c == '{') return set_token(BRT_CUR_L, NULL, ln, col_begin_token);
-                else if (c == '}') return set_token(BRT_CUR_R, NULL, ln, col_begin_token);
+                else if (c == '{') id_token = BRT_CUR_L;
+                else if (c == '}') id_token = BRT_CUR_R;
+                else if (c == '(') id_token = BRT_RND_L;
+                else if (c == ')') id_token = BRT_RND_R;
                 //Konec souboru
-                else if (c == EOF) return set_token(EOF_TKN, NULL, ln, col_begin_token);
+                else if (c == EOF) id_token = EOF_TKN;
                 //není přečtený správný znak
                 else 
-                    return set_token(INVALID, NULL, ln, col_begin_token);
-                //Přidání znaku do řetězce (jde o víceznakový token)   
-                if (!isspace(c) && c != '/') {
-                    StrAppend(string, c);
-                }
+                    id_token = INVALID;
                 break;
 /*=======================================STATE=======================================*/
             case COMMENT_SLASH_S:
@@ -353,9 +318,8 @@ token_T *getToken()
                     //na vstupu není ani * ani / => jedná se o operátor děleno
                     default:
                         //potřeba vrátit znak do STREAMu
-                        ungetc(c, source);
-                        col--;
-                        return set_token(OP_DIV, NULL, ln, col_begin_token);
+                        push_to_stream = true;
+                        id_token = OP_DIV;
                         break;
                 }
                 break;
@@ -366,7 +330,7 @@ token_T *getToken()
                     state = COMMENT_BLOCK_S;
                 } else if (c == EOF) {
                     //Neukončený blokový komentář
-                    return set_token(INVALID, NULL, ln, col_begin_token);
+                    id_token = INVALID;
                 } else {
                     state = COMMENT_BLOCK_END_S;
                 }
@@ -378,7 +342,7 @@ token_T *getToken()
                     state = INIT_STATE_S;
                 } else if (c == EOF) {
                     //Neukončený blokový komentář
-                    return set_token(INVALID, NULL, ln, col_begin_token);  
+                    id_token = INVALID;
                 } else {
                     state = COMMENT_BLOCK_S;
                 }
@@ -390,8 +354,7 @@ token_T *getToken()
                     state = INIT_STATE_S;
                 } else if (c == EOF) {
                     //Přečtený EOF
-                    col--;
-                    ungetc(c, source);
+                    push_to_stream = true;
                     state = INIT_STATE_S;  
                 } else {
                     state = COMMENT_LINE_S;
@@ -402,21 +365,19 @@ token_T *getToken()
                 if (isdigit(c)) {
                     //Na vstupu jsou čísla = zůstává se ve stavu celé číslo
                     state = INT_NUMBER_S;
+                    StrAppend(&string, c);
                 } else if (tolower(c) == 'e') {
                     //celé číslo s exponentem
                     state = EXP_NUMBER_S;
+                    StrAppend(&string, c);
                 } else if (c == '.') {
                     //desetinné číslo
                     state = PRE_DOUBLE_NUMBER_S;
+                    StrAppend(&string, c);
                 } else {
-                    ungetc(c, source);
-                    col--;
-                    /*POZOR JE TREBA OPRAVIT PREDAT UZ RETEZEC (MISTO NULL)*/
-                    /*col_begin_token musi byt podle prvni pozice cisla*/
-                    return set_token(INT_CONST, string, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = INT_CONST;
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
                 break;
 /*=======================================STATE=======================================*/
             case PRE_DOUBLE_NUMBER_S:
@@ -425,26 +386,24 @@ token_T *getToken()
                     state = DOUBLE_NUMBER_S;
                 } else {
                     //na vstup nepřišel žádný vhodný znak
-                    return set_token(INVALID, NULL, ln, col_begin_token);
+                    id_token = INVALID;
                 }
-                //Přidání znaku na konec řetězce
-                
-                StrAppend(string, c);
+                StrAppend(&string, c);
                 break;
 /*=======================================STATE=======================================*/
             case DOUBLE_NUMBER_S:
                 if (isdigit(c)) {
                     //zůstaň v tomto stavu (na vstupu jsou čísla)
                     state = DOUBLE_NUMBER_S;
+                    StrAppend(&string, c);
                 } else if (tolower(c) == 'e') {
                     //desetinné číslo s exponentem
                     state = EXP_NUMBER_S;
+                    StrAppend(&string, c);
                 } else {
-                    /*col_begin_token musi byt podle prvni pozice cisla*/
-                    return set_token(DOUBLE_CONST, string, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = DOUBLE_CONST;
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
                 break;
 /*=======================================STATE=======================================*/
             case EXP_NUMBER_S:
@@ -455,10 +414,9 @@ token_T *getToken()
                     state = EXP_NUMBER_SIGN_S;
                 } else {
                     //špatná hodnota
-                    return set_token(INVALID, NULL, ln, col_begin_token);
+                    id_token = INVALID;
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
+                StrAppend(&string, c);
                 break;
 /*=======================================STATE=======================================*/
             case EXP_NUMBER_SIGN_S:
@@ -466,44 +424,39 @@ token_T *getToken()
                 if (isdigit(c)) {
                     state = DOUBLE_NUMBER_S;
                 } else {
-                    return set_token(INVALID, NULL, ln, col_begin_token);
+                    id_token = INVALID;
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
+                StrAppend(&string, c);
                 break;
 /*=======================================STATE=======================================*/
             case ID_S:
+                int keyw;
                 //Součástí názvu identifikátoru může být jakýkoliv alfanumerický znak a podtržítko
                 if (isalnum(c) || c == '_') {
                     state = ID_S;
+                    StrAppend(&string, c);
                 } else {
-                    /*UPRAVIT NULL NA REALNY RETEZEC, UPRAVIT MAGICKOU KONSTANTU*/
-                    col--;
-                    ungetc(c, source);
-                    if (find_key_word(key_words, string->data, NUM_OF_KEYWORDS)) {
+                    push_to_stream = true;
+                    if ((keyw = keyw_token_num(string.data))) {
                         //Bylo nalezeno klíčové slovo, vrátí se token konkrétního klíčového slova
-                        return set_token(keyw_token_num(string->data), string, ln, col_begin_token);
+                        id_token = keyw;
                     } else {
-                        /*LN a col_begin_token musi byt nastaveno od zacatku identifikatoru*/
-                        return set_token(ID, string, ln, col_begin_token);
+                        id_token = ID;
                     }
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
                 break;
 /*=======================================STATE=======================================*/
             case UNDERSCORE_S:
-                if (isalnum(c)) {
+                if (isalnum(c) || c == '_') {
                     //Bude se jednat o identifikátor začínající podtržítkem
                     state = ID_S;
+                    StrAppend(&string, '_'); //Do řetězce se přidá i to začáteční podtržítko, jelikož ještě nebylo přidáno
+                    StrAppend(&string, c);
                 } else {
                     //jedná se o znak podtržítko
-                    ungetc(c, source);
-                    col--;
-                    return set_token(UNDERSCORE, NULL, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = UNDERSCORE;
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
                 break;
 /*=======================================STATE=======================================*/
             case STRING_S:
@@ -512,26 +465,22 @@ token_T *getToken()
                     state = EMPTY_STRING_S;
                 } else if (c == EOF) {
                     //Otevřený řetězec, za kterým následuje EOF
-                    col--;
-                    ungetc(c, source);
-                    return set_token(INVALID, NULL, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = INVALID;
                 } else {
                     //jednoduchý řetězec
                     state = SINGLE_LINE_STRING_S;
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
+                StrAppend(&string, c);
                 break;
 /*=======================================STATE=======================================*/
             case SINGLE_LINE_STRING_S:
                 if (c == '"') {
-                    //konec jednořádkového řetězce
-                    return set_token(STRING_CONST, string, ln, col_begin_token);
+                    id_token = STRING_CONST;
                 } else if (c == EOF) {
                   //Neukončený řetězec
-                    ungetc(c, source);
-                    col--;
-                    return set_token(INVALID, NULL, ln, col_begin_token);  
+                    push_to_stream = true;
+                    id_token = INVALID;
                 } else if (c == '\\') {
                     //Escape sekvence
                     is_multi_line_string = false;
@@ -539,36 +488,31 @@ token_T *getToken()
                 } else {
                     state = SINGLE_LINE_STRING_S;
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
+                StrAppend(&string, c);
                 break;
 /*=======================================STATE=======================================*/
             case EMPTY_STRING_S:
                 //Toto je přechodový stav mezi víceřádkovým řetězcem a jednořádkovým řetězcem
-
                 if (c == '"') {
                     state = PRE_MULTI_LINE_STRING_S;
+                    StrAppend(&string, c);
                 } else {
-                    ungetc(c, source);
-                    col--;
-                    return set_token(STRING_CONST, string, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = STRING_CONST;
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
                 break;
 /*=======================================STATE=======================================*/
             case PRE_MULTI_LINE_STRING_S:
                 //Tři uvozovky (víceřádkový řetězec) musí být na samostatném řádku
                 if (c == '\n') {
                     state = MULTI_LINE_STRING_S;
-                    //Přidání znaku na konec řetězce
-                    StrAppend(string, c);
+                    StrAppend(&string, c);
                 } else if (isblank(c)) {
                     //Bílé znaky se ignorují
                     //Nebudou se do řetězce přidávat
                     state = PRE_MULTI_LINE_STRING_S;
                 } else {
-                    return set_token(INVALID, NULL, ln, col_begin_token);
+                    id_token = INVALID;
                 }
                 break;
 /*=======================================STATE=======================================*/
@@ -578,9 +522,8 @@ token_T *getToken()
                     //Potenciální možnost ukončení řetězce
                     state = MULTI_LINE_STRING_END_S;
                 } else if (c == EOF) {
-                    ungetc(c, source);
-                    col--;
-                    return set_token(INVALID, NULL, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = INVALID;
                 } else if (c == '\\') {
                     //Escape sekvence
                     is_multi_line_string = true;
@@ -589,9 +532,7 @@ token_T *getToken()
                     //Na vstup přichází správné znaky, zůstaň v tomto stavu
                     state = MULTI_LINE_STRING_S;
                 }
-
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
+                StrAppend(&string, c);
                 break;
 /*=======================================STATE=======================================*/
             case MULTI_LINE_STRING_END_S:
@@ -599,20 +540,18 @@ token_T *getToken()
                 if (c == '"') {
                     quote_mark_num++;
                     //Abych nemusel přecházet do dalších dvou stavů, je zde pomocná proměnná, která počítá uvozovky
-                    if (quote_mark_num == END_OF_MULITINE_STRING) {
-                        return set_token(STRING_CONST, string, ln, col_begin_token);
+                    if (quote_mark_num == END_OF_MULTILINE_STRING) {
+                        id_token = STRING_CONST;
                     }
                     state = MULTI_LINE_STRING_END_S;
-
                 } else if (c == EOF) {
                     //Neukončený řetězec
-                    return set_token(INVALID, NULL, ln, col_begin_token);
+                    id_token = INVALID;
                 } else {
                     quote_mark_num = 0;
                     state = MULTI_LINE_STRING_S;
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
+                StrAppend(&string, c);
                 break;
 /*=======================================STATE=======================================*/
             case ESCAPE_SEKV_S:
@@ -629,38 +568,31 @@ token_T *getToken()
                     }
                 } else if (escape_seq_process(c) == 0) {
                     //Analýza escape sekvence neproběhla úspěšně
-                    return set_token(INVALID, NULL, ln, col_begin_token);
+                   id_token = INVALID;
                 }
-                //Přidání znaku na konec řetězce
-                StrAppend(string, c);
+                StrAppend(&string, c);
                 break;
 /*=======================================STATE=======================================*/
             case DASH_MINUS_S:
                 
                 //Přečtený znak je '>': výsledný token: ->
                 if (c == '>') {
-                    //Přidání znaku na konec řetězce
-                    StrAppend(string, c);
-                    return set_token(ARROW, string, ln, col_begin_token);
+                    id_token = ARROW;
                 } else {
                     //Jedná se o pomlčku = operátor minus (jednoznakový operátor)
-                    ungetc(c, source);
-                    col--;
-                    return set_token(OP_MINUS, NULL, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = OP_MINUS;
                 } 
                 break;
 /*=======================================STATE=======================================*/
             case EQ_S:
                 //přiřazení nebo porovnání
                 if (c == '=') {
-                    //Přidání znaku na konec řetězce
-                    StrAppend(string, c);
-                    return set_token(EQ, string, ln, col_begin_token);
+                    id_token = EQ;
                 } else {
                     //Operátor přiřazení
-                    ungetc(c, source);
-                    col--;
-                    return set_token(ASSIGN, NULL, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = ASSIGN;
                 }
                 break;
 /*=======================================STATE=======================================*/
@@ -668,13 +600,10 @@ token_T *getToken()
 
                 //větší nebo větší rovno
                 if (c == '=') {
-                    //Přidání znaku na konec řetězce
-                    StrAppend(string, c);
-                    return set_token(GTEQ, string, ln, col_begin_token);
+                    id_token = GTEQ;
                 } else {
-                    ungetc(c, source);
-                    col--;
-                    return set_token(GT, NULL, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = GT;
                 }
                 break;
 /*=======================================STATE=======================================*/
@@ -682,14 +611,11 @@ token_T *getToken()
 
                 //menší nebo menší rovno
                 if (c == '=') {
-                    //Přidání znaku na konec řetězce
-                    StrAppend(string, c);
-                    return set_token(LTEQ, string, ln, col_begin_token);
+                    id_token = LTEQ;
                 } else {
                     //Operátor menší
-                    ungetc(c, source);
-                    col--;
-                    return set_token(LT, NULL, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = LT;
                 }
                 break;
 /*=======================================STATE=======================================*/
@@ -697,13 +623,10 @@ token_T *getToken()
 
                 if (c == '=') {
                     //Negace porovnání
-                    //Přidání znaku na konec řetězce
-                    StrAppend(string, c);
-                    return set_token(NEQ, string, ln, col_begin_token);
+                    id_token = NEQ;
                 } else {
-                    ungetc(c, source);
-                    col--;
-                    return set_token(EXCL, NULL, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = EXCL;
                 }
                 break;
 /*=======================================STATE=======================================*/
@@ -711,21 +634,40 @@ token_T *getToken()
 
                 if (c == '?') {
                     //Operátor ??
-                    //Přidání znaku na konec řetězce
-                    StrAppend(string, c);
-                    return set_token(TEST_NIL, string, ln, col_begin_token);
+                    id_token = TEST_NIL;
                 } else {
-                    ungetc(c, source);
-                    col--;
-                    return set_token(QUEST_MARK, NULL, ln, col_begin_token);
+                    push_to_stream = true;
+                    id_token = QUEST_MARK;
                 }
                 break;
         }
+
+        if (push_to_stream) {
+            //Je třeba vrátit znak do streamu 
+            //Pokud znak, který bude vrácen je "new line", je třeba decrementovat i ln, aby se znak \n nepřečetl dvakrát
+            if (c == '\n')
+                ln--;
+
+            col--;
+            ungetc(c, stdin);
+        }
+
+        if (id_token != -1) {
+            //Token je zpracován, vrátí se
+            set_token(tkn, id_token, &string, line_begin_token, col_begin_token);
+            return tkn;
+        }
+
     }
     return NULL;
 }
 
 void storeToken(token_T *tkn)
 {
+    storage = tkn;
+}
 
+void destroyToken(token_T *tkn) {
+    StrDestroy(tkn->atr);
+    free(tkn);
 }
