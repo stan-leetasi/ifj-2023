@@ -547,6 +547,9 @@ token_T *getToken()
                 } else if (c == '\n') {
                     //Přeskakují se mezery
                     state = MULTI_LINE_STRING_END_S;
+                } else if (c == '\\') {
+                    //Přeskakují se mezery
+                    state = ESCAPE_SEKV_S;
                 } else {
                     quote_mark_num = 0;
                     state = MULTI_LINE_STRING_S;
@@ -556,17 +559,18 @@ token_T *getToken()
 /*=======================================STATE=======================================*/
             case ESCAPE_SEKV_S:
                 //Zde se zpracovává escape sekvence v řetězci
-                if (escape_seq_process(c) == -1) {
+                int esc_seq_proc = escape_seq_process(c);
+                if (esc_seq_proc == -1) {
                     //analýza escape sekvence není u konce, zůstává se v tomto stavu
                     state = ESCAPE_SEKV_S;
-                } else if (escape_seq_process(c)) {
+                } else if (esc_seq_proc) {
                     //analýza escape sekvence proběhla úspěšně
                     if (is_multi_line_string) {
                         state = MULTI_LINE_STRING_S;
                     } else {
                         state = SINGLE_LINE_STRING_S;
                     }
-                } else if (escape_seq_process(c) == 0) {
+                } else if (esc_seq_proc == 0) {
                     //Analýza escape sekvence neproběhla úspěšně
                    id_token = INVALID;
                 }
