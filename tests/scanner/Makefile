@@ -8,7 +8,7 @@ all: test.out
 clean:
 	rm -f *.out *.o
 
-test.out: test.o scanner.o
+test.out: test.o scanner.o strR.o
 	${CC} ${CFLAGS} -o $@ $^
 
 %.o: %.c

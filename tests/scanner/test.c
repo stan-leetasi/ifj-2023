@@ -39,6 +39,7 @@ char *tkn_ids[] = {
     "LT",              ///< porovnanie <
     "LTEQ",            ///< porovnanie <=
     "EXCL",            ///< výkričník !
+    "QUEST_MARK",      ///< otazník ?   
     "TEST_NIL",        ///< test nil hodnoty ??
     "SEMICOLON",       ///< bodkočiarka ;
     "COMMA",           ///< čiarka ,
@@ -54,13 +55,13 @@ int main()
         if (tkn != NULL)
         {
             printf("%s\n", tkn_ids[tkn->type]);
-            free(tkn);
+            destroyToken(tkn);
         }
     }
     if(tkn != NULL)
     {
         printf("%s\n", tkn_ids[EOF_TKN]);
-        free(tkn);
+        destroyToken(tkn);
     }
 
     return 0;
