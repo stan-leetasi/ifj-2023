@@ -34,6 +34,7 @@ char *tkn_ids[] = {
     "OP_DIV",          ///< operátor /
     "ASSIGN",          ///< priradenie =
     "EQ",              ///< porovnanie ==
+    "NEQ",             ///< negace porovnanie !=  
     "GT",              ///< porovnanie >
     "GTEQ",            ///< porovnanie >=
     "LT",              ///< porovnanie <
@@ -41,7 +42,6 @@ char *tkn_ids[] = {
     "EXCL",            ///< výkričník !
     "QUEST_MARK",      ///< otazník ?   
     "TEST_NIL",        ///< test nil hodnoty ??
-    "SEMICOLON",       ///< bodkočiarka ;
     "COMMA",           ///< čiarka ,
     "COLON",           ///< dvojbodka :
     "EOF_TKN"          ///< Koniec súboru
