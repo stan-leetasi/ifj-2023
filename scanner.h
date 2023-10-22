@@ -65,7 +65,7 @@ enum token_ids
 typedef struct token
 {
     int type;      ///< typ tokenu
-    str_T *atr;     ///< atribut tokenu, prečítaný reťazec
+    str_T atr;     ///< atribut tokenu, prečítaný reťazec
     int ln;        ///< riadok tokenu
     int col;       ///< pozícia prvého charakteru tokenu v riadku
 } token_T;
