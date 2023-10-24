@@ -39,6 +39,17 @@ int nextToken() {
 }
 
 /**
+ * @brief Precedenčná syntaktická analýza výrazov
+ * @details Táto funkcia očakáva globálnu premennú tkn prázdnu
+ * @param result_type Dátový typ výsledku
+ * @param first_token Prvý token
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int parseExpression(char *result_type, token_T *first_token){
+    return COMPILATION_OK;
+}
+
+/**
  * @brief Pravidlo pre spracovanie dátového typu
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token LET alebo VAR
  * @return 0 v prípade úspechu, inak číslo chyby
@@ -78,6 +89,31 @@ int parseDataType(TSData_T *var_info) {
 }
 
 /**
+ * @brief Pravidlo pre spracovanie priradenia
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token '='
+ * @param result_type Dátový typ výsledku
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int assignment(char *result_type) {
+    int comp_err = nextToken();
+    if( comp_err != 0) return comp_err;
+    token_T *first_tkn;
+    if( tkn->type == BRT_RND_L ){
+        // <ASSIGN>  ->  exp
+        if( (comp_err=parseExpression(result_type)) != 0) return comp_err;
+    }
+    else if( tkn->type == ID ){
+        if( (comp_err=nextToken()) != 0) return comp_err;
+        if(tkn->type == BRT_RND_L) {
+            // <ASSIGN>  ->  <CALL_FN>
+        }
+        else {
+            
+        }
+    }
+}
+
+/**
  * @brief Pravidlo pre spracovanie deklarácie/definície premennej
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token LET alebo VAR
  * @return 0 v prípade úspechu, inak číslo chyby
@@ -95,9 +131,23 @@ int variableDecl() {
     switch (tkn->type)
     {
     case COLON:
+        // <DEF_VAR>  ->  : <TYPE> <INIT_VAL>
         if( (comp_err=nextToken()) != 0) return comp_err;
         //if( (comp_err=parseDataType()) != 0) return comp_err;
-        // defineVar()
+        if( (comp_err=nextToken()) != 0) return comp_err;
+        if (tkn->type == ASSIGN) {
+            // <INIT_VAL>  ->  = <ASSIGN>
+            if( (comp_err=nextToken()) != 0) return comp_err;
+
+
+        }
+        else {
+            // <INIT_VAL>  ->  €
+            storeToken(tkn);
+            return COMPILATION_OK;
+        }
+        break;
+    case ASSIGN:
         break;
     
     default:
