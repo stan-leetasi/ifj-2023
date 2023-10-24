@@ -5,6 +5,8 @@
  * @date 03.10.2023
  */
 
+#include "parser.h"
+
 int main()
 {
     return 0;

@@ -1,4 +1,4 @@
-Pravidlá bezkontextovej gramatiky používanáéj parserom.
+Pravidlá bezkontextovej gramatiky používanej parserom.
 € = epsilon
 id = identifikátor
 exp = výraz
@@ -12,15 +12,15 @@ exp = výraz
 // definícia premennej
 <STAT>      ->  {let,var} id <DEF_VAR>          // let a : Int = 4
 <DEF_VAR>   ->  : <TYPE> <INIT_VAL>
-<DEF_VAR>   ->  <INIT_VAL>
-<INIT_VAL>  ->  <ASSIGN>        // inicializačná hodnota ... priradenie
+<DEF_VAR>   ->  = <ASSIGN>
+<INIT_VAL>  ->  = <ASSIGN>        // inicializačná hodnota ... priradenie
 <INIT_VAL>  ->  €               // bez inicializácie
 // priradenie ... "= a + 25"
-<ASSIGN>    ->  = exp
-<ASSIGN>    ->  = <CALL_FN>
+<ASSIGN>    ->  exp
+<ASSIGN>    ->  <CALL_FN>
 
 // priradenie
-<STAT>      ->  id <ASSIGN>
+<STAT>      ->  id = <ASSIGN>
 
 // blok kódu 
 <STAT>      ->  { <PROG> }
