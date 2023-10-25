@@ -52,7 +52,7 @@ typedef struct TSBlock {
     size_t used;            ///< počet zaplnených miest
     struct TSBlock *prev;   ///< ukazateľ na predchádzajúci blok
     struct TSBlock *next;   ///< ukazateľ na nasledujúci blok
-    TSData *array;          ///< pole pre symboly
+    TSData_T *array;          ///< pole pre symboly
 } TSBlock_T;
 
 /**

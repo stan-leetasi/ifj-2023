@@ -1,0 +1,68 @@
+Pravidlá bezkontextovej gramatiky používanej parserom.
+€ = epsilon
+id = identifikátor
+exp = výraz
+
+// program sa skladá z príkazov
+<PROG>      -> <STAT> <PROG>
+<PROG>      -> €
+
+// statement / príkaz
+
+// definícia premennej
+<STAT>      ->  {let,var} id <DEF_VAR>          // let a : Int = 4
+<DEF_VAR>   ->  : <TYPE> <INIT_VAL>
+<DEF_VAR>   ->  = <ASSIGN>
+<INIT_VAL>  ->  = <ASSIGN>        // inicializačná hodnota ... priradenie
+<INIT_VAL>  ->  €               // bez inicializácie
+// priradenie ... "= a + 25"
+<ASSIGN>    ->  exp
+<ASSIGN>    ->  <CALL_FN>
+
+// priradenie
+<STAT>      ->  id = <ASSIGN>
+
+// blok kódu 
+<STAT>      ->  { <PROG> }
+
+// volanie funkcie
+<STAT>          ->  <CALL_FN>
+<CALL_FN>       ->  id ( <PAR_LIST> )
+// list vstupných parametrov funkcie
+<PAR_LIST>      ->  <PAR_IN> <PAR_IN_NEXT>
+<PAR_LIST>      ->  €
+<PAR_IN_NEXT>   ->  , <PAR_IN> <PAR_IN_NEXT>
+<PAR_IN_NEXT>   ->  €
+<PAR_IN>        ->  id : term
+<PAR_IN>        ->  term
+
+// definícia funkcie
+<STAT>          ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
+// signatúra funkcie ... parametre
+<FN_SIG>        ->  <FN_PAR> <FN_PAR_NEXT>
+<FN_SIG>        ->  €
+<FN_PAR_NEXT>   ->  , <FN_PAR> <FN_PAR_NEXT>
+<FN_PAR_NEXT>   ->  €
+<FN_PAR>        ->  id id : <TYPE>
+<FN_PAR>        ->  _  id : <TYPE>
+// typ návratovej hodnoty funkcie
+<FN_RET_TYPE>   ->  "->" <TYPE>
+<FN_RET_TYPE>   ->  €            // void funkcia
+
+// vrátenie hodnoty z funkcie
+<STAT>      ->  return <RET_VAL>
+<RET_VAL>   ->  <TERM>
+<RET_VAL>   ->  €
+
+// podmienka if
+<STAT>      ->  if <COND> { <PROG> } else { <PROG> }
+<COND>      ->  exp
+<COND>      ->  let id
+
+// cyklus
+<STAT>      ->  while exp { <PROG> }
+
+// dátový typ
+<TYPE>      ->  {Int, Double, String} <QUESTMARK>
+<QUESTMARK> ->  ?
+<QUESTMARK> ->  €
