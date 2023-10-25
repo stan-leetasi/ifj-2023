@@ -1,8 +1,8 @@
 /** Projekt IFJ2023
  * @file parser.h
  * @brief Syntaktický a sémantický anayzátor
- * @author 
- * @date 
+ * @author Michal Krulich (xkruli03)
+ * @date 25.10.2023
  */
 
 #ifndef _PARSER_H_
@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include "symtable.h"
 #include "scanner.h"
+#include "dll.h"
 
 #define COMPILATION_OK  0 ///< Preklad bez chýb
 #define LEX_ERR         1 ///< Chybný lexém 
@@ -35,12 +36,17 @@ extern token_T *tkn;
 extern SymTab_T *symt;
 
 /**
- * 
+ * @brief Vygenerovaný kód pre funkcie
 */
-// extern DLL generated_code
+extern DLLstr_T *code_fn;
 
 /**
- * @brief Hlavný cyklus parsera, funkcia rekurzívne spracúva jednotlivé príkazy
+ * @brief Vygenerovaný kód pre hlavný program (všetko mimo funkcií)
+*/
+extern DLLstr_T *code_main;
+
+/**
+ * @brief Hlavná časť parsera, funkcia spracúva jeden <STAT>
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token
  * @return 0 v prípade úspechu, inak číslo chyby
 */

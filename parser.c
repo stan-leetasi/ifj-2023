@@ -1,8 +1,8 @@
 /** Projekt IFJ2023
  * @file parser.c
  * @brief Syntaktický a sémantický anayzátor
- * @author 
- * @date 
+ * @author Michal Krulich (xkruli03)
+ * @date 25.10.2023
  */
 
 #include "parser.h"
@@ -10,6 +10,9 @@
 token_T *tkn;
 
 SymTab_T *symt;
+
+DLLstr_T *code_fn;
+DLLstr_T *code_main;
 
 /**
  * @brief Indikuje, či sa parser nachádza vo vnútri cykla.
@@ -22,9 +25,15 @@ static bool parser_inside_loop = false;
 // StrR first_loop_label;
 
 /**
- * 
+ * @brief Zoznam premenných,, ktoré musia byť dekalrované pred prvým nespracovaným cyklom
 */
-// DLL variables_declared_inside_loop
+static DLLstr_T *variables_declared_inside_loop;
+
+/**
+ * @brief Indikuje, či sa aktuálne spracúva kód vo vnútri funkcie.
+ * @details Podľa toho sa generovaný kód ukladá buď do code_fn alebo code_main.
+*/
+static bool parser_inside_fn_def = false;
 
 /**
  * @brief Uvoľní aktuálne načítaný token v globálnej premennej tkn a nahradí ho novým zo scannera
@@ -39,10 +48,18 @@ int nextToken() {
 }
 
 /**
+ * Táto funkcia:
+ *  - žiada o tokeny dokým je možné vytvoriť zmysluplný výraz.
+ *  - prevádza infixový výraz na postfixový
+ *  - na základe postfixového výrazu generuje cieľový kód, pričom kontroluje 
+ *    sémantiku za pomoci tabuľky symbolov:
+ *          - či sú premenné deklarované a inicializované
+ *          - či sedia dátové typy operandov
+ * 
  * @brief Precedenčná syntaktická analýza výrazov
- * @details Táto funkcia očakáva globálnu premennú tkn prázdnu
- * @param result_type Dátový typ výsledku
- * @param first_token Prvý token
+ * @details Táto funkcia očakáva globálnu premennú tkn prázdnu a taktiež ju aj zanechá prázdnu.
+ * @param result_type Dátový typ výsledku výrazu
+ * @param first_token Prvý token výrazu (netreba načítavať zo skenera)
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseExpression(char *result_type, token_T *first_token){
