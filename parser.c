@@ -100,7 +100,7 @@ int assignment(char *result_type) {
     token_T *first_tkn;
     if( tkn->type == BRT_RND_L ){
         // <ASSIGN>  ->  exp
-        if( (comp_err=parseExpression(result_type)) != 0) return comp_err;
+        // if( (comp_err=parseExpression(result_typem, tkn)) != 0) return comp_err;
     }
     else if( tkn->type == ID ){
         if( (comp_err=nextToken()) != 0) return comp_err;
