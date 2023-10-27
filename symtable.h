@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define SYM_TYPE_FUNC       'F'
 #define SYM_TYPE_INT        'i'
