@@ -7,9 +7,26 @@
 
 #include "symtable.h"
 
+unsigned long hashOne(char *str)
+{
+    unsigned long hash = 5381;
+    int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash;
+}
+
+unsigned long hashTwo(char *str)
+{
+    // vymyslieť niečo podobné prvému
+    return 1;
+}
+
 bool SymTabInit(SymTab_T *st) {
 
-    st -> global = (TSBlock_T*) malloc(sizeof(TSBlock_T));
+    st -> global = malloc(sizeof (TSBlock_T) + sizeof(TSData_T*) * SYMTABLE_MAX_SIZE);
 
     if(st -> global == NULL) {
         return false;
@@ -19,19 +36,9 @@ bool SymTabInit(SymTab_T *st) {
     st -> global -> prev = NULL;
     st -> global -> next = NULL;
 
-    st -> global -> array = (TSData_T*) malloc(sizeof(TSData_T) * SYMTABLE_MAX_SIZE);
-
-    if(st -> global -> array == NULL) {
-        free(st -> global);
-        return false;
-    }
-
+    // NULL značí prázdne (voľné) miesto v tabuľke
     for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
-        st -> global -> array[i].id = NULL;
-        st -> global -> array[i].type = SYM_TYPE_UNKNOWN;
-        st -> global -> array[i].let = false;
-        st -> global -> array[i].init = false;
-        st -> global -> array[i].sig = NULL;
+        st -> global -> array[i] = NULL;
     }
 
     st -> local = st -> global;
@@ -40,34 +47,24 @@ bool SymTabInit(SymTab_T *st) {
 }
 
 bool SymTabAddLocalBlock(SymTab_T *st) {
-    TSBlock_T *newBlock = (TSBlock_T*) malloc(sizeof(TSBlock_T));
+    TSBlock_T *newBlock = malloc(sizeof (TSBlock_T) + sizeof(TSData_T*) * SYMTABLE_MAX_SIZE);
 
     if(newBlock == NULL) { 
         return false;
     }
 
     newBlock -> used = 0;
-    st -> global -> prev = st -> local;
-    st -> global -> next = NULL;
-
-    newBlock -> array = (TSData_T*) malloc(sizeof(TSData_T) * SYMTABLE_MAX_SIZE);
-
-    if(newBlock -> array == NULL) {
-        free(newBlock);
-        return false;
-    }
 
     for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
-        newBlock -> array[i].id = NULL;
-        newBlock -> array[i].type = SYM_TYPE_UNKNOWN;
-        newBlock -> array[i].let = false;
-        newBlock -> array[i].init = false;
-        newBlock -> array[i].sig = NULL;
+        newBlock -> array[i] = NULL;
     }
 
     if(st -> local != NULL) {
         st -> local -> next = newBlock;
     }
+
+    newBlock -> prev = st -> local;
+    newBlock -> next = NULL;
 
     st -> local = newBlock;
 
@@ -149,7 +146,7 @@ TSData_T *SymTabLookupLocal(SymTab_T *st, char *key) {
     TSBlock_T *currentBlock = st -> local;
 
     for(size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
-        if(currentBlock -> array[i].id != NULL && strcmp(currentBlock -> array[i].id, key) == 0) {
+        if(currentBlock -> array[i]->id != NULL && strcmp(currentBlock -> array[i].id, key) == 0) {
             return &currentBlock -> array[i];
         }
     }
@@ -165,14 +162,22 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
         return false;
     }
 
-    //iterate through global block until we find an empty slot
-    for(size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
-        if (st -> global -> array[i].id == NULL) {
-            st -> global -> array[i] = *elem;
-            return true;
-        }    
+    // v tabuľke by malo ostať aspoň jedno prázdne miesto
+    if(st->global->used + 1 == SYMTABLE_MAX_SIZE) {
+        return false;
     }
 
+    size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
+    if(st->global->array[h1] != NULL) {
+        size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
+        for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++)
+        {
+            if (st->global->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] == NULL) {
+                st->global->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] = elem;
+                return true;
+            }
+        }
+    }
     return false;
 }
 
