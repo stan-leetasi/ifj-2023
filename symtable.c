@@ -20,8 +20,15 @@ unsigned long hashOne(char *str)
 
 unsigned long hashTwo(char *str)
 {
-    // vymyslieť niečo podobné prvému
-    return 1;
+    unsigned long hash = 5381;
+    int c;
+
+    while ((c = *str++))
+    {
+        hash = ((hash << 5) + hash) ^ c;
+    }
+
+    return hash;
 }
 
 bool SymTabInit(SymTab_T *st) {
@@ -47,6 +54,10 @@ bool SymTabInit(SymTab_T *st) {
 }
 
 bool SymTabAddLocalBlock(SymTab_T *st) {
+    if (st == NULL) {
+        return false;
+    }
+    
     TSBlock_T *newBlock = malloc(sizeof (TSBlock_T) + sizeof(TSData_T*) * SYMTABLE_MAX_SIZE);
 
     if(newBlock == NULL) { 
@@ -105,20 +116,37 @@ void SymTabDestroy(SymTab_T *st) {
 }
 
 TSData_T *SymTabLookup(SymTab_T *st, char *key) {
+    if (st == NULL || st->global == NULL) {
+        return NULL;
+    }
 
-    TSBlock_T *currentBlock = st -> local;
+    size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
+    size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
 
-    while(currentBlock != NULL) {
+    if (st->global->array[h1] != NULL && strcmp(st->global->array[h1]->id, key) == 0) {
+        return st->global->array[h1];
+    }
 
-        for(size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
-            if(currentBlock -> array[i].id != NULL && strcmp(currentBlock -> array[i].id, key) == 0) {
-                return &currentBlock -> array[i];
+    for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
+        size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
+        if (st->global->array[index] != NULL && strcmp(st->global->array[index]->id, key) == 0) {
+            return st->global->array[index];
+        }
+    }
+
+    // Iterate through all local blocks and look for the symbol in each
+    TSBlock_T *currentBlock = st->local;
+    while (currentBlock != NULL) {
+        for (size_t i = 0; i < currentBlock->used; i++) {
+            if (currentBlock->array[i] != NULL && strcmp(currentBlock->array[i]->id, key) == 0) {
+                return currentBlock->array[i];
             }
         }
-        currentBlock = currentBlock -> prev;
+        currentBlock = currentBlock->prev;
     }
 
     return NULL;
+    
 }
 
 /**
@@ -129,31 +157,46 @@ TSData_T *SymTabLookup(SymTab_T *st, char *key) {
 */
 TSData_T *SymTabLookupGlobal(SymTab_T *st, char *key) {
 
-    TSBlock_T *currentBlock = st -> global;
+    if(st->global == NULL) {
+        return NULL;
+    }
 
-    for(size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
-        if(currentBlock -> array[i].id != NULL && strcmp(currentBlock -> array[i].id, key) == 0) {
-            return &currentBlock -> array[i];
+    size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
+
+    if(st->global->array[h1] != NULL && strcmp(st->global->array[h1]->id, key) == 0) {
+        return st->global->array[h1];
+    }
+
+    size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
+    for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
+        size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
+        if (st->global->array[index] != NULL && strcmp(st->global->array[index]->id, key) == 0) {
+            return st->global->array[index];
         }
     }
-    currentBlock = currentBlock -> prev;
-
     return NULL;
 }
 
 TSData_T *SymTabLookupLocal(SymTab_T *st, char *key) {
 
-    TSBlock_T *currentBlock = st -> local;
+    if(st->local == NULL) {
+        return NULL;
+    }
 
-    for(size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
-        if(currentBlock -> array[i]->id != NULL && strcmp(currentBlock -> array[i].id, key) == 0) {
-            return &currentBlock -> array[i];
+    size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
+
+    if(st->local->array[h1] != NULL && strcmp(st->local->array[h1]->id, key) == 0) {
+        return st->local->array[h1];
+    }
+
+    size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
+    for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
+        size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
+        if (st->local->array[index] != NULL && strcmp(st->local->array[index]->id, key) == 0) {
+            return st->local->array[index];
         }
     }
-    currentBlock = currentBlock -> prev;
-
     return NULL;
-
 }
 
 bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
@@ -187,15 +230,23 @@ bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
             return false;
         }
 
-    //iterate through local block until we find an empty slot
-    for(size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
-        if (st -> local -> array[i].id == NULL) {
-            st -> local -> array[i] = *elem;
-            return true;
-        }    
+    if(st->local->used + 1 == SYMTABLE_MAX_SIZE) {
+        return false;
     }
 
-    return false;
+    size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
+    //iterate through local block until we find an empty slot
+    if(st->local->array[h1] != NULL) {
+            size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
+        for(size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
+            if (st->local->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] == NULL) {
+                st->local->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] = elem;
+                return true;
+            }  
+        }
+
+        return false;
+    }
 }
 
 
