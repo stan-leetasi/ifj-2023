@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define SYM_TYPE_FUNC       'F'
 #define SYM_TYPE_INT        'i'
@@ -52,7 +53,7 @@ typedef struct TSBlock {
     size_t used;            ///< počet zaplnených miest
     struct TSBlock *prev;   ///< ukazateľ na predchádzajúci blok
     struct TSBlock *next;   ///< ukazateľ na nasledujúci blok
-    TSData_T *array;          ///< pole pre symboly
+    TSData_T *array[];      ///< pole ukazateľov na symboly
 } TSBlock_T;
 
 /**
