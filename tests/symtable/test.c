@@ -12,11 +12,10 @@ int failures = 0;
         failures++;                                   \
     }
 
-SymTab_T *table = NULL;
-
-char** keys = {"global", "local", "daco143", "kluc", "$XYZ"};
+char* keys[] = {"global", "local", "daco143", "kluc", "$XYZ"};
 
 void test() {
+    SymTab_T *table = malloc(sizeof(SymTab_T));
     if (!SymTabInit(table)) return;
     TEST(table != NULL);
     TEST(table->global != NULL);

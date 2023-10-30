@@ -6,9 +6,9 @@ CFLAGS=-g -Wall -Wextra -std=c17 -O2
 all: test.out
 
 clean:
-	rm -f *.out *.o
+	#rm -f *.out *.o
 
-test.out: test.o strR.o 
+test.out: test.o strR.o symtable.o
 	${CC} ${CFLAGS} -o $@ $^
 
 %.o: %.c
