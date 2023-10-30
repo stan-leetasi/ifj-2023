@@ -149,9 +149,7 @@ TSData_T *SymTabLookup(SymTab_T *st, char *key) {
         }
         currentBlock = currentBlock->prev;
     }
-
     return NULL;
-    
 }
 
 /**
@@ -220,14 +218,13 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
     }
 
     size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
-    if(st->global->array[h1] != NULL) {
-        size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-        for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++)
-        {
-            if (st->global->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] == NULL) {
-                st->global->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] = elem;
-                return true;
-            }
+    size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
+    for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++)
+    {
+        if (st->global->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] == NULL) {
+            st->global->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] = elem;
+            st->global->used++;
+            return true;
         }
     }
     return false;
@@ -236,35 +233,24 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
 bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
 
     if(st -> local == NULL) {
-            return false;
-        }
+        return false;
+    }
 
     if(st->local->used + 1 == SYMTABLE_MAX_SIZE) {
         return false;
     }
 
     size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
+    size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
     //iterate through local block until we find an empty slot
-    if(st->local->array[h1] != NULL) {
-            size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-        for(size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
-            if (st->local->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] == NULL) {
-                st->local->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] = elem;
-                return true;
-            }  
-        }
+    for(size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
+        if (st->local->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] == NULL) {
+            st->local->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] = elem;
+            st->local->used++;
+            return true;
+        }  
     }
     return false;
 }
-
-
-
-
-
-
-
-
-
-
 
 /* Koniec súboru symtable.c */
