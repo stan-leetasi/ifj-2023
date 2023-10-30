@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Ako spustiť test:
+# Ako spustiť testy:
 # bash test.sh scanner
+# bash test.sh strR
+# bash test.sh symtable
 
 # Niekedy treba extra spustiť make
 
