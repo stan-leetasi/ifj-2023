@@ -2,7 +2,9 @@
  * @file symtable.c
  * @brief Tabuľka symbolov
  * @author Boris Hatala
- * @date 26.10.2023
+ * @date 30.10.2023
+ * 
+ * @todo Uvoľnenie celej tabuľky, refaktorizácia kódu (private metódy pre TSBlock_T)
  */
 
 #include "symtable.h"
@@ -84,8 +86,6 @@ bool SymTabAddLocalBlock(SymTab_T *st) {
 
 void SymTabRemoveLocalBlock(SymTab_T *st) {
     if (st->local != NULL) {
-
-        free(st->local->array);
         
         if (st->local->prev != NULL) {
             st->local->prev->next = NULL;
@@ -104,7 +104,9 @@ void SymTabDestroy(SymTab_T *st) {
     while (currentBlock != NULL) {
         TSBlock_T *nextBlock = currentBlock->next;
         
-        free(currentBlock->array);
+        /*
+            TODO: dealokácia jednotlivých prvkov blokov tabuľky ... TSData_T*
+        */
         
         free(currentBlock);
         
@@ -123,14 +125,16 @@ TSData_T *SymTabLookup(SymTab_T *st, char *key) {
     size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
     size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
 
-    if (st->global->array[h1] != NULL && strcmp(st->global->array[h1]->id, key) == 0) {
-        return st->global->array[h1];
+    if (st->global->array[h1] != NULL) {
+        if(strcmp(st->global->array[h1]->id, key) == 0) 
+            return st->global->array[h1];
     }
 
     for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
         size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
-        if (st->global->array[index] != NULL && strcmp(st->global->array[index]->id, key) == 0) {
-            return st->global->array[index];
+        if (st->global->array[index] != NULL) {
+            if (strcmp(st->global->array[index]->id, key) == 0)
+                return st->global->array[index];
         }
     }
 
@@ -138,8 +142,9 @@ TSData_T *SymTabLookup(SymTab_T *st, char *key) {
     TSBlock_T *currentBlock = st->local;
     while (currentBlock != NULL) {
         for (size_t i = 0; i < currentBlock->used; i++) {
-            if (currentBlock->array[i] != NULL && strcmp(currentBlock->array[i]->id, key) == 0) {
-                return currentBlock->array[i];
+            if (currentBlock->array[i] != NULL) {
+                if (strcmp(currentBlock->array[i]->id, key) == 0)
+                    return currentBlock->array[i];
             }
         }
         currentBlock = currentBlock->prev;
@@ -163,15 +168,17 @@ TSData_T *SymTabLookupGlobal(SymTab_T *st, char *key) {
 
     size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
 
-    if(st->global->array[h1] != NULL && strcmp(st->global->array[h1]->id, key) == 0) {
-        return st->global->array[h1];
+    if(st->global->array[h1] != NULL) {
+        if(strcmp(st->global->array[h1]->id, key) == 0)
+            return st->global->array[h1];
     }
 
     size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
     for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
         size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
-        if (st->global->array[index] != NULL && strcmp(st->global->array[index]->id, key) == 0) {
-            return st->global->array[index];
+        if (st->global->array[index] != NULL) {
+            if (strcmp(st->global->array[index]->id, key) == 0)
+                return st->global->array[index];
         }
     }
     return NULL;
@@ -185,15 +192,17 @@ TSData_T *SymTabLookupLocal(SymTab_T *st, char *key) {
 
     size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
 
-    if(st->local->array[h1] != NULL && strcmp(st->local->array[h1]->id, key) == 0) {
-        return st->local->array[h1];
+    if(st->local->array[h1] != NULL) {
+        if (strcmp(st->local->array[h1]->id, key) == 0)
+            return st->local->array[h1];
     }
 
     size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
     for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
         size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
-        if (st->local->array[index] != NULL && strcmp(st->local->array[index]->id, key) == 0) {
-            return st->local->array[index];
+        if (st->local->array[index] != NULL) {
+            if (strcmp(st->local->array[index]->id, key) == 0)
+                return st->local->array[index];
         }
     }
     return NULL;
