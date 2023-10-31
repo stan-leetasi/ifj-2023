@@ -65,6 +65,12 @@ typedef struct SymbolsTable {
     TSBlock_T *local;       ///< ukazateľ na lokálny blok  (posledný blok)
 } SymTab_T;
 
+/**
+ * @brief Alokuje prvok tabuľky symbolov
+ * @param key Kľúč, ktorý sa uloží do prvku
+ * @return Ukazateľ na alokovaný prvok, NULL v prípade neúspechu
+*/
+TSData_T *SymTabCreateElement(char *key);
 
 /**
  * @brief Inicializuje tabuľku symbolov a vloží do nej jeden globálny rámec
