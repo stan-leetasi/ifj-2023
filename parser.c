@@ -207,7 +207,7 @@ int parseVariableDecl() {
         return COMPILATION_OK;
         break;
     case ASSIGN:
-        TRY_OR_EXIT(parseAssignment(&(variable->type))));
+        TRY_OR_EXIT(parseAssignment(&(variable->type)));
         // unknown TODO
         return COMPILATION_OK;
         break;
@@ -244,21 +244,46 @@ int parse() {
         /* code */
         break;
     case ID:
-        // TODO opakuje sa v parseAssignment => refaktorizacia ???
+        // TODO podobné parseAssignment => refaktorizacia ???
         token_T* first_tkn = tkn;
         tkn = getToken();
         if (tkn == NULL) return COMPILER_ERROR;
         if (tkn->type == INVALID) return LEX_ERR;
         if (tkn->type == BRT_RND_L) {
-            // <ASSIGN>  ->  <CALL_FN>
+            // <STAT>   ->  <CALL_FN>
         }
         else if (tkn->type == ASSIGN){
             // <STAT>   ->  id = <ASSIGN>
             storeToken(tkn);
             tkn = first_tkn;
-            // parseExpression
+            // parseAssignment
         }
+        else {
+            return LEX_ERR;
+        }
+        break;
+    case BRT_CUR_L:
+        // <STAT>  ->  { <PROG> }
+        TRY_OR_EXIT(nextToken());
+        while (tkn->type != BRT_CUR_R) {
+            parse();
+            TRY_OR_EXIT(nextToken());
+        }
+        break;
+    case FUNC:
+        // <STAT> ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
+        break;
+    case RETURN:
+        // <STAT>      ->  return <RET_VAL>
+        break;
+    case IF:
+        // <STAT>      ->  if <COND> { <PROG> } else { <PROG> }
+        break;
+    case WHILE:
+        // <STAT>      ->  if <COND> { <PROG> } else { <PROG> }
+        break;
     default:
+        return LEX_ERR;
         break;
     }
     return COMPILATION_OK;
