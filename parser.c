@@ -7,12 +7,12 @@
 
 #include "parser.h"
 
-token_T *tkn;
+token_T* tkn;
 
-SymTab_T *symt;
+SymTab_T symt;
 
-DLLstr_T *code_fn;
-DLLstr_T *code_main;
+DLLstr_T code_fn;
+DLLstr_T code_main;
 
 /**
  * @brief Indikuje, či sa parser nachádza vo vnútri cykla.
@@ -27,7 +27,7 @@ static bool parser_inside_loop = false;
 /**
  * @brief Zoznam premenných,, ktoré musia byť dekalrované pred prvým nespracovaným cyklom
 */
-static DLLstr_T *variables_declared_inside_loop;
+static DLLstr_T* variables_declared_inside_loop;
 
 /**
  * @brief Indikuje, či sa aktuálne spracúva kód vo vnútri funkcie.
@@ -51,50 +51,56 @@ int nextToken() {
  * Táto funkcia:
  *  - žiada o tokeny dokým je možné vytvoriť zmysluplný výraz.
  *  - prevádza infixový výraz na postfixový
- *  - na základe postfixového výrazu generuje cieľový kód, pričom kontroluje 
+ *  - na základe postfixového výrazu generuje cieľový kód, pričom kontroluje
  *    sémantiku za pomoci tabuľky symbolov:
  *          - či sú premenné deklarované a inicializované
  *          - či sedia dátové typy operandov
- * 
+ *
  * @brief Precedenčná syntaktická analýza výrazov
  * @details Táto funkcia očakáva globálnu premennú tkn prázdnu a taktiež ju aj zanechá prázdnu.
  * @param result_type Dátový typ výsledku výrazu
  * @param first_token Prvý token výrazu (netreba načítavať zo skenera)
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseExpression(char *result_type, token_T *first_token){
+int parseExpression(char* result_type, token_T* first_token) {
     return COMPILATION_OK;
 }
 
 /**
- * @brief Pravidlo pre spracovanie dátového typu
+ * @brief Pravidlo pre spracovanie dátového typu, zapíše do var_info->type spracovaný typ
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token LET alebo VAR
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseDataType(TSData_T *var_info) {
+int parseDataType(TSData_T* var_info) {
     // <TYPE>  ->  {Int, Double, String} <QUESTMARK>
-    int data_type;
     switch (tkn->type)
     {
     case INT_TYPE:
+        var_info->type = SYM_TYPE_INT;
+        break;
     case DOUBLE_TYPE:
+        var_info->type = SYM_TYPE_DOUBLE;
+        break;
     case STRING_TYPE:
-        data_type = tkn->type;
-        //var_info->type = ...;
+        var_info->type = SYM_TYPE_STRING;
         break;
     default:
         return SYN_ERR;
         break;
     }
-    int tkn_err = nextToken();
-    if( tkn_err != 0) return tkn_err;
-    if(tkn->type == QUEST_MARK) {
-        switch (data_type)
+    TRY_OR_EXIT(nextToken());
+    if (tkn->type == QUEST_MARK) {
+        switch (var_info->type)
         {
-        case INT_TYPE:
+        case SYM_TYPE_INT:
             var_info->type = SYM_TYPE_INT_NIL;
             break;
-        // TO DO
+        case SYM_TYPE_DOUBLE:
+            var_info->type = SYM_TYPE_DOUBLE_NIL;
+            break;
+        case SYM_TYPE_STRING:
+            var_info->type = SYM_TYPE_STRING_NIL;
+            break;
         default:
             break;
         }
@@ -111,23 +117,40 @@ int parseDataType(TSData_T *var_info) {
  * @param result_type Dátový typ výsledku
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int assignment(char *result_type) {
-    int comp_err = nextToken();
-    if( comp_err != 0) return comp_err;
-    token_T *first_tkn;
-    if( tkn->type == BRT_RND_L ){
-        // <ASSIGN>  ->  exp
-        // if( (comp_err=parseExpression(result_typem, tkn)) != 0) return comp_err;
-    }
-    else if( tkn->type == ID ){
-        if( (comp_err=nextToken()) != 0) return comp_err;
-        if(tkn->type == BRT_RND_L) {
+int parseAssignment(char* result_type) {
+    TRY_OR_EXIT(nextToken());
+    token_T* first_tkn;
+    switch (tkn->type)
+    {
+    case BRT_RND_L:
+    case INT_CONST:
+    case DOUBLE_CONST:
+    case STRING_CONST:
+        // parseExpression()
+        break;
+    case ID:
+        first_tkn = tkn;
+        tkn = getToken();
+        if (tkn == NULL) return COMPILER_ERROR;
+        if (tkn->type == INVALID) return LEX_ERR;
+        if (tkn->type == BRT_RND_L) {
             // <ASSIGN>  ->  <CALL_FN>
         }
         else {
-            
+            storeToken(tkn);
+            tkn = first_tkn;
+            // parseExpression
         }
+        break;
+    case NIL:
+        // TODO
+        break;
+    default:
+        return LEX_ERR;
+        break;
     }
+    // *result_type = ...;
+    return COMPILATION_OK;
 }
 
 /**
@@ -135,41 +158,63 @@ int assignment(char *result_type) {
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token LET alebo VAR
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int variableDecl() {
+int parseVariableDecl() {
     // <STAT>  ->  {let,var} id <DEF_VAR>
     bool let = tkn->type == LET ? true : false;
-    int comp_err = nextToken();
-    if( comp_err != 0) return comp_err;
-    if ( tkn->type != ID ) {
+    int comp_err;
+    TRY_OR_EXIT(nextToken());
+    if (tkn->type != ID) {
         return SYN_ERR;
     }
     // --- vytvorenie noveho symbolu v tabulke symbolov
-    if( (comp_err=nextToken()) != 0) return comp_err;
+    if(SymTabLookupLocal(&symt, StrRead(&(tkn->atr))) != NULL) {
+        return SEM_ERR_REDEF;
+    }
+    TSData_T *variable = SymTabCreateElement(StrRead(&(tkn->atr)));
+    if (variable == NULL)
+    {
+        return COMPILER_ERROR;
+    }
+    variable->init = false;
+    variable->let = let;
+    variable->sig = NULL;
+    variable->type = SYM_TYPE_UNKNOWN;
+    
+    if(SymTabInsertLocal(&symt, variable)){
+        free(variable);
+        return COMPILER_ERROR;
+    }
+    TRY_OR_EXIT(nextToken());
     switch (tkn->type)
     {
     case COLON:
         // <DEF_VAR>  ->  : <TYPE> <INIT_VAL>
-        if( (comp_err=nextToken()) != 0) return comp_err;
-        //if( (comp_err=parseDataType()) != 0) return comp_err;
-        if( (comp_err=nextToken()) != 0) return comp_err;
+        TRY_OR_EXIT(nextToken());
+        TRY_OR_EXIT(parseDataType(variable));
+        TRY_OR_EXIT(nextToken());
         if (tkn->type == ASSIGN) {
             // <INIT_VAL>  ->  = <ASSIGN>
-            if( (comp_err=nextToken()) != 0) return comp_err;
-
-
+            char assign_type = SYM_TYPE_UNKNOWN;
+            TRY_OR_EXIT(parseAssignment(&assign_type));
+            if(assign_type != variable->type) { // unknown TODO
+                return SEM_ERR_TYPE;
+            }
         }
         else {
             // <INIT_VAL>  ->  €
             storeToken(tkn);
-            return COMPILATION_OK;
         }
+        return COMPILATION_OK;
         break;
     case ASSIGN:
+        TRY_OR_EXIT(parseAssignment(&(variable->type))));
+        // unknown TODO
+        return COMPILATION_OK;
         break;
-    
     default:
         break;
     }
+    return LEX_ERR;
 }
 
 /**
@@ -177,8 +222,17 @@ int variableDecl() {
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token LET alebo VAR
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int defineVar(TSData_T *var_info) {
+int defineVar(TSData_T* var_info) {
     // <DEF_VAR>   ->  : <TYPE> <INIT_VAL>
+}
+
+/* --- FUNKCIE DEKLAROVANÉ V PARSER.H --- */
+
+bool initializeParser() {
+    if (!SymTabInit(&symt)) return false;
+    DLLstr_Init(&code_fn);
+    DLLstr_Init(&code_main);
+    return true;
 }
 
 int parse() {
@@ -186,13 +240,28 @@ int parse() {
     {
     case LET:
     case VAR:
-        
+        parseVariableDecl();
         /* code */
         break;
-    
+    case ID:
+        // TODO opakuje sa v parseAssignment => refaktorizacia ???
+        token_T* first_tkn = tkn;
+        tkn = getToken();
+        if (tkn == NULL) return COMPILER_ERROR;
+        if (tkn->type == INVALID) return LEX_ERR;
+        if (tkn->type == BRT_RND_L) {
+            // <ASSIGN>  ->  <CALL_FN>
+        }
+        else if (tkn->type == ASSIGN){
+            // <STAT>   ->  id = <ASSIGN>
+            storeToken(tkn);
+            tkn = first_tkn;
+            // parseExpression
+        }
     default:
         break;
     }
+    return COMPILATION_OK;
 }
 
 

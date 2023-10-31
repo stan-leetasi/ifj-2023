@@ -25,25 +25,45 @@
 #define SEM_ERR_OTHER   9 ///< ostatné sémantické chyby
 #define COMPILER_ERROR  99 ///< Chyba prekladača
 
+ /**
+  * @brief Vykoná zadanú operáciu a v prípade návratovej hodnotej rôznej od nuly, použije ju
+  *        ako návratovej hodnotu aktuálnej funkcie.
+ */
+#define TRY_OR_EXIT(operation) \
+do \
+{ \
+  int error_code = (operation); \
+  if (error_code != 0) return error_code;  \
+} while (0);
+
+
+
+
 /**
  * @brief Aktuálny načítaný token
 */
-extern token_T *tkn;
+extern token_T* tkn;
 
 /**
  * @brief Tabuľka symbolov
 */
-extern SymTab_T *symt;
+extern SymTab_T symt;
 
 /**
  * @brief Vygenerovaný kód pre funkcie
 */
-extern DLLstr_T *code_fn;
+extern DLLstr_T code_fn;
 
 /**
  * @brief Vygenerovaný kód pre hlavný program (všetko mimo funkcií)
 */
-extern DLLstr_T *code_main;
+extern DLLstr_T code_main;
+
+/**
+ * @brief Inicializácia dátových štruktúr parsera
+ * @return true v prípade úspechu, inak false
+*/
+bool initializeParser();
 
 /**
  * @brief Hlavná časť parsera, funkcia spracúva jeden <STAT>

@@ -9,5 +9,8 @@
 
 int main()
 {
+    if(initializeParser()) return COMPILER_ERROR;
+    tkn = getToken();
+    
     return 0;
 }
