@@ -120,18 +120,8 @@ TSData_T *SymTabLookup(SymTab_T *st, char *key) {
         return NULL;
     }
 
-    size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
-    size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-
-    if (st->global->array[h1] != NULL && strcmp(st->global->array[h1]->id, key) == 0) {
-        return st->global->array[h1];
-    }
-
-    for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
-        size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
-        if (st->global->array[index] != NULL && strcmp(st->global->array[index]->id, key) == 0) {
-            return st->global->array[index];
-        }
+    if(SymTabBlockLookUp(st->global, key) != NULL) {
+        return SymTabBlockLookUp(st->global, key);
     }
 
     // Iterate through all local blocks and look for the symbol in each
@@ -161,20 +151,7 @@ TSData_T *SymTabLookupGlobal(SymTab_T *st, char *key) {
         return NULL;
     }
 
-    size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
-
-    if(st->global->array[h1] != NULL && strcmp(st->global->array[h1]->id, key) == 0) {
-        return st->global->array[h1];
-    }
-
-    size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-    for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
-        size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
-        if (st->global->array[index] != NULL && strcmp(st->global->array[index]->id, key) == 0) {
-            return st->global->array[index];
-        }
-    }
-    return NULL;
+    return SymTabBlockLookUp(st->global, key);
 }
 
 TSData_T *SymTabLookupLocal(SymTab_T *st, char *key) {
@@ -183,20 +160,7 @@ TSData_T *SymTabLookupLocal(SymTab_T *st, char *key) {
         return NULL;
     }
 
-    size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
-
-    if(st->local->array[h1] != NULL && strcmp(st->local->array[h1]->id, key) == 0) {
-        return st->local->array[h1];
-    }
-
-    size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-    for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
-        size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
-        if (st->local->array[index] != NULL && strcmp(st->local->array[index]->id, key) == 0) {
-            return st->local->array[index];
-        }
-    }
-    return NULL;
+    return SymTabBlockLookUp(st->local, key);
 }
 
 bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
@@ -205,23 +169,7 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
         return false;
     }
 
-    // v tabuľke by malo ostať aspoň jedno prázdne miesto
-    if(st->global->used + 1 == SYMTABLE_MAX_SIZE) {
-        return false;
-    }
-
-    size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
-    if(st->global->array[h1] != NULL) {
-        size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-        for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++)
-        {
-            if (st->global->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] == NULL) {
-                st->global->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] = elem;
-                return true;
-            }
-        }
-    }
-    return false;
+    return SymTabBlockInsert(st->global, elem);
 }
 
 bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
@@ -230,33 +178,46 @@ bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
             return false;
         }
 
-    if(st->local->used + 1 == SYMTABLE_MAX_SIZE) {
+    return SymTabBlockInsert(st->local, elem);
+}
+
+TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {
+
+    size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
+
+    if(block->array[h1] != NULL && strcmp(block->array[h1]->id, key) == 0) {
+        return block->array[h1];
+    }
+
+    size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
+    for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
+        size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
+        if (block->array[index] != NULL && strcmp(block->array[index]->id, key) == 0) {
+            return block->array[index];
+        }
+    }
+
+    return NULL;
+}
+
+bool SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
+
+    if(block->used + 1 == SYMTABLE_MAX_SIZE) {
         return false;
     }
 
     size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
-    //iterate through local block until we find an empty slot
-    if(st->local->array[h1] != NULL) {
-            size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-        for(size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
-            if (st->local->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] == NULL) {
-                st->local->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] = elem;
+    if(block->array[h1] != NULL) {
+        size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
+        for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++)
+        {
+            if (block->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] == NULL) {
+                block->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] = elem;
                 return true;
-            }  
+            }
         }
-
-        return false;
     }
+    return false;
 }
-
-
-
-
-
-
-
-
-
-
 
 /* Koniec súboru symtable.c */
