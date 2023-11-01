@@ -84,35 +84,55 @@ bool SymTabAddLocalBlock(SymTab_T *st) {
 
 void SymTabRemoveLocalBlock(SymTab_T *st) {
     if (st->local != NULL) {
+        TSBlock_T *localBlock = st->local;
+        st->local = localBlock->prev;
 
-        free(st->local->array);
-        
-        if (st->local->prev != NULL) {
-            st->local->prev->next = NULL;
+        for (size_t i = 0; i < localBlock->used; i++) {
+            TSData_T *data = localBlock->array[i];
+            free(data->id);
+            if (data->type == SYM_TYPE_FUNC && data->sig) {
+                free(data->sig->par_types);
+                for (size_t j = 0; data->sig->par_names[j]; j++) {
+                    free(data->sig->par_names[j]);
+                    free(data->sig->par_ids[j]);
+                }
+                free(data->sig->par_names);
+                free(data->sig->par_ids);
+                free(data->sig);
+            }
+            free(data);
         }
-        
-        st->local = st->local->prev;
-        
-        free(st->local->next);
+
+        free(localBlock->array); 
+        free(localBlock); 
     }
 }
 
 void SymTabDestroy(SymTab_T *st) {
-
-    TSBlock_T *currentBlock = st->global;
-
-    while (currentBlock != NULL) {
-        TSBlock_T *nextBlock = currentBlock->next;
-        
-        free(currentBlock->array);
-        
-        free(currentBlock);
-        
-        currentBlock = nextBlock;
+    while (st->local != NULL) {
+        SymTabRemoveLocalBlock(st);
     }
-    
-    st->global = NULL;
-    st->local = NULL;
+
+    TSBlock_T *globalBlock = st->global;
+    for (size_t i = 0; i < globalBlock->used; i++) {
+        TSData_T *data = globalBlock->array[i];
+        free(data->id);
+        if (data->type == SYM_TYPE_FUNC && data->sig) {
+            free(data->sig->par_types);
+            for (size_t j = 0; data->sig->par_names[j]; j++) {
+                free(data->sig->par_names[j]);
+                free(data->sig->par_ids[j]);
+            }
+            free(data->sig->par_names);
+            free(data->sig->par_ids);
+            free(data->sig);
+        }
+        free(data);
+    }
+    free(globalBlock->array);
+    free(globalBlock);
+
+    free(st);
 }
 
 TSData_T *SymTabLookup(SymTab_T *st, char *key) {
