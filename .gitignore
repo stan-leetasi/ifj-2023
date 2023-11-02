@@ -4,3 +4,5 @@
 *.out
 # Test results
 *.result
+
+.vscode
