@@ -286,6 +286,9 @@ int parseFunctionSignature() {
 */
 int parseFunction() {
     // <STAT> ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
+    bool code_inside_fn_def = parser_inside_fn_def;
+    parser_inside_fn_def = true;
+
     TRY_OR_EXIT(nextToken());
     if(tkn->type != ID) return SYN_ERR;
 
@@ -316,6 +319,7 @@ int parseFunction() {
         TRY_OR_EXIT(nextToken());
     }
 
+    parser_inside_fn_def = code_inside_fn_def;
     return COMPILATION_OK;
 }
 
@@ -383,6 +387,9 @@ int parseIf() {
 */
 int parseWhile() {
     // <STAT>      ->  while exp { <PROG> }
+    bool loop_inside_loop = parser_inside_loop;
+    parser_inside_loop = true;
+
     TRY_OR_EXIT(nextToken());
     // TODO pridat konstanty INT_CONT, ... do if
     if (!(tkn->type == ID || tkn->type == BRT_RND_L)) return SYN_ERR;
@@ -402,6 +409,7 @@ int parseWhile() {
         TRY_OR_EXIT(nextToken());
     }
 
+    parser_inside_loop = loop_inside_loop;
     return COMPILATION_OK;
 }
 
@@ -424,8 +432,6 @@ bool initializeParser() {
 }
 
 int parse() {
-    bool statement_inside_loop = parser_inside_loop;
-    bool statement_inside_fn_def = parser_inside_fn_def;
     switch (tkn->type)
     {
     case LET:
@@ -465,7 +471,7 @@ int parse() {
         break;
     case FUNC:
         // <STAT> ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
-        parser_inside_fn_def = true;
+        TRY_OR_EXIT(parseFunction());
         break;
     case RETURN:
         // <STAT>      ->  return <RET_VAL>
@@ -479,15 +485,13 @@ int parse() {
         break;
     case WHILE:
         // <STAT>      ->  while exp { <PROG> }
-        parser_inside_loop = true;
         TRY_OR_EXIT(parseWhile());
         break;
     default:
         return LEX_ERR;
         break;
     }
-    parser_inside_loop = statement_inside_loop;
-    parser_inside_fn_def = statement_inside_fn_def;
+
     return COMPILATION_OK;
 }
 
