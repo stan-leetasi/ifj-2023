@@ -305,7 +305,7 @@ int parseFunction() {
 
     TRY_OR_EXIT(parseFunctionSignature());
 
-    TRY_OR_EXIT(nextToken);
+    TRY_OR_EXIT(nextToken());
 
     if (tkn->type == ARROW) {
         //<FN_RET_TYPE>   ->  "->" <TYPE>
