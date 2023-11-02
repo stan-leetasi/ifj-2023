@@ -269,6 +269,7 @@ int parseIf() {
         // TODO
         break;
     case ID:
+    case BRT_RND_L:
         // <COND> ->  exp
         token_T *t = tkn;
         tkn = NULL;
@@ -307,11 +308,29 @@ int parseIf() {
 
 /**
  * @brief Pravidlo pre spracovanie cyklu while
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token IF
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token WHILE
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseWhile() {
     // <STAT>      ->  while exp { <PROG> }
+    TRY_OR_EXIT(nextToken());
+    if (!(tkn->type == ID || tkn->type == BRT_RND_L)) return SYN_ERR;
+    
+    token_T *t = tkn;
+    tkn = NULL;
+    char exp_type;
+    parseExpression(&exp_type, t);
+    // TODO
+
+    TRY_OR_EXIT(nextToken());
+    if(tkn->type != BRT_CUR_L) return SYN_ERR;
+    TRY_OR_EXIT(nextToken());
+    while (tkn->type != BRT_CUR_R)
+    {
+        TRY_OR_EXIT(parse());
+        TRY_OR_EXIT(nextToken());
+    }
+
     return COMPILATION_OK;
 }
 
@@ -374,8 +393,8 @@ int parse() {
         }
         break;
     case FUNC:
-        parser_inside_fn_def = true;
         // <STAT> ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
+        parser_inside_fn_def = true;
         break;
     case RETURN:
         // <STAT>      ->  return <RET_VAL>
@@ -388,8 +407,9 @@ int parse() {
         TRY_OR_EXIT(parseIf());
         break;
     case WHILE:
-        parser_inside_loop = true;
         // <STAT>      ->  while exp { <PROG> }
+        parser_inside_loop = true;
+        TRY_OR_EXIT(parseWhile());
         break;
     default:
         return LEX_ERR;
