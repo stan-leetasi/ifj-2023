@@ -161,6 +161,7 @@ int parseAssignment(char* result_type) {
     case INT_CONST:
     case DOUBLE_CONST:
     case STRING_CONST:
+    case NIL:
         // parseExpression()
         break;
     case ID:
@@ -177,11 +178,8 @@ int parseAssignment(char* result_type) {
             // parseExpression
         }
         break;
-    case NIL:
-        // TODO
-        break;
     default:
-        return LEX_ERR; // ??? SYN_ERR
+        return SYN_ERR;
         break;
     }
     // *result_type = ...;
@@ -196,7 +194,6 @@ int parseAssignment(char* result_type) {
 int parseVariableDecl() {
     // <STAT>  ->  {let,var} id <DEF_VAR>
     bool let = tkn->type == LET ? true : false;
-    int comp_err;
     TRY_OR_EXIT(nextToken());
     if (tkn->type != ID) {
         return SYN_ERR;
@@ -219,6 +216,7 @@ int parseVariableDecl() {
         free(variable);
         return COMPILER_ERROR;
     }
+
     TRY_OR_EXIT(nextToken());
     switch (tkn->type)
     {
@@ -242,14 +240,16 @@ int parseVariableDecl() {
         return COMPILATION_OK;
         break;
     case ASSIGN:
+        // <DEF_VAR>   ->  = <ASSIGN>
         TRY_OR_EXIT(parseAssignment(&(variable->type)));
         // unknown TODO
         return COMPILATION_OK;
         break;
     default:
+        return SYN_ERR;
         break;
     }
-    return LEX_ERR;
+    return SYN_ERR;
 }
 
 /**
@@ -261,12 +261,19 @@ int parseFunctionSignature() {
     // <FN_SIG>        ->  <FN_PAR> <FN_PAR_NEXT>
     // <FN_SIG>        ->  €
     TRY_OR_EXIT(nextToken());
+
+    size_t params = 0;
+
     while (tkn->type != BRT_RND_R)
     {
         // <FN_PAR_NEXT>   ->  , <FN_PAR> <FN_PAR_NEXT>
         // <FN_PAR_NEXT>   ->  €
         // <FN_PAR>        ->  id id : <TYPE>
         // <FN_PAR>        ->  _  id : <TYPE>
+        if(params > 0) {
+            if (tkn->type != COMMA) return SYN_ERR;
+            TRY_OR_EXIT(nextToken());
+        }
         if(!(tkn->type == ID && tkn->type == UNDERSCORE)) return SYN_ERR;
         TRY_OR_EXIT(nextToken());
         if(tkn->type != ID) return SYN_ERR;
@@ -274,6 +281,7 @@ int parseFunctionSignature() {
         if(tkn->type != COLON) return SYN_ERR;
         TSData_T data_el; // TODO zmenit
         TRY_OR_EXIT(parseDataType(&data_el));
+        params++;
     }
 
     return COMPILATION_OK;
@@ -436,8 +444,7 @@ int parse() {
     {
     case LET:
     case VAR:
-        parseVariableDecl();
-        /* code */
+        TRY_OR_EXIT(parseVariableDecl());
         break;
     case ID:
         // <STAT>   ->  <CALL_FN>
@@ -465,7 +472,7 @@ int parse() {
         TRY_OR_EXIT(nextToken());
         //SymTabAddLocalBlock(&symt);
         while (tkn->type != BRT_CUR_R) {
-            parse();
+            TRY_OR_EXIT(parse());
             TRY_OR_EXIT(nextToken());
         }
         break;
