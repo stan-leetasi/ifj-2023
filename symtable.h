@@ -19,6 +19,7 @@
 #define SYM_TYPE_DOUBLE_NIL 'D'
 #define SYM_TYPE_STRING     's'
 #define SYM_TYPE_STRING_NIL 'S'
+#define SYM_TYPE_BOOL       'b'
 #define SYM_TYPE_VOID       'V'
 #define SYM_TYPE_UNKNOWN    'U'
 #define SYM_TYPE_NIL        'N'
