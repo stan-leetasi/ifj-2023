@@ -12,7 +12,7 @@ unsigned long hashOne(char *str)
     unsigned long hash = 5381;
     int c;
 
-    while (c = *str++)
+    while ((c = *str++))
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 
     return hash;
@@ -103,7 +103,7 @@ void SymTabRemoveLocalBlock(SymTab_T *st) {
             free(data);
         }
 
-        free(localBlock->array); 
+        // free(localBlock->array);
         free(localBlock); 
     }
 }
@@ -129,7 +129,7 @@ void SymTabDestroy(SymTab_T *st) {
         }
         free(data);
     }
-    free(globalBlock->array);
+    // free(globalBlock->array);
     free(globalBlock);
 
     free(st);
@@ -140,8 +140,9 @@ TSData_T *SymTabLookup(SymTab_T *st, char *key) {
         return NULL;
     }
 
-    if(SymTabBlockLookUp(st->global, key) != NULL) {
-        return SymTabBlockLookUp(st->global, key);
+    TSData_T *result = SymTabBlockLookUp(st->global, key);
+    if(result != NULL) {
+        return result;
     }
 
     // Iterate through all local blocks and look for the symbol in each
@@ -171,7 +172,8 @@ TSData_T *SymTabLookupGlobal(SymTab_T *st, char *key) {
         return NULL;
     }
 
-    return SymTabBlockLookUp(st->global, key);
+    TSData_T *result = SymTabBlockLookUp(st->global, key);
+    return result;
 }
 
 TSData_T *SymTabLookupLocal(SymTab_T *st, char *key) {
@@ -179,8 +181,8 @@ TSData_T *SymTabLookupLocal(SymTab_T *st, char *key) {
     if(st->local == NULL) {
         return NULL;
     }
-
-    return SymTabBlockLookUp(st->local, key);
+    TSData_T *result = SymTabBlockLookUp(st->local, key);
+    return result;
 }
 
 bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
@@ -189,7 +191,8 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
         return false;
     }
 
-    return SymTabBlockInsert(st->global, elem);
+    bool result = SymTabBlockInsert(st->global, elem);
+    return result;
 }
 
 bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
@@ -197,8 +200,9 @@ bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
     if(st -> local == NULL) {
             return false;
         }
+    bool result = SymTabBlockInsert(st->local, elem);
+    return result;
 
-    return SymTabBlockInsert(st->local, elem);
 }
 
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {

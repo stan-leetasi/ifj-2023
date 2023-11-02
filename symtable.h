@@ -128,5 +128,9 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem);
 */
 bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem);
 
+TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key);
+
+bool SymTabBlockInsert(TSBlock_T *block, TSData_T *elem);
+
 #endif // ifndef _SYMTABLE_H_
 /* Koniec súboru symtable.h */
