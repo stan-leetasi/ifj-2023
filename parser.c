@@ -139,8 +139,6 @@ int parseTerm(char *term_type) {
     case NIL:
         *term_type = SYM_TYPE_NIL;
         break;
-    case INVALID:
-        return LEX_ERR;
     default:
         return SYN_ERR;
         break;
@@ -260,7 +258,61 @@ int parseVariableDecl() {
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseIf() {
+    // <STAT>  ->  if <COND> { <PROG> } else { <PROG> }
     TRY_OR_EXIT(nextToken());
+    switch (tkn->type)
+    {
+    case LET:
+        //  <COND> ->  let id
+        TRY_OR_EXIT(nextToken());
+        if(tkn->type != ID) return SYN_ERR;
+        // TODO
+        break;
+    case ID:
+        // <COND> ->  exp
+        token_T *t = tkn;
+        tkn = NULL;
+        char exp_type;
+        parseExpression(&exp_type, t);
+        break;
+    default:
+        return SYN_ERR;
+        break;
+    }
+
+    TRY_OR_EXIT(nextToken());
+    if(tkn->type != BRT_CUR_L) return SYN_ERR;
+    TRY_OR_EXIT(nextToken());
+    while (tkn->type != BRT_CUR_R)
+    {
+        TRY_OR_EXIT(parse());
+        TRY_OR_EXIT(nextToken());
+    }
+    
+    TRY_OR_EXIT(nextToken());
+    if(tkn->type != ELSE) return SYN_ERR;
+
+
+    TRY_OR_EXIT(nextToken());
+    if(tkn->type != BRT_CUR_L) return SYN_ERR;
+    TRY_OR_EXIT(nextToken());
+    while (tkn->type != BRT_CUR_R)
+    {
+        TRY_OR_EXIT(parse());
+        TRY_OR_EXIT(nextToken());
+    }
+
+    return COMPILATION_OK;
+}
+
+/**
+ * @brief Pravidlo pre spracovanie cyklu while
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token IF
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int parseWhile() {
+    // <STAT>      ->  while exp { <PROG> }
+    return COMPILATION_OK;
 }
 
 /**
@@ -333,10 +385,11 @@ int parse() {
         break;
     case IF:
         // <STAT>      ->  if <COND> { <PROG> } else { <PROG> }
+        TRY_OR_EXIT(parseIf());
         break;
     case WHILE:
         parser_inside_loop = true;
-        // <STAT>      ->  if <COND> { <PROG> } else { <PROG> }
+        // <STAT>      ->  while exp { <PROG> }
         break;
     default:
         return LEX_ERR;
