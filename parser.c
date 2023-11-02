@@ -117,15 +117,15 @@ int parseDataType(TSData_T* var_info) {
  * @param term_type Dátový typ termu
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseTerm(char *term_type) {
+int parseTerm(char* term_type) {
     switch (tkn->type)
     {
     case ID:
-        TSData_T *variable = SymTabLookup(&symt, StrRead(&(tkn->atr)));
-        if(variable == NULL) return SEM_ERR_UNDEF;
-        if(variable->type == SYM_TYPE_FUNC) return SEM_ERR_RETURN;
-        if(!(variable->init)) return SEM_ERR_UNDEF;
-        *term_type = variable->type; 
+        TSData_T* variable = SymTabLookup(&symt, StrRead(&(tkn->atr)));
+        if (variable == NULL) return SEM_ERR_UNDEF;
+        if (variable->type == SYM_TYPE_FUNC) return SEM_ERR_RETURN;
+        if (!(variable->init)) return SEM_ERR_UNDEF;
+        *term_type = variable->type;
         break;
     case INT_CONST:
         *term_type = SYM_TYPE_INT;
@@ -199,10 +199,10 @@ int parseVariableDecl() {
         return SYN_ERR;
     }
     // --- vytvorenie noveho symbolu v tabulke symbolov
-    if(SymTabLookupLocal(&symt, StrRead(&(tkn->atr))) != NULL) {
+    if (SymTabLookupLocal(&symt, StrRead(&(tkn->atr))) != NULL) {
         return SEM_ERR_REDEF;
     }
-    TSData_T *variable = SymTabCreateElement(StrRead(&(tkn->atr)));
+    TSData_T* variable = SymTabCreateElement(StrRead(&(tkn->atr)));
     if (variable == NULL)
     {
         return COMPILER_ERROR;
@@ -211,8 +211,8 @@ int parseVariableDecl() {
     variable->let = let;
     variable->sig = NULL;
     variable->type = SYM_TYPE_UNKNOWN;
-    
-    if(SymTabInsertLocal(&symt, variable)){
+
+    if (SymTabInsertLocal(&symt, variable)) {
         free(variable);
         return COMPILER_ERROR;
     }
@@ -229,7 +229,7 @@ int parseVariableDecl() {
             // <INIT_VAL>  ->  = <ASSIGN>
             char assign_type = SYM_TYPE_UNKNOWN;
             TRY_OR_EXIT(parseAssignment(&assign_type));
-            if(assign_type != variable->type) { // unknown TODO
+            if (assign_type != variable->type) { // unknown TODO
                 return SEM_ERR_TYPE;
             }
         }
@@ -270,15 +270,15 @@ int parseFunctionSignature() {
         // <FN_PAR_NEXT>   ->  €
         // <FN_PAR>        ->  id id : <TYPE>
         // <FN_PAR>        ->  _  id : <TYPE>
-        if(params > 0) {
+        if (params > 0) {
             if (tkn->type != COMMA) return SYN_ERR;
             TRY_OR_EXIT(nextToken());
         }
-        if(!(tkn->type == ID && tkn->type == UNDERSCORE)) return SYN_ERR;
+        if (!(tkn->type == ID && tkn->type == UNDERSCORE)) return SYN_ERR;
         TRY_OR_EXIT(nextToken());
-        if(tkn->type != ID) return SYN_ERR;
+        if (tkn->type != ID) return SYN_ERR;
         TRY_OR_EXIT(nextToken());
-        if(tkn->type != COLON) return SYN_ERR;
+        if (tkn->type != COLON) return SYN_ERR;
         TSData_T data_el; // TODO zmenit
         TRY_OR_EXIT(parseDataType(&data_el));
         params++;
@@ -298,16 +298,16 @@ int parseFunction() {
     parser_inside_fn_def = true;
 
     TRY_OR_EXIT(nextToken());
-    if(tkn->type != ID) return SYN_ERR;
+    if (tkn->type != ID) return SYN_ERR;
 
     TRY_OR_EXIT(nextToken());
-    if(tkn->type != BRT_RND_L) return SYN_ERR;
+    if (tkn->type != BRT_RND_L) return SYN_ERR;
 
     TRY_OR_EXIT(parseFunctionSignature());
 
     TRY_OR_EXIT(nextToken);
 
-    if(tkn->type == ARROW) {
+    if (tkn->type == ARROW) {
         //<FN_RET_TYPE>   ->  "->" <TYPE>
         TSData_T data_el; // TODO zmenit
         TRY_OR_EXIT(parseDataType(&data_el));
@@ -344,7 +344,7 @@ int parseIf() {
     case LET:
         //  <COND> ->  let id
         TRY_OR_EXIT(nextToken());
-        if(tkn->type != ID) return SYN_ERR;
+        if (tkn->type != ID) return SYN_ERR;
         // TODO
         break;
     case ID:
@@ -353,7 +353,7 @@ int parseIf() {
     case DOUBLE_CONST:
     case STRING_CONST:
         // <COND> ->  exp
-        token_T *t = tkn;
+        token_T* t = tkn;
         tkn = NULL;
         char exp_type;
         parseExpression(&exp_type, t);
@@ -364,20 +364,20 @@ int parseIf() {
     }
 
     TRY_OR_EXIT(nextToken());
-    if(tkn->type != BRT_CUR_L) return SYN_ERR;
+    if (tkn->type != BRT_CUR_L) return SYN_ERR;
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_CUR_R)
     {
         TRY_OR_EXIT(parse());
         TRY_OR_EXIT(nextToken());
     }
-    
+
     TRY_OR_EXIT(nextToken());
-    if(tkn->type != ELSE) return SYN_ERR;
+    if (tkn->type != ELSE) return SYN_ERR;
 
 
     TRY_OR_EXIT(nextToken());
-    if(tkn->type != BRT_CUR_L) return SYN_ERR;
+    if (tkn->type != BRT_CUR_L) return SYN_ERR;
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_CUR_R)
     {
@@ -401,15 +401,15 @@ int parseWhile() {
     TRY_OR_EXIT(nextToken());
     // TODO pridat konstanty INT_CONT, ... do if
     if (!(tkn->type == ID || tkn->type == BRT_RND_L)) return SYN_ERR;
-    
-    token_T *t = tkn;
+
+    token_T* t = tkn;
     tkn = NULL;
     char exp_type;
     parseExpression(&exp_type, t);
     // TODO
 
     TRY_OR_EXIT(nextToken());
-    if(tkn->type != BRT_CUR_L) return SYN_ERR;
+    if (tkn->type != BRT_CUR_L) return SYN_ERR;
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_CUR_R)
     {
@@ -457,7 +457,7 @@ int parse() {
         if (tkn->type == BRT_RND_L) {
             // <STAT>   ->  <CALL_FN>
         }
-        else if (tkn->type == ASSIGN){
+        else if (tkn->type == ASSIGN) {
             // <STAT>   ->  id = <ASSIGN>
             storeToken(tkn);
             tkn = first_tkn;
