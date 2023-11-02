@@ -2,7 +2,9 @@
  * @file symtable.c
  * @brief Tabuľka symbolov
  * @author Boris Hatala
- * @date 26.10.2023
+ * @date 30.10.2023
+ * 
+ * @todo Uvoľnenie celej tabuľky, refaktorizácia kódu (private metódy pre TSBlock_T)
  */
 
 #include "symtable.h"
@@ -12,6 +14,7 @@ unsigned long hashOne(char *str)
     unsigned long hash = 5381;
     int c;
 
+    while ((c = *str++))
     while ((c = *str++))
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 
@@ -149,15 +152,14 @@ TSData_T *SymTabLookup(SymTab_T *st, char *key) {
     TSBlock_T *currentBlock = st->local;
     while (currentBlock != NULL) {
         for (size_t i = 0; i < currentBlock->used; i++) {
-            if (currentBlock->array[i] != NULL && strcmp(currentBlock->array[i]->id, key) == 0) {
-                return currentBlock->array[i];
+            if (currentBlock->array[i] != NULL) {
+                if (strcmp(currentBlock->array[i]->id, key) == 0)
+                    return currentBlock->array[i];
             }
         }
         currentBlock = currentBlock->prev;
     }
-
     return NULL;
-    
 }
 
 /**
