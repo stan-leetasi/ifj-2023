@@ -21,6 +21,7 @@
 #define SYM_TYPE_STRING_NIL 'S'
 #define SYM_TYPE_VOID       'V'
 #define SYM_TYPE_UNKNOWN    'U'
+#define SYM_TYPE_NIL        'N'
 
 #define SYMTABLE_MAX_SIZE 997 // musí byť prvočíslo
 
