@@ -17,7 +17,7 @@ unsigned long hashOne(char *str)
     while ((c = *str++))
     while ((c = *str++))
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-
+    printf("hashone\n");
     return hash;
 }
 
@@ -30,7 +30,7 @@ unsigned long hashTwo(char *str)
     {
         hash = ((hash << 5) + hash) ^ c;
     }
-
+    printf("hashtwo\n");
     return hash;
 }
 
@@ -192,6 +192,7 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
     if(st -> global == NULL) {
         return false;
     }
+    // printf("kokot\n");
 
     bool result = SymTabBlockInsert(st->global, elem);
     return result;
@@ -228,13 +229,20 @@ TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {
 
 bool SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
 
+    block->used++;
     if(block->used + 1 == SYMTABLE_MAX_SIZE) {
         return false;
     }
 
     size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
+    
+    if(block->array[h1] == NULL) {
+        block->array[h1] = elem;
+        return true;
+    }
     if(block->array[h1] != NULL) {
         size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
+        // printf("chuj2\n");
         for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++)
         {
             if (block->array[(h1 + i*h2)%SYMTABLE_MAX_SIZE] == NULL) {
