@@ -68,7 +68,7 @@ int parseExpression(char* result_type, token_T* first_token) {
 
 /**
  * @brief Pravidlo pre spracovanie dátového typu, zapíše do var_info->type spracovaný typ
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token LET alebo VAR
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token COLON
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseDataType(TSData_T* var_info) {
@@ -253,6 +253,73 @@ int parseVariableDecl() {
 }
 
 /**
+ * @brief Pravidlo pre spracovanie definície parametrov funkcie, končí načítaním pravej zátvorky
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token FUNC
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int parseFunctionSignature() {
+    // <FN_SIG>        ->  <FN_PAR> <FN_PAR_NEXT>
+    // <FN_SIG>        ->  €
+    TRY_OR_EXIT(nextToken());
+    while (tkn->type != BRT_RND_R)
+    {
+        // <FN_PAR_NEXT>   ->  , <FN_PAR> <FN_PAR_NEXT>
+        // <FN_PAR_NEXT>   ->  €
+        // <FN_PAR>        ->  id id : <TYPE>
+        // <FN_PAR>        ->  _  id : <TYPE>
+        if(!(tkn->type == ID && tkn->type == UNDERSCORE)) return SYN_ERR;
+        TRY_OR_EXIT(nextToken());
+        if(tkn->type != ID) return SYN_ERR;
+        TRY_OR_EXIT(nextToken());
+        if(tkn->type != COLON) return SYN_ERR;
+        TSData_T data_el; // TODO zmenit
+        TRY_OR_EXIT(parseDataType(&data_el));
+    }
+
+    return COMPILATION_OK;
+}
+
+/**
+ * @brief Pravidlo pre spracovanie definície funkcie
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token FUNC
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int parseFunction() {
+    // <STAT> ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
+    TRY_OR_EXIT(nextToken());
+    if(tkn->type != ID) return SYN_ERR;
+
+    TRY_OR_EXIT(nextToken());
+    if(tkn->type != BRT_RND_L) return SYN_ERR;
+
+    TRY_OR_EXIT(parseFunctionSignature());
+
+    TRY_OR_EXIT(nextToken);
+
+    if(tkn->type == ARROW) {
+        //<FN_RET_TYPE>   ->  "->" <TYPE>
+        TSData_T data_el; // TODO zmenit
+        TRY_OR_EXIT(parseDataType(&data_el));
+        TRY_OR_EXIT(nextToken());
+    }
+    else if (tkn->type == BRT_CUR_L)
+    {
+        // <FN_RET_TYPE>   ->  €
+    }
+    else {
+        return SYN_ERR;
+    }
+
+    while (tkn->type != BRT_CUR_R)
+    {
+        TRY_OR_EXIT(parse());
+        TRY_OR_EXIT(nextToken());
+    }
+
+    return COMPILATION_OK;
+}
+
+/**
  * @brief Pravidlo pre spracovanie podmieneného bloku kódu
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token IF
  * @return 0 v prípade úspechu, inak číslo chyby
@@ -270,6 +337,9 @@ int parseIf() {
         break;
     case ID:
     case BRT_RND_L:
+    case INT_CONST:
+    case DOUBLE_CONST:
+    case STRING_CONST:
         // <COND> ->  exp
         token_T *t = tkn;
         tkn = NULL;
@@ -314,6 +384,7 @@ int parseIf() {
 int parseWhile() {
     // <STAT>      ->  while exp { <PROG> }
     TRY_OR_EXIT(nextToken());
+    // TODO pridat konstanty INT_CONT, ... do if
     if (!(tkn->type == ID || tkn->type == BRT_RND_L)) return SYN_ERR;
     
     token_T *t = tkn;
