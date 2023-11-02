@@ -17,7 +17,7 @@ unsigned long hashOne(char *str)
     while ((c = *str++))
     while ((c = *str++))
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-    printf("hashone\n");
+    // printf("hashone\n");
     return hash;
 }
 
@@ -30,7 +30,7 @@ unsigned long hashTwo(char *str)
     {
         hash = ((hash << 5) + hash) ^ c;
     }
-    printf("hashtwo\n");
+    // printf("hashtwo\n");
     return hash;
 }
 
@@ -86,29 +86,17 @@ bool SymTabAddLocalBlock(SymTab_T *st) {
 }
 
 void SymTabRemoveLocalBlock(SymTab_T *st) {
-    if (st->local != NULL) {
-        TSBlock_T *localBlock = st->local;
-        st->local = localBlock->prev;
+        TSBlock_T *currentLocal = st->local;
+        st->local = currentLocal->prev;
 
-        for (size_t i = 0; i < localBlock->used; i++) {
-            TSData_T *data = localBlock->array[i];
-            free(data->id);
-            if (data->type == SYM_TYPE_FUNC && data->sig) {
-                free(data->sig->par_types);
-                for (size_t j = 0; data->sig->par_names[j]; j++) {
-                    free(data->sig->par_names[j]);
-                    free(data->sig->par_ids[j]);
+        for (size_t i = 0; i < SYMTABLE_MAX_SIZE - 1; i++) {
+            TSData_T *data = currentLocal->array[i];
+                if(data != NULL) {
+                    free(data->id);
+                    free(data); 
                 }
-                free(data->sig->par_names);
-                free(data->sig->par_ids);
-                free(data->sig);
-            }
-            free(data);
         }
-
-        // free(localBlock->array);
-        free(localBlock); 
-    }
+        free(currentLocal); 
 }
 
 void SymTabDestroy(SymTab_T *st) {
@@ -116,25 +104,14 @@ void SymTabDestroy(SymTab_T *st) {
         SymTabRemoveLocalBlock(st);
     }
 
-    TSBlock_T *globalBlock = st->global;
-    for (size_t i = 0; i < globalBlock->used; i++) {
-        TSData_T *data = globalBlock->array[i];
-        free(data->id);
-        if (data->type == SYM_TYPE_FUNC && data->sig) {
-            free(data->sig->par_types);
-            for (size_t j = 0; data->sig->par_names[j]; j++) {
-                free(data->sig->par_names[j]);
-                free(data->sig->par_ids[j]);
-            }
-            free(data->sig->par_names);
-            free(data->sig->par_ids);
-            free(data->sig);
-        }
-        free(data);
-    }
-    // free(globalBlock->array);
-    free(globalBlock);
-
+    // for(size_t i = 0; i < SYMTABLE_MAX_SIZE - 1; i++) {
+    //     TSData_T *data = st->global->array[i];
+    //     if(data != NULL) {
+    //         free(data->id);
+    //         free(data);
+    //     }
+    // }
+    // free(st->global);
     free(st);
 }
 
@@ -143,22 +120,20 @@ TSData_T *SymTabLookup(SymTab_T *st, char *key) {
         return NULL;
     }
 
-    TSData_T *result = SymTabBlockLookUp(st->global, key);
-    if(result != NULL) {
-        return result;
-    }
-
-    // Iterate through all local blocks and look for the symbol in each
     TSBlock_T *currentBlock = st->local;
+    TSData_T *result = NULL;
     while (currentBlock != NULL) {
-        for (size_t i = 0; i < currentBlock->used; i++) {
-            if (currentBlock->array[i] != NULL) {
-                if (strcmp(currentBlock->array[i]->id, key) == 0)
-                    return currentBlock->array[i];
-            }
+        result = SymTabBlockLookUp(currentBlock, key);
+        if(result != NULL) {
+            return result;
         }
         currentBlock = currentBlock->prev;
     }
+
+    // result = SymTabBlockLookUp(st->global, key);
+    // if(result != NULL) {
+    //     return result;
+    // }
     return NULL;
 }
 
@@ -205,15 +180,15 @@ bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
         }
     bool result = SymTabBlockInsert(st->local, elem);
     return result;
-
 }
 
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {
 
     size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
 
-    if(block->array[h1] != NULL && strcmp(block->array[h1]->id, key) == 0) {
-        return block->array[h1];
+    if(block->array[h1] != NULL) {
+        if(strcmp(block->array[h1]->id, key) == 0)
+            return block->array[h1];
     }
 
     size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
@@ -240,7 +215,7 @@ bool SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
         block->array[h1] = elem;
         return true;
     }
-    if(block->array[h1] != NULL) {
+    else if(block->array[h1] != NULL) {
         size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
         // printf("chuj2\n");
         for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++)
