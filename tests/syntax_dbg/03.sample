@@ -1,0 +1,7 @@
+// if
+var v : Int? = 50 
+if let v {
+    var v = 4
+} else {
+    var b : String = "lol"
+}

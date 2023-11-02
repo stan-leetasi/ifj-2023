@@ -1,0 +1,12 @@
+// deklaracia a definicia funkcie
+func fn_void () {
+    var f = 0
+}
+
+func fn_ret () -> String {
+    return "text"
+}
+
+func fn_copy (_ x : Int) {
+    return x
+}
