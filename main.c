@@ -11,6 +11,16 @@ int main()
 {
     if(initializeParser()) return COMPILER_ERROR;
     tkn = getToken();
+    if (tkn == NULL) return COMPILER_ERROR;
+    if (tkn->type == INVALID) return LEX_ERR;
+    while (tkn->type != EOF)
+    {
+        TRY_OR_EXIT(parse());
+        destroyToken(tkn);
+        tkn = getToken();
+        if (tkn == NULL) return COMPILER_ERROR;
+        if (tkn->type == INVALID) return LEX_ERR;
+    }
     
-    return 0;
+    return COMPILATION_OK;
 }
