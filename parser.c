@@ -112,6 +112,43 @@ int parseDataType(TSData_T* var_info) {
 }
 
 /**
+ * @brief Pravidlo pre spracovanie termu
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token
+ * @param term_type Dátový typ termu
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int parseTerm(char *term_type) {
+    switch (tkn->type)
+    {
+    case ID:
+        TSData_T *variable = SymTabLookup(&symt, StrRead(&(tkn->atr)));
+        if(variable == NULL) return SEM_ERR_UNDEF;
+        if(variable->type == SYM_TYPE_FUNC) return SEM_ERR_RETURN;
+        if(!(variable->init)) return SEM_ERR_UNDEF;
+        *term_type = variable->type; 
+        break;
+    case INT_CONST:
+        *term_type = SYM_TYPE_INT;
+        break;
+    case DOUBLE_CONST:
+        *term_type = SYM_TYPE_DOUBLE;
+        break;
+    case STRING_CONST:
+        *term_type = SYM_TYPE_STRING;
+        break;
+    case NIL:
+        *term_type = SYM_TYPE_NIL;
+        break;
+    case INVALID:
+        return LEX_ERR;
+    default:
+        return SYN_ERR;
+        break;
+    }
+    return COMPILATION_OK;
+}
+
+/**
  * @brief Pravidlo pre spracovanie priradenia
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token '='
  * @param result_type Dátový typ výsledku
@@ -146,7 +183,7 @@ int parseAssignment(char* result_type) {
         // TODO
         break;
     default:
-        return LEX_ERR;
+        return LEX_ERR; // ??? SYN_ERR
         break;
     }
     // *result_type = ...;
@@ -218,6 +255,15 @@ int parseVariableDecl() {
 }
 
 /**
+ * @brief Pravidlo pre spracovanie podmieneného bloku kódu
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token IF
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int parseIf() {
+    TRY_OR_EXIT(nextToken());
+}
+
+/**
  * @brief Pokračujúce pravidlo pre spracovanie deklarácie/definície premennej
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token LET alebo VAR
  * @return 0 v prípade úspechu, inak číslo chyby
@@ -236,6 +282,8 @@ bool initializeParser() {
 }
 
 int parse() {
+    bool statement_inside_loop = parser_inside_loop;
+    bool statement_inside_fn_def = parser_inside_fn_def;
     switch (tkn->type)
     {
     case LET:
@@ -244,6 +292,8 @@ int parse() {
         /* code */
         break;
     case ID:
+        // <STAT>   ->  <CALL_FN>
+        // <STAT>   ->  id = <ASSIGN>
         // TODO podobné parseAssignment => refaktorizacia ???
         token_T* first_tkn = tkn;
         tkn = getToken();
@@ -265,27 +315,35 @@ int parse() {
     case BRT_CUR_L:
         // <STAT>  ->  { <PROG> }
         TRY_OR_EXIT(nextToken());
+        //SymTabAddLocalBlock(&symt);
         while (tkn->type != BRT_CUR_R) {
             parse();
             TRY_OR_EXIT(nextToken());
         }
         break;
     case FUNC:
+        parser_inside_fn_def = true;
         // <STAT> ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
         break;
     case RETURN:
         // <STAT>      ->  return <RET_VAL>
+        TRY_OR_EXIT(nextToken());
+        char term_type;
+        TRY_OR_EXIT(parseTerm(&term_type));
         break;
     case IF:
         // <STAT>      ->  if <COND> { <PROG> } else { <PROG> }
         break;
     case WHILE:
+        parser_inside_loop = true;
         // <STAT>      ->  if <COND> { <PROG> } else { <PROG> }
         break;
     default:
         return LEX_ERR;
         break;
     }
+    parser_inside_loop = statement_inside_loop;
+    parser_inside_fn_def = statement_inside_fn_def;
     return COMPILATION_OK;
 }
 
