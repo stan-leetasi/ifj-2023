@@ -421,15 +421,6 @@ int parseWhile() {
     return COMPILATION_OK;
 }
 
-/**
- * @brief Pokračujúce pravidlo pre spracovanie deklarácie/definície premennej
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token LET alebo VAR
- * @return 0 v prípade úspechu, inak číslo chyby
-*/
-int defineVar(TSData_T* var_info) {
-    // <DEF_VAR>   ->  : <TYPE> <INIT_VAL>
-}
-
 /* --- FUNKCIE DEKLAROVANÉ V PARSER.H --- */
 
 bool initializeParser() {
