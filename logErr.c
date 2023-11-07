@@ -19,7 +19,7 @@ void logErrCodeAnalysis(const int err_code, const int ln, const int c, const cha
     else if (err_code == SYN_ERR) fprintf(stderr, "Syntax Error");
     else fprintf(stderr, "Semantic Error");
     
-    fprintf(" - ln %d, col %d: ", ln, c);
+    fprintf(stderr, " - ln %d, col %d: ", ln, c);
     
     va_list l;
     va_start(l, format);
