@@ -9,17 +9,14 @@
 
 int main()
 {
-    if(initializeParser()) return COMPILER_ERROR;
-    tkn = getToken();
+    if(!initializeParser()) return COMPILER_ERROR;
+    TRY_OR_EXIT(nextToken());
     if (tkn == NULL) return COMPILER_ERROR;
     if (tkn->type == INVALID) return LEX_ERR;
-    while (tkn->type != EOF)
+    while (tkn->type != EOF_TKN)
     {
         TRY_OR_EXIT(parse());
-        destroyToken(tkn);
-        tkn = getToken();
-        if (tkn == NULL) return COMPILER_ERROR;
-        if (tkn->type == INVALID) return LEX_ERR;
+        TRY_OR_EXIT(nextToken());
     }
     
     return COMPILATION_OK;

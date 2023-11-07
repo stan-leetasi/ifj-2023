@@ -34,7 +34,7 @@ do \
 { \
   int error_code = (operation); \
   if (error_code != 0) return error_code;  \
-} while (0);
+} while (0)
 
 
 
@@ -58,6 +58,12 @@ extern DLLstr_T code_fn;
  * @brief Vygenerovaný kód pre hlavný program (všetko mimo funkcií)
 */
 extern DLLstr_T code_main;
+
+/**
+ * @brief Uvoľní aktuálne načítaný token v globálnej premennej tkn a nahradí ho novým zo scannera 
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int nextToken();
 
 /**
  * @brief Inicializácia dátových štruktúr parsera

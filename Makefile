@@ -13,7 +13,7 @@ all: main.out
 clean:
 	rm -f *.out *.o
 
-main.out: main.o dll.o parser.o scanner.o strR.o symtable.o
+main.out: main.o dll.o parser.o scanner.o strR.o symtable.o logErr.o
 	${CC} ${CFLAGS} -o $@ $^
 
 %.o: %.c

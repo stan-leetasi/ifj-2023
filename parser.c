@@ -6,8 +6,9 @@
  */
 
 #include "parser.h"
+#include "logErr.h"
 
-token_T* tkn;
+token_T* tkn = NULL;
 
 SymTab_T symt;
 
@@ -36,15 +37,11 @@ static DLLstr_T* variables_declared_inside_loop;
 static bool parser_inside_fn_def = false;
 
 /**
- * @brief Uvoľní aktuálne načítaný token v globálnej premennej tkn a nahradí ho novým zo scannera
- * @return 0 v prípade úspechu, inak číslo chyby
+ * @brief Uloží token v globálnej premennej tkn do úschovňe skenera a prepíše tkn na NULL
 */
-int nextToken() {
-    destroyToken(tkn);
-    tkn = getToken();
-    if (tkn == NULL) return COMPILER_ERROR;
-    if (tkn->type == INVALID) return LEX_ERR;
-    return COMPILATION_OK;
+void saveToken() {
+    storeToken(tkn);
+    tkn = NULL;
 }
 
 /**
@@ -106,7 +103,7 @@ int parseDataType(TSData_T* var_info) {
         }
     }
     else {
-        storeToken(tkn);
+        saveToken();
     }
     return COMPILATION_OK;
 }
@@ -162,18 +159,19 @@ int parseAssignment(char* result_type) {
     case DOUBLE_CONST:
     case STRING_CONST:
     case NIL:
-        // parseExpression()
+        token_T *first = tkn;
+        tkn = NULL;
+        //parseExpression();
         break;
     case ID:
         first_tkn = tkn;
-        tkn = getToken();
-        if (tkn == NULL) return COMPILER_ERROR;
-        if (tkn->type == INVALID) return LEX_ERR;
+        tkn = NULL;
+        TRY_OR_EXIT(nextToken());
         if (tkn->type == BRT_RND_L) {
             // <ASSIGN>  ->  <CALL_FN>
         }
         else {
-            storeToken(tkn);
+            saveToken();
             tkn = first_tkn;
             // parseExpression
         }
@@ -212,7 +210,7 @@ int parseVariableDecl() {
     variable->sig = NULL;
     variable->type = SYM_TYPE_UNKNOWN;
 
-    if (SymTabInsertLocal(&symt, variable)) {
+    if (!SymTabInsertLocal(&symt, variable)) {
         free(variable);
         return COMPILER_ERROR;
     }
@@ -229,13 +227,13 @@ int parseVariableDecl() {
             // <INIT_VAL>  ->  = <ASSIGN>
             char assign_type = SYM_TYPE_UNKNOWN;
             TRY_OR_EXIT(parseAssignment(&assign_type));
-            if (assign_type != variable->type) { // unknown TODO
+            /*if (assign_type != variable->type) { // unknown TODO
                 return SEM_ERR_TYPE;
-            }
+            }*/
         }
         else {
             // <INIT_VAL>  ->  €
-            storeToken(tkn);
+            saveToken();
         }
         return COMPILATION_OK;
         break;
@@ -423,6 +421,17 @@ int parseWhile() {
 
 /* --- FUNKCIE DEKLAROVANÉ V PARSER.H --- */
 
+int nextToken() { 
+    if (tkn != NULL) destroyToken(tkn);
+    tkn = getToken();
+    if (tkn == NULL) return COMPILER_ERROR;
+    if (tkn->type == INVALID) {
+        logErrCodeAnalysis(LEX_ERR, tkn->ln, tkn->col, "invalid token");
+        return LEX_ERR;
+    }
+    return COMPILATION_OK;
+}
+
 bool initializeParser() {
     if (!SymTabInit(&symt)) return false;
     DLLstr_Init(&code_fn);
@@ -442,17 +451,17 @@ int parse() {
         // <STAT>   ->  id = <ASSIGN>
         // TODO podobné parseAssignment => refaktorizacia ???
         token_T* first_tkn = tkn;
-        tkn = getToken();
-        if (tkn == NULL) return COMPILER_ERROR;
-        if (tkn->type == INVALID) return LEX_ERR;
+        tkn = NULL;
+        TRY_OR_EXIT(nextToken());
         if (tkn->type == BRT_RND_L) {
             // <STAT>   ->  <CALL_FN>
         }
         else if (tkn->type == ASSIGN) {
             // <STAT>   ->  id = <ASSIGN>
-            storeToken(tkn);
-            tkn = first_tkn;
-            // parseAssignment
+            //saveToken();
+            //tkn = first_tkn;
+            char result_type;
+            parseAssignment(&result_type);
         }
         else {
             return LEX_ERR;
