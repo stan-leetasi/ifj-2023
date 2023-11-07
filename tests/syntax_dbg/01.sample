@@ -1,5 +1,5 @@
 // len deklaracie premennych a priradenia
-let a = "fgggg" : String
+let a : String = "fgggg" 
 var t : Int
 let h : Double?
 t = 8
