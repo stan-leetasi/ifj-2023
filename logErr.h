@@ -16,7 +16,7 @@ void logErrCompiler(const char *msg);
 /**
  * @brief Vypíše do stderr chybu prekladu kódu, funguje podobne ako printf
 */
-void logErrCodeAnalysis(const int err_code, const size_t ln, const size_t c, const char *format, ...);
+void logErrCodeAnalysis(const int err_code, const int ln, const int c, const char *format, ...);
 
 #endif
 
