@@ -44,7 +44,8 @@ typedef enum state {
     MULTI_LINE_STRING_END_S,
     EMPTY_STRING_S,
     ESCAPE_SEKV_S,
-    QUEST_MARK_S
+    QUEST_MARK_S,
+    NESTED_COMMENT_S
 } state_t;
 
 ///< úschovňa pre jeden token
@@ -200,6 +201,7 @@ token_T *getToken()
     int line_begin_token = 0;       //speciální proměnná pro uložení pozice, kde začíná víceznakový token (string, identifikátor,...)
     int quote_mark_num = 0;         //speciální proměnná, která indikuje počet za sebou jdoucích uvozovek
     bool is_multi_line_string = 0;  //speciální proměnná, která indikuje zda se přešlo do stavu ESCAPE_SEKV_S z víceřádkového řetězce nebo z jednořádkového řetězce
+    int nested_comment_cnt = 0;     //speciální proměnná, která zaznamenává počet vnořených komentářů
 
     //zde bude uložený nový token
     token_T *tkn = NULL;
@@ -322,21 +324,48 @@ token_T *getToken()
                 break;
 /*=======================================STATE=======================================*/               
             case COMMENT_BLOCK_S:
-                if (c != '*' && c != EOF) {
-                    //'/*' ==> blokový komentář, zůstaň v tomto stavu
-                    state = COMMENT_BLOCK_S;
-                } else if (c == EOF) {
-                    //Neukončený blokový komentář
-                    id_token = INVALID;
-                } else {
-                    state = COMMENT_BLOCK_END_S;
+                switch (c)
+                {
+                    case '*':
+                        //Komentář může být ukončen
+                        state = COMMENT_BLOCK_END_S;
+                        break;
+                    case '/':
+                        //Může začít vnořený komentář
+                        state = NESTED_COMMENT_S;
+                        break;
+                    case EOF:
+                        //Neukončený blokový komentář
+                        state = INVALID;
+                        break;
+                    default:
+                        //'/*' ==> blokový komentář, zůstaň v tomto stavu
+                        state = COMMENT_BLOCK_S;
+                        break;
                 }
+
+                break;
+/*=======================================STATE=======================================*/
+            case NESTED_COMMENT_S:
+                //Vnořený komentář
+                if (c == '*') {
+                    //Jedná se o vnořený komentář, inkrementuj čítač
+                    nested_comment_cnt++;
+                } 
+
+                state = COMMENT_BLOCK_S;
                 break;
 /*=======================================STATE=======================================*/ 
             case COMMENT_BLOCK_END_S:
                 if (c == '/') {
-                    //blokový komentář je ukončen, vrať se do začátečního stavu stavu
-                    state = INIT_STATE_S;
+                    //blokový komentář je ukončen
+                    if (nested_comment_cnt == 0) {
+                        //Všechny (vnořené) komenáře uvnitř blokového jsou ukončeny
+                        state = INIT_STATE_S;
+                    } else {
+                        nested_comment_cnt--;
+                        state = COMMENT_BLOCK_S;
+                    }
                 } else if (c == EOF) {
                     //Neukončený blokový komentář
                     id_token = INVALID;
