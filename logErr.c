@@ -14,7 +14,7 @@ void logErrCompiler(const char *msg) {
     fprintf(stderr, "[COMPILER ERROR] %s\n", msg);
 }
 
-void logErrCodeAnalysis(const int err_code, const size_t ln, const size_t c, const char *format, ...) {
+void logErrCodeAnalysis(const int err_code, const int ln, const int c, const char *format, ...) {
     if(err_code == LEX_ERR) fprintf(stderr, "Lexical Error");
     else if (err_code == SYN_ERR) fprintf(stderr, "Syntax Error");
     else fprintf(stderr, "Semantic Error");
