@@ -7,6 +7,6 @@ func fn_ret () -> String {
     return "text"
 }
 
-func fn_copy (_ x : Int) {
+func fn_copy (_ x : Int) -> Int {
     return x
 }

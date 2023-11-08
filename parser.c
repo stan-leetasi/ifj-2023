@@ -65,11 +65,12 @@ int parseExpression(char* result_type, token_T* first_token) {
 
 /**
  * @brief Pravidlo pre spracovanie dátového typu, zapíše do var_info->type spracovaný typ
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token COLON
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token COLON alebo ARROW
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseDataType(TSData_T* var_info) {
     // <TYPE>  ->  {Int, Double, String} <QUESTMARK>
+    TRY_OR_EXIT(nextToken());
     switch (tkn->type)
     {
     case INT_TYPE:
@@ -118,11 +119,13 @@ int parseTerm(char* term_type) {
     switch (tkn->type)
     {
     case ID:
+        /* Zatiaľ len syntaktická analýza
         TSData_T* variable = SymTabLookup(&symt, StrRead(&(tkn->atr)));
         if (variable == NULL) return SEM_ERR_UNDEF;
         if (variable->type == SYM_TYPE_FUNC) return SEM_ERR_RETURN;
         if (!(variable->init)) return SEM_ERR_UNDEF;
         *term_type = variable->type;
+        */
         break;
     case INT_CONST:
         *term_type = SYM_TYPE_INT;
@@ -159,7 +162,7 @@ int parseAssignment(char* result_type) {
     case DOUBLE_CONST:
     case STRING_CONST:
     case NIL:
-        token_T *first = tkn;
+        token_T* first = tkn;
         tkn = NULL;
         //parseExpression();
         break;
@@ -197,7 +200,8 @@ int parseVariableDecl() {
         return SYN_ERR;
     }
     // --- vytvorenie noveho symbolu v tabulke symbolov
-    if (SymTabLookupLocal(&symt, StrRead(&(tkn->atr))) != NULL) {
+    if (SymTabLookupLocal(&symt, StrRead(&(tkn->atr))) != NULL
+        && false /* zatiaľ pre potreby debugu syntaktickej analýzy */) {
         return SEM_ERR_REDEF;
     }
     TSData_T* variable = SymTabCreateElement(StrRead(&(tkn->atr)));
@@ -220,7 +224,6 @@ int parseVariableDecl() {
     {
     case COLON:
         // <DEF_VAR>  ->  : <TYPE> <INIT_VAL>
-        TRY_OR_EXIT(nextToken());
         TRY_OR_EXIT(parseDataType(variable));
         TRY_OR_EXIT(nextToken());
         if (tkn->type == ASSIGN) {
@@ -252,7 +255,7 @@ int parseVariableDecl() {
 
 /**
  * @brief Pravidlo pre spracovanie definície parametrov funkcie, končí načítaním pravej zátvorky
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token FUNC
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token BRT_RND_L
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFunctionSignature() {
@@ -272,7 +275,7 @@ int parseFunctionSignature() {
             if (tkn->type != COMMA) return SYN_ERR;
             TRY_OR_EXIT(nextToken());
         }
-        if (!(tkn->type == ID && tkn->type == UNDERSCORE)) return SYN_ERR;
+        if (!(tkn->type == ID || tkn->type == UNDERSCORE)) return SYN_ERR;
         TRY_OR_EXIT(nextToken());
         if (tkn->type != ID) return SYN_ERR;
         TRY_OR_EXIT(nextToken());
@@ -280,6 +283,7 @@ int parseFunctionSignature() {
         TSData_T data_el; // TODO zmenit
         TRY_OR_EXIT(parseDataType(&data_el));
         params++;
+        TRY_OR_EXIT(nextToken());
     }
 
     return COMPILATION_OK;
@@ -311,9 +315,11 @@ int parseFunction() {
         TRY_OR_EXIT(parseDataType(&data_el));
         TRY_OR_EXIT(nextToken());
     }
-    else if (tkn->type == BRT_CUR_L)
+    
+    if (tkn->type == BRT_CUR_L)
     {
         // <FN_RET_TYPE>   ->  €
+        TRY_OR_EXIT(nextToken());
     }
     else {
         return SYN_ERR;
@@ -421,7 +427,7 @@ int parseWhile() {
 
 /* --- FUNKCIE DEKLAROVANÉ V PARSER.H --- */
 
-int nextToken() { 
+int nextToken() {
     if (tkn != NULL) destroyToken(tkn);
     tkn = getToken();
     if (tkn == NULL) return COMPILER_ERROR;
