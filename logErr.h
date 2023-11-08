@@ -8,6 +8,8 @@
 #ifndef _LOGERR_H_
 #define _LOGERR_H_ 1
 
+#include "scanner.h"
+
 /**
  * @brief Vypíše do stderr chybu prekladača s priloženou správou
 */
