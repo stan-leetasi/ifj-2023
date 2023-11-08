@@ -1,6 +1,9 @@
 #!/bin/bash
 
-echo "Executing syntax-check test, check results yourself for now"
+echo "Executing syntax-check test"
+
+result_file="syntax_dbg.result"
+rm -f ${result_file}
 
 for f in *.sample
 do
@@ -9,6 +12,7 @@ do
     echo "Parsing ${f}"
     ./main.out <"${test_sample}.sample" >"/dev/null"
     result=$?
+    echo -e "${test_sample} " "$(printf "%d" ${result})" >>${result_file}
     echo -n "Code ${f} is: "
     if [ ${result} -eq 0 ]; then 
         echo -e "\t\tOK"
@@ -16,3 +20,11 @@ do
         echo -e "\t\terr #${result}"
     fi
 done
+
+echo "----------------------------------------------------------"
+DIFF="$(diff "${result_file%.result}.exp" "${result_file}")"
+if [ "${DIFF}" == "" ]; then 
+    echo "[PASS]"
+else
+    echo "[FAIL]"
+fi
