@@ -14,6 +14,10 @@ void logErrCompiler(const char *msg) {
     fprintf(stderr, "[COMPILER ERROR] %s\n", msg);
 }
 
+void logErrCompilerMemAlloc() {
+    logErrCompiler("memory allocation failed");
+}
+
 void logErrCodeAnalysis(const int err_code, const int ln, const int c, const char *format, ...) {
     if(err_code == LEX_ERR) fprintf(stderr, "Lexical Error");
     else if (err_code == SYN_ERR) fprintf(stderr, "Syntax Error");
@@ -27,6 +31,10 @@ void logErrCodeAnalysis(const int err_code, const int ln, const int c, const cha
     va_end(l);
 
     fprintf(stderr, "\n");
+}
+
+void logErrSyntax(const token_T *t, const char *expected) {
+    logErrCodeAnalysis(SYN_ERR, t->ln, t->col, "expected \"%s\", but got \"%s\"", expected, t->atr);
 }
 
 /* Koniec súboru logErr.c */

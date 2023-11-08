@@ -14,9 +14,19 @@
 void logErrCompiler(const char *msg);
 
 /**
+ * @brief Vypíše do stderr chybu alokácie pamäte
+*/
+void logErrCompilerMemAlloc();
+
+/**
  * @brief Vypíše do stderr chybu prekladu kódu, funguje podobne ako printf
 */
 void logErrCodeAnalysis(const int err_code, const int ln, const int c, const char *format, ...);
+
+/**
+ * @brief Vypíše do stderr informáciu o syntaktickej chybe
+*/
+void logErrSyntax(const token_T *t, const char *expected);
 
 #endif
 

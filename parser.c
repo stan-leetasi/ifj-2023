@@ -83,6 +83,7 @@ int parseDataType(TSData_T* var_info) {
         var_info->type = SYM_TYPE_STRING;
         break;
     default:
+        logErrSyntax(tkn, "data type");
         return SYN_ERR;
         break;
     }
@@ -140,6 +141,7 @@ int parseTerm(char* term_type) {
         *term_type = SYM_TYPE_NIL;
         break;
     default:
+        logErrSyntax(tkn, "term");
         return SYN_ERR;
         break;
     }
@@ -180,6 +182,7 @@ int parseAssignment(char* result_type) {
         }
         break;
     default:
+        logErrSyntax(tkn, "assignment or function call");
         return SYN_ERR;
         break;
     }
@@ -197,6 +200,7 @@ int parseVariableDecl() {
     bool let = tkn->type == LET ? true : false;
     TRY_OR_EXIT(nextToken());
     if (tkn->type != ID) {
+        logErrSyntax(tkn, "identifier");
         return SYN_ERR;
     }
     // --- vytvorenie noveho symbolu v tabulke symbolov
@@ -207,6 +211,7 @@ int parseVariableDecl() {
     TSData_T* variable = SymTabCreateElement(StrRead(&(tkn->atr)));
     if (variable == NULL)
     {
+        logErrCompilerMemAlloc();
         return COMPILER_ERROR;
     }
     variable->init = false;
@@ -238,19 +243,18 @@ int parseVariableDecl() {
             // <INIT_VAL>  ->  €
             saveToken();
         }
-        return COMPILATION_OK;
         break;
     case ASSIGN:
         // <DEF_VAR>   ->  = <ASSIGN>
         TRY_OR_EXIT(parseAssignment(&(variable->type)));
         // unknown TODO
-        return COMPILATION_OK;
         break;
     default:
+        logErrSyntax(tkn, "':' or '='");
         return SYN_ERR;
         break;
     }
-    return SYN_ERR;
+    return COMPILATION_OK;
 }
 
 /**
@@ -272,14 +276,26 @@ int parseFunctionSignature() {
         // <FN_PAR>        ->  id id : <TYPE>
         // <FN_PAR>        ->  _  id : <TYPE>
         if (params > 0) {
-            if (tkn->type != COMMA) return SYN_ERR;
+            if (tkn->type != COMMA) {
+                logErrSyntax(tkn, "comma");
+                return SYN_ERR;
+            }
             TRY_OR_EXIT(nextToken());
         }
-        if (!(tkn->type == ID || tkn->type == UNDERSCORE)) return SYN_ERR;
+        if (!(tkn->type == ID || tkn->type == UNDERSCORE)) {
+            logErrSyntax(tkn, "parameter name or underscore");
+            return SYN_ERR;
+        }
         TRY_OR_EXIT(nextToken());
-        if (tkn->type != ID) return SYN_ERR;
+        if (tkn->type != ID) {
+            logErrSyntax(tkn, "parameter identifier");
+            return SYN_ERR;
+        }
         TRY_OR_EXIT(nextToken());
-        if (tkn->type != COLON) return SYN_ERR;
+        if (tkn->type != COLON) {
+            logErrSyntax(tkn, "':'");
+            return SYN_ERR;
+        }
         TSData_T data_el; // TODO zmenit
         TRY_OR_EXIT(parseDataType(&data_el));
         params++;
@@ -300,10 +316,16 @@ int parseFunction() {
     parser_inside_fn_def = true;
 
     TRY_OR_EXIT(nextToken());
-    if (tkn->type != ID) return SYN_ERR;
+    if (tkn->type != ID) {
+        logErrSyntax(tkn, "function identifier");
+        return SYN_ERR;
+    }
 
     TRY_OR_EXIT(nextToken());
-    if (tkn->type != BRT_RND_L) return SYN_ERR;
+    if (tkn->type != BRT_RND_L) {
+        logErrSyntax(tkn, "'('");
+        return SYN_ERR;
+    }
 
     TRY_OR_EXIT(parseFunctionSignature());
 
@@ -315,13 +337,14 @@ int parseFunction() {
         TRY_OR_EXIT(parseDataType(&data_el));
         TRY_OR_EXIT(nextToken());
     }
-    
+
     if (tkn->type == BRT_CUR_L)
     {
         // <FN_RET_TYPE>   ->  €
         TRY_OR_EXIT(nextToken());
     }
     else {
+        logErrSyntax(tkn, "'{'");
         return SYN_ERR;
     }
 
@@ -348,7 +371,10 @@ int parseIf() {
     case LET:
         //  <COND> ->  let id
         TRY_OR_EXIT(nextToken());
-        if (tkn->type != ID) return SYN_ERR;
+        if (tkn->type != ID) {
+            logErrSyntax(tkn, "identifier");
+            return SYN_ERR;
+        }
         // TODO
         break;
     case ID:
@@ -356,6 +382,7 @@ int parseIf() {
     case INT_CONST:
     case DOUBLE_CONST:
     case STRING_CONST:
+    // case NIL ???
         // <COND> ->  exp
         token_T* t = tkn;
         tkn = NULL;
@@ -363,12 +390,16 @@ int parseIf() {
         parseExpression(&exp_type, t);
         break;
     default:
+        logErrSyntax(tkn, "let or an expression");
         return SYN_ERR;
         break;
     }
 
     TRY_OR_EXIT(nextToken());
-    if (tkn->type != BRT_CUR_L) return SYN_ERR;
+    if (tkn->type != BRT_CUR_L) {
+        logErrSyntax(tkn, "'{'");
+        return SYN_ERR;
+    }
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_CUR_R)
     {
@@ -377,11 +408,16 @@ int parseIf() {
     }
 
     TRY_OR_EXIT(nextToken());
-    if (tkn->type != ELSE) return SYN_ERR;
-
+    if (tkn->type != ELSE) {
+        logErrSyntax(tkn, "else");
+        return SYN_ERR;
+    }
 
     TRY_OR_EXIT(nextToken());
-    if (tkn->type != BRT_CUR_L) return SYN_ERR;
+    if (tkn->type != BRT_CUR_L) {
+        logErrSyntax(tkn, "'{'");
+        return SYN_ERR;
+    }
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_CUR_R)
     {
@@ -404,7 +440,10 @@ int parseWhile() {
 
     TRY_OR_EXIT(nextToken());
     // TODO pridat konstanty INT_CONT, ... do if
-    if (!(tkn->type == ID || tkn->type == BRT_RND_L)) return SYN_ERR;
+    if (!(tkn->type == ID || tkn->type == BRT_RND_L)) {
+        logErrSyntax(tkn, "expression");
+        return SYN_ERR;
+    }
 
     token_T* t = tkn;
     tkn = NULL;
@@ -413,7 +452,10 @@ int parseWhile() {
     // TODO
 
     TRY_OR_EXIT(nextToken());
-    if (tkn->type != BRT_CUR_L) return SYN_ERR;
+    if (tkn->type != BRT_CUR_L) {
+        logErrSyntax(tkn, "'{'");
+        return SYN_ERR;
+    }
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_CUR_R)
     {
@@ -470,7 +512,8 @@ int parse() {
             parseAssignment(&result_type);
         }
         else {
-            return LEX_ERR;
+            logErrSyntax(tkn, "'(' or '='");
+            return SYN_ERR;
         }
         break;
     case BRT_CUR_L:
@@ -501,7 +544,8 @@ int parse() {
         TRY_OR_EXIT(parseWhile());
         break;
     default:
-        return LEX_ERR;
+        logErrSyntax(tkn, "beginning of a statement");
+        return SYN_ERR;
         break;
     }
 
