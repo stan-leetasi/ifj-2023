@@ -509,7 +509,7 @@ int parse() {
             //saveToken();
             //tkn = first_tkn;
             char result_type;
-            parseAssignment(&result_type);
+            TRY_OR_EXIT(parseAssignment(&result_type));
         }
         else {
             logErrSyntax(tkn, "'(' or '='");
