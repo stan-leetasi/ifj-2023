@@ -10,3 +10,19 @@ func fn_ret () -> String {
 func fn_copy (_ x : Int) -> Int {
     return x
 }
+
+func fn_more_args (arg1 a : Int?, arg2 b:Double, 
+                   arg3 c: String, _ more : String?)
+                   -> Int
+{
+    let g : Double
+    var op = 85
+    if let a {
+        var k : Int = 9
+    }
+    else 
+    {
+
+    }
+    return op
+}

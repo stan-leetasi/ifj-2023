@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# v syntax_dbg.exp sú uvedené očakávané return kódy prekladača
+
+# rozdelenie samplov:
+# (bez prefixu) *.sample ... syntakticky správne
+# LEX_*.sample ... nesprávne lexémy
+# SYN_*.sample ... nesprávne syntakticky
+
 echo "Executing syntax-check test"
 
 result_file="syntax_dbg.result"
