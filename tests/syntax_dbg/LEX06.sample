@@ -1,0 +1,6 @@
+// nespravne lexemy - rozne znaky
+let a = 825
+var b = "@@;.'];;,$][][-=$&^)_#$^.,,$$$"
+
+ @gtga
+var g = 8.6

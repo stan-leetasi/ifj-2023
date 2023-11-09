@@ -4,8 +4,8 @@
 
 # rozdelenie samplov:
 # (bez prefixu) *.sample ... syntakticky správne
-# LEX_*.sample ... nesprávne lexémy
-# SYN_*.sample ... nesprávne syntakticky
+# LEX*.sample ... nesprávne lexémy
+# SYN*.sample ... nesprávne syntakticky
 
 echo "Executing syntax-check test"
 
@@ -29,8 +29,9 @@ do
 done
 
 echo "----------------------------------------------------------"
-DIFF="$(diff "${result_file%.result}.exp" "${result_file}")"
-if [ "${DIFF}" == "" ]; then 
+diff --color "${result_file%.result}.exp" "${result_file}"
+DIFF=$?
+if [ ${DIFF} -eq 0 ]; then 
     echo "[PASS]"
 else
     echo "[FAIL]"
