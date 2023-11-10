@@ -34,7 +34,7 @@ void logErrCodeAnalysis(const int err_code, const int ln, const int c, const cha
 }
 
 void logErrSyntax(const token_T *t, const char *expected) {
-    logErrCodeAnalysis(SYN_ERR, t->ln, t->col, "expected \"%s\", but got \"%s\"", expected, t->atr);
+    logErrCodeAnalysis(SYN_ERR, t->ln, t->col, "expected %s, but got '%s'", expected, StrRead((str_T*)(&(t->atr))));
 }
 
 /* Koniec súboru logErr.c */
