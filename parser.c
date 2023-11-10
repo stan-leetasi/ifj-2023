@@ -2,7 +2,7 @@
  * @file parser.c
  * @brief Syntaktický a sémantický anayzátor
  * @author Michal Krulich (xkruli03)
- * @date 25.10.2023
+ * @date 11.10.2023
  */
 
 #include "parser.h"
@@ -148,6 +148,89 @@ int parseTerm(char* term_type) {
     return COMPILATION_OK;
 }
 
+
+/**
+ * @brief Pravidlo pre spracovanie argumentov volanej funkcie
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný '(', zanechá načítaný ')'
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int parseFnCallArgs() {
+    // <PAR_LIST>      ->  <PAR_IN> <PAR_IN_NEXT>
+    // <PAR_LIST>      ->  €
+    // <PAR_IN_NEXT>   ->  , <PAR_IN> <PAR_IN_NEXT>
+    // <PAR_IN_NEXT>   ->  €
+    // <PAR_IN>        ->  id : term
+    // <PAR_IN>        ->  term
+
+    size_t args = 0;
+
+    TRY_OR_EXIT(nextToken());
+    while (tkn->type != BRT_RND_R)
+    {
+        if(args > 0) {
+            if(tkn->type != COMMA){
+                logErrSyntax(tkn, "comma");
+                return SYN_ERR;
+            }
+            TRY_OR_EXIT(nextToken());
+        }
+        switch (tkn->type)
+        {
+        case ID:
+            TRY_OR_EXIT(nextToken());
+            if(tkn->type == COMMA) {
+                // <PAR_IN> ->  term
+                saveToken();
+            }
+            else if (tkn->type == COLON) {
+                // <PAR_IN>        ->  id : term
+                TRY_OR_EXIT(nextToken());
+                char result_type;
+                TRY_OR_EXIT(parseTerm(&result_type));
+            }
+            else if (tkn->type == BRT_RND_R) {
+                saveToken();
+            }
+            else {
+                logErrSyntax(tkn, "',' or ':'");
+                return SYN_ERR;
+            }
+            break;
+        case INT_CONST:
+        case DOUBLE_CONST:
+        case STRING_CONST:
+        case NIL:
+            // <PAR_IN> ->  term
+            break;
+        default:
+            logErrSyntax(tkn, "parameter identifier or term");
+            return SYN_ERR;
+        }
+        TRY_OR_EXIT(nextToken());
+        args++;
+    }
+
+    return COMPILATION_OK;
+}
+
+/**
+ * @brief Pravidlo pre spracovanie volania funkcie
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný identifikátor volanej funkcie
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int parseFnCall(char *result_type) {
+    // <CALL_FN>       ->  id ( <PAR_LIST> )
+    TRY_OR_EXIT(nextToken());
+    if (tkn->type != BRT_RND_L) {
+        logErrSyntax(tkn, "'('");
+        return SYN_ERR;
+    }
+
+    TRY_OR_EXIT(parseFnCallArgs());
+
+    return COMPILATION_OK;
+}
+
 /**
  * @brief Pravidlo pre spracovanie priradenia
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token '='
@@ -174,6 +257,9 @@ int parseAssignment(char* result_type) {
         TRY_OR_EXIT(nextToken());
         if (tkn->type == BRT_RND_L) {
             // <ASSIGN>  ->  <CALL_FN>
+            saveToken();
+            tkn = first_tkn;
+            TRY_OR_EXIT(parseFnCall(result_type));
         }
         else {
             saveToken();
@@ -259,7 +345,7 @@ int parseVariableDecl() {
 
 /**
  * @brief Pravidlo pre spracovanie definície parametrov funkcie, končí načítaním pravej zátvorky
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token BRT_RND_L
+ * @details Očakáva, že v globálnej premennej tkn je už načítaný token BRT_RND_L, zanechá naítaný BRT_RND_R
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFunctionSignature() {
@@ -498,17 +584,18 @@ int parse() {
         // <STAT>   ->  <CALL_FN>
         // <STAT>   ->  id = <ASSIGN>
         // TODO podobné parseAssignment => refaktorizacia ???
+        char result_type;
         token_T* first_tkn = tkn;
         tkn = NULL;
         TRY_OR_EXIT(nextToken());
         if (tkn->type == BRT_RND_L) {
             // <STAT>   ->  <CALL_FN>
+            saveToken();
+            tkn = first_tkn;
+            TRY_OR_EXIT(parseFnCall(&result_type));
         }
         else if (tkn->type == ASSIGN) {
             // <STAT>   ->  id = <ASSIGN>
-            //saveToken();
-            //tkn = first_tkn;
-            char result_type;
             TRY_OR_EXIT(parseAssignment(&result_type));
         }
         else {
