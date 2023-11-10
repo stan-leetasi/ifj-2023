@@ -7,6 +7,7 @@
 
 #include "parser.h"
 #include "logErr.h"
+#include "exp.h"
 
 token_T* tkn = NULL;
 
@@ -15,53 +16,15 @@ SymTab_T symt;
 DLLstr_T code_fn;
 DLLstr_T code_main;
 
-/**
- * @brief Indikuje, či sa parser nachádza vo vnútri cykla.
-*/
-static bool parser_inside_loop = false;
+bool parser_inside_loop = false;
 
-/**
- * @brief Meno náveštia na najvrchnejší cyklus
-*/
 // StrR first_loop_label;
 
-/**
- * @brief Zoznam premenných,, ktoré musia byť dekalrované pred prvým nespracovaným cyklom
-*/
-static DLLstr_T* variables_declared_inside_loop;
+DLLstr_T* variables_declared_inside_loop;
 
-/**
- * @brief Indikuje, či sa aktuálne spracúva kód vo vnútri funkcie.
- * @details Podľa toho sa generovaný kód ukladá buď do code_fn alebo code_main.
-*/
-static bool parser_inside_fn_def = false;
+bool parser_inside_fn_def = false;
 
-/**
- * @brief Uloží token v globálnej premennej tkn do úschovňe skenera a prepíše tkn na NULL
-*/
-void saveToken() {
-    storeToken(tkn);
-    tkn = NULL;
-}
-
-/**
- * Táto funkcia:
- *  - žiada o tokeny dokým je možné vytvoriť zmysluplný výraz.
- *  - prevádza infixový výraz na postfixový
- *  - na základe postfixového výrazu generuje cieľový kód, pričom kontroluje
- *    sémantiku za pomoci tabuľky symbolov:
- *          - či sú premenné deklarované a inicializované
- *          - či sedia dátové typy operandov
- *
- * @brief Precedenčná syntaktická analýza výrazov
- * @details Táto funkcia očakáva globálnu premennú tkn prázdnu a taktiež ju aj zanechá prázdnu.
- * @param result_type Dátový typ výsledku výrazu
- * @param first_token Prvý token výrazu (netreba načítavať zo skenera)
- * @return 0 v prípade úspechu, inak číslo chyby
-*/
-int parseExpression(char* result_type, token_T* first_token) {
-    return COMPILATION_OK;
-}
+/* ----------- PRIVATE FUNKCIE ----------- */
 
 /**
  * @brief Pravidlo pre spracovanie dátového typu, zapíše do var_info->type spracovaný typ
@@ -247,9 +210,8 @@ int parseAssignment(char* result_type) {
     case DOUBLE_CONST:
     case STRING_CONST:
     case NIL:
-        token_T* first = tkn;
-        tkn = NULL;
-        //parseExpression();
+        // <ASSIGN> ->  exp
+        parseExpression(result_type);
         break;
     case ID:
         first_tkn = tkn;
@@ -264,7 +226,7 @@ int parseAssignment(char* result_type) {
         else {
             saveToken();
             tkn = first_tkn;
-            // parseExpression
+            parseExpression(result_type);
         }
         break;
     default:
@@ -468,12 +430,10 @@ int parseIf() {
     case INT_CONST:
     case DOUBLE_CONST:
     case STRING_CONST:
-    // case NIL ???
+    case NIL:
         // <COND> ->  exp
-        token_T* t = tkn;
-        tkn = NULL;
         char exp_type;
-        parseExpression(&exp_type, t);
+        parseExpression(&exp_type);
         break;
     default:
         logErrSyntax(tkn, "let or an expression");
@@ -531,10 +491,8 @@ int parseWhile() {
         return SYN_ERR;
     }
 
-    token_T* t = tkn;
-    tkn = NULL;
     char exp_type;
-    parseExpression(&exp_type, t);
+    parseExpression(&exp_type);
     // TODO
 
     TRY_OR_EXIT(nextToken());
@@ -564,6 +522,11 @@ int nextToken() {
         return LEX_ERR;
     }
     return COMPILATION_OK;
+}
+
+void saveToken() {
+    storeToken(tkn);
+    tkn = NULL;
 }
 
 bool initializeParser() {
@@ -620,7 +583,7 @@ int parse() {
         // <STAT>      ->  return <RET_VAL>
         TRY_OR_EXIT(nextToken());
         char term_type;
-        TRY_OR_EXIT(parseTerm(&term_type));
+        TRY_OR_EXIT(parseTerm(&term_type)); // !!! zmeniť na parseExpression
         break;
     case IF:
         // <STAT>      ->  if <COND> { <PROG> } else { <PROG> }
