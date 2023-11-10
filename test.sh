@@ -4,6 +4,7 @@
 # bash test.sh scanner
 # bash test.sh strR
 # bash test.sh symtable
+# bash test.sh syntax_dbg
 
 # Niekedy treba extra spustiť make
 
@@ -21,5 +22,9 @@ if [ $# -gt 0 ]; then
     cd "tests/$1" || exit 1
     bash "test.sh"
 else
-    echo "enter test name"
+    echo "enter test name:"
+    echo "bash test.sh scanner"
+    echo "bash test.sh strR"
+    echo "bash test.sh symtable"
+    echo "bash test.sh syntax_dbg"
 fi
