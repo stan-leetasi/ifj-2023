@@ -9,6 +9,9 @@
  * 
  */
 
+#ifndef _DECODE_H_
+#define _DECODE_H_
+
 #include "strR.h"
 /**
  * @brief Převede řetězec napsaný ve zdrojovém jazyce na řetězec pro IFJcode23
@@ -17,3 +20,6 @@
  * @return Funkce vrací přímo převedený řetězec do IFJcode23 (strukturu str_T)
  */
 str_T strEncode(char * string);
+
+#endif// ifndef _DECODE_H_
+/* Koniec súboru decode.h */

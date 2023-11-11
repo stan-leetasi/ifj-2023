@@ -110,3 +110,4 @@ str_T strEncode(char * string) {
 
     return decoded_string;
 }
+/* Koniec súboru decode.c */
