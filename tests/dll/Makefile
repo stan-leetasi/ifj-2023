@@ -1,7 +1,7 @@
 .PHONY=all clean
 
 CC=gcc
-CFLAGS=-g -Wall -Wextra -std=c17 -O2
+CFLAGS=-Wall -Wextra -std=c17 -g
 
 all: test.out
 

@@ -8,6 +8,8 @@
 # SYN*.sample ... nesprávne syntakticky
 # testy s cislami 50+ su pre vyrazy
 
+make || exit 1
+
 echo "Executing syntax-check test"
 
 result_file="syntax_dbg.result"

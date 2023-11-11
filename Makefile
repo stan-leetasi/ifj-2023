@@ -1,20 +1,17 @@
 # Projekt IFJ2023
 # Makefile
 # Autor: Michal Krulich (xkruli03)
-# Datum: 03.10.2023
+# Datum: 11.11.2023
 
-.PHONY=all clean test
+.PHONY=all clean
 
 CC=gcc
-CFLAGS=-g -Wall -Wextra -std=c17 -O2
+CFLAGS=-Wall -Wextra -std=c17
 
 all: main.out
 
 clean:
 	rm -f *.out *.o
 
-main.out: main.o dll.o parser.o scanner.o strR.o symtable.o logErr.o exp.o
+main.out: main.c dll.c parser.c scanner.c strR.c symtable.c logErr.c exp.c
 	${CC} ${CFLAGS} -o $@ $^
-
-%.o: %.c
-	${CC} ${CFLAGS} -c $?
