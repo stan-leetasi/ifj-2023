@@ -8,21 +8,18 @@
 #include "parser.h"
 #include "logErr.h"
 #include "exp.h"
+#include "generator.h"
 
 token_T* tkn = NULL;
 
 SymTab_T symt;
 
-DLLstr_T code_fn;
-DLLstr_T code_main;
-
 bool parser_inside_loop = false;
-
-// StrR first_loop_label;
-
-DLLstr_T* variables_declared_inside_loop;
+str_T first_loop_label;
+DLLstr_T variables_declared_inside_loop;
 
 bool parser_inside_fn_def = false;
+str_T fn_name;
 
 /* ----------- PRIVATE FUNKCIE ----------- */
 

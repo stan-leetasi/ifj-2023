@@ -8,5 +8,5 @@ all: main.out
 clean:
 	rm -f *.out *.o
 
-main.out: ../../main.c ../../dll.c ../../parser.c ../../scanner.c ../../strR.c ../../symtable.c ../../logErr.c ../../exp.c
+main.out: ../../main.c ../../dll.c ../../parser.c ../../scanner.c ../../strR.c ../../symtable.c ../../logErr.c ../../exp.c ../../generator.c
 	${CC} ${CFLAGS} -o $@ $^

@@ -12,6 +12,7 @@
 #include "symtable.h"
 #include "scanner.h"
 #include "dll.h"
+#include "strR.h"
 
 #define COMPILATION_OK  0 ///< Preklad bez chýb
 #define LEX_ERR         1 ///< Chybný lexém 
@@ -36,25 +37,15 @@ do \
   if (error_code != 0) return error_code;  \
 } while (0)
 
-/**
- * @brief Aktuálny načítaný token
-*/
+ /**
+  * @brief Aktuálny načítaný token
+ */
 extern token_T* tkn;
 
 /**
  * @brief Tabuľka symbolov
 */
 extern SymTab_T symt;
-
-/**
- * @brief Vygenerovaný kód pre funkcie
-*/
-extern DLLstr_T code_fn;
-
-/**
- * @brief Vygenerovaný kód pre hlavný program (všetko mimo funkcií)
-*/
-extern DLLstr_T code_main;
 
 /**
  * @brief Indikuje, či sa parser nachádza vo vnútri cykla.
@@ -64,12 +55,12 @@ extern bool parser_inside_loop;
 /**
  * @brief Meno náveštia na najvrchnejší cyklus
 */
-// StrR first_loop_label;
+extern str_T first_loop_label;
 
 /**
  * @brief Zoznam premenných,, ktoré musia byť dekalrované pred prvým nespracovaným cyklom
 */
-extern DLLstr_T* variables_declared_inside_loop;
+extern DLLstr_T variables_declared_inside_loop;
 
 /**
  * @brief Indikuje, či sa aktuálne spracúva kód vo vnútri funkcie.
@@ -78,7 +69,12 @@ extern DLLstr_T* variables_declared_inside_loop;
 extern bool parser_inside_fn_def;
 
 /**
- * @brief Uvoľní aktuálne načítaný token v globálnej premennej tkn a nahradí ho novým zo scannera 
+ * @brief Názov funkcie, ktorej definícia je práve spracovávaná
+*/
+extern str_T fn_name;
+
+/**
+ * @brief Uvoľní aktuálne načítaný token v globálnej premennej tkn a nahradí ho novým zo scannera
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int nextToken();
