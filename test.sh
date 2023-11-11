@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Ako spustiť testy:
+# bash test.sh dll
 # bash test.sh scanner
 # bash test.sh strR
 # bash test.sh symtable
@@ -23,6 +24,7 @@ if [ $# -gt 0 ]; then
     bash "test.sh"
 else
     echo "enter test name:"
+    echo "bash test.sh dll"
     echo "bash test.sh scanner"
     echo "bash test.sh strR"
     echo "bash test.sh symtable"
