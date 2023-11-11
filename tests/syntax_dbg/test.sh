@@ -6,6 +6,7 @@
 # (bez prefixu) *.sample ... syntakticky správne
 # LEX*.sample ... nesprávne lexémy
 # SYN*.sample ... nesprávne syntakticky
+# testy s cislami 50+ su pre vyrazy
 
 echo "Executing syntax-check test"
 

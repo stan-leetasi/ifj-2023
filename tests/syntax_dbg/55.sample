@@ -1,0 +1,11 @@
+/* výrazy - testy na hodnotu nil */ 
+
+let a : String? = nil
+var b : String
+b = a ?? "this is nil"
+
+var c = 8456 ?? 40
+var d : Double = nil ?? 40.0
+
+let x : Double? = 1.0e5
+let y = x!
