@@ -2,14 +2,30 @@
  * @file dll.c
  * @brief Double linked list, dvojsmerný zoznam na generované inštrukcie
  * @author Michal Krulich
- * @date 25.10.2023
+ * @date 11.11.2023
  */
 
 #include <stdlib.h>
 #include "dll.h"
 
+/**
+ * @brief Makro pre alokáciu novej kópie reťazca do dst
+ * @param dest Deklarovaná premenná typu char*
+ * @param src Reťazec, ktorého kópia sa bude vytvárať
+ * @param in_case_of_failure Príkaz, ktorý sa vykonáva v prípade zlyhania alokácie pamäte
+ * @return Vracia false ak zlyhá alokácia
+*/
+#define TRY_DEEPCOPY_STRING(dest, src, in_case_of_failure) \
+	do \
+	{ \
+		(dest) = malloc(sizeof(char) * (strlen(src) + 1)); \
+		if ((dest) == NULL) return ((in_case_of_failure), false); \
+		strcpy((dest), (src)); \
+	} while (0) 
+
+
 void DLLstr_ElementDestroy(DLLstr_el_ptr elem) {
-    StrDestroy(&(elem->string));
+    free(elem->string);
     free(elem);
 }
 
@@ -47,7 +63,7 @@ bool DLLstr_GetFirst( DLLstr_T *list, str_T *string) {
 	if (list->first == NULL) {
 		return false;
 	}
-	*string = list->first->string;
+	StrFillWith(string, list->first->string);
     return true;
 }
 
@@ -55,7 +71,7 @@ bool DLLstr_GetLast( DLLstr_T *list, str_T *string){
 	if (list->last == NULL) {
 		return false;
 	}
-	*string = list->last->string;
+	StrFillWith(string, list->last->string);
     return true;
 }
 
@@ -63,16 +79,16 @@ bool DLLstr_GetValue( DLLstr_T *list, str_T *string){
 	if (list->active == NULL) {
 		return false;
 	}
-	*string = list->active->string;
+	StrFillWith(string, list->active->string);
     return true;
 }
 
-bool DLLstr_InsertFirst( DLLstr_T *list, str_T string) {
+bool DLLstr_InsertFirst( DLLstr_T *list, char *s) {
 	DLLstr_el_ptr element = malloc(sizeof(struct DLLstr_element));
 	if (element == NULL) { // chyba alokácie pamäte
 		return false;
 	}
-	element->string = string; // zapíšem dáta
+	TRY_DEEPCOPY_STRING(element->string, s, free(element));
 	element->prev = NULL; // prvý prvok nemá predchodcu
 	if (list->first == NULL) { // zoznam je prázdny, nový prvok sa stáva prvým aj posledným
 		list->first = element;
@@ -87,12 +103,12 @@ bool DLLstr_InsertFirst( DLLstr_T *list, str_T string) {
     return true;
 }
 
-bool DLLstr_InsertLast( DLLstr_T *list, str_T string){
+bool DLLstr_InsertLast( DLLstr_T *list, char *s){
 	DLLstr_el_ptr element = malloc(sizeof(struct DLLstr_element));
 	if (element == NULL) { // chyba alokácie pamäte
 		return false;
 	}
-	element->string = string; // zapíšem dáta
+	TRY_DEEPCOPY_STRING(element->string, s, free(element));
 	element->next = NULL; // posledný prvok nemá nasledovníka
 	if (list->first == NULL) { // zoznam je prázdny, nový prvok sa stáva prvým aj posledným
 		list->first = element;
@@ -108,7 +124,7 @@ bool DLLstr_InsertLast( DLLstr_T *list, str_T string){
     return true;
 }
 
-bool DLLstr_InsertAfter( DLLstr_T *list, str_T string){
+bool DLLstr_InsertAfter( DLLstr_T *list, char *s){
 	if (list->active == NULL) { // neaktívny zoznam
 		return false;
 	}
@@ -116,7 +132,7 @@ bool DLLstr_InsertAfter( DLLstr_T *list, str_T string){
 	if (element == NULL) {
 		return false;
 	}
-	element->string = string;
+	TRY_DEEPCOPY_STRING(element->string, s, free(element));
 	if (list->last == list->active) { // aktívny prvok je posledný v zozname
 		list->active->next = element;
 		element->prev = list->last;
@@ -132,7 +148,7 @@ bool DLLstr_InsertAfter( DLLstr_T *list, str_T string){
 	}
     return true;
 }
-bool DLLstr_InsertBefore( DLLstr_T *list, str_T string){
+bool DLLstr_InsertBefore( DLLstr_T *list, char *s){
 	if (list->active == NULL) { // neaktívny zoznam
 		return false;
 	}
@@ -140,7 +156,7 @@ bool DLLstr_InsertBefore( DLLstr_T *list, str_T string){
 	if (element == NULL) {
 		return false;
 	}
-	element->string = string;
+	TRY_DEEPCOPY_STRING(element->string, s, free(element));
 	if (list->first == list->active) { // aktívny prvok je prvý v zozname
 		list->active->prev = element;
 		element->prev = NULL;

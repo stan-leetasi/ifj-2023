@@ -1,15 +1,12 @@
 .PHONY=all clean
 
 CC=gcc
-CFLAGS=-g -Wall -Wextra -std=c17 -O2
+CFLAGS=-Wall -Wextra -std=c17 -g
 
 all: test.out
 
 clean:
 	rm -f *.out *.o
 
-test.out: test.o scanner.o strR.o
+test.out: test.c ../../scanner.c ../../strR.c
 	${CC} ${CFLAGS} -o $@ $^
-
-%.o: %.c
-	${CC} ${CFLAGS} -c $?

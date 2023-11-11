@@ -51,7 +51,7 @@ exp = výraz
 
 // vrátenie hodnoty z funkcie
 <STAT>      ->  return <RET_VAL>
-<RET_VAL>   ->  <TERM>
+<RET_VAL>   ->  exp
 <RET_VAL>   ->  €
 
 // podmienka if
