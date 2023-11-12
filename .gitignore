@@ -6,3 +6,5 @@
 *.result
 # VsCode config
 .vscode
+# IFJcode23
+*.prog
