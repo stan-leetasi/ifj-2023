@@ -126,55 +126,54 @@ int genCode(char *instruction, char *op1, char *op2, char *op3);
 int genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
 
 /**
- * Vygenerovaný kód bude vložený na koniec zoznamu code_fn pokiaľ parser_inside_fn_def==true
- * (globálna premenná v parser.h), inak na koniec code_main.
+ * Vygenerovaný kód bude vložený na koniec zoznamu code_fn.
  * 
- * Vygenerovaný kód: vytvorí nový rámec, do dočasného rámca definuje návratovú hodnotu a parametre
- * a vloží argumenty, vloží dočasný rámec do zásobníka, a zavolá funkciu.
+ * Vygenerovaný kód:    vytvorí nový rámec, vloží ho do zásobníka,
+ *                      definuje v novom rámci premenné parametrov funkcie,
+ *                      zapíše do nich hodnoty zo zásobníka (na vrchole je prvý argument).
  * 
- * Návratová hodnota má identifikátor "TF@!retval".
- * Identifikátory parametrov vyzerajú nasledovne "TF@<id>%".
+ * Identifikátory parametrov vyzerajú nasledovne "LF@<id>%".
  * 
  * Príklad:
- *      genFnCall("sum", {"a", "b"}, {"int@6", "LF@x$1"}),
+ *      genFnDefBegin({"a", "b"}),
  *      vygeneruje kód:
  * 
  *      ...
  *      CREATEFRAME
- *      DEFVAR  TF@!retval
- *      DEFVAR  TF@a%
- *      MOVE    TF@a%   int@6
- *      DEFVAR  TF@b%
- *      MOVE    TF@b%   LF@x$1
  *      PUSHFRAME
- *      CALL sum
+ *      DEFVAR  LF@a%
+ *      POPS    LF@a%
+ *      DEFVAR  LF@b%
+ *      POPS    LF@b%
  * 
- * @brief Vygeneruje kód volania funkcie.
- * @param fn Názov funkcie
+ * @brief Vygeneruje kód začiatku definície funkcie, resp. príprava nového rámca a argumentov.
  * @param params Identifikátory parametrov funkcie
- * @param args Predávané argumenty
  * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */
-int genFnCall(char *fn, DLLstr_T *params, DLLstr_T *args);
+int genFnDefBegin(char *fn, DLLstr_T *params);
 
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn pokiaľ parser_inside_fn_def==true
  * (globálna premenná v parser.h), inak na koniec code_main.
  * 
+ * Vygenerovaný kód:    vloží do zásobníka argumenty (prvý argument bude na vrchole, posledný na dne)
+ *                       a predá riadenie pomocou CALL.
+ * 
  * Príklad:
- *      genFnCallExit("LF@ans$25"),
+ *      genFnCall("sum", {"int@6", "LF@x$1"}),
  *      vygeneruje kód:
  * 
  *      ...
- *      POPFRAME
- *      MOVE    LF@ans$25   TF@!retval
+ *      PUSH    LF@x$1
+ *      PUSH    int@6
+ *      CALL sum
  * 
- * @brief Vygeneruje kód, potrebný pre získanie návratovej hodnoty funkcie a vymazanie rámca.
- * @param var Identifikátor premennej, do ktorej má byť uložená návratová hodnota funkcie.
- *            V prípade NULL, funkcia je void a inštrukcia MOVE nie je generovaná.
- * 
+ * @brief Vygeneruje kód volania funkcie.
+ * @param fn Názov funkcie
+ * @param args Predávané argumenty
+ * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */
-int genFnCallExit(char *var);
+int genFnCall(char *fn, DLLstr_T *args);
 
 #endif // ifndef _GENERATOR_H_
 /* Koniec súboru generator.h */
