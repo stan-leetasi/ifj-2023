@@ -2,7 +2,7 @@
  * @file logErr.h
  * @brief Funkcie pre hlásenie chýb prekladu kódu či samotného prekladača
  * @author Michal Krulich
- * @date 02.11.2023
+ * @date 12.11.2023
  */
 
 #ifndef _LOGERR_H_
@@ -29,6 +29,11 @@ void logErrCodeAnalysis(const int err_code, const int ln, const int c, const cha
  * @brief Vypíše do stderr informáciu o syntaktickej chybe
 */
 void logErrSyntax(const token_T *t, const char *expected);
+
+/**
+ * @brief Vypíše do stderr informáciu o sémantickej chybe
+*/
+void logErrSemantic(const token_T *t, const char *format, ...);
 
 #endif
 

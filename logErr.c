@@ -2,7 +2,7 @@
  * @file logErr.c
  * @brief Funkcie pre hlásenie chýb prekladu kódu či samotného prekladača
  * @author Michal Krulich
- * @date 10.11.2023
+ * @date 12.11.2023
  */
 
 #include <stdio.h>
@@ -35,6 +35,17 @@ void logErrCodeAnalysis(const int err_code, const int ln, const int c, const cha
 
 void logErrSyntax(const token_T *t, const char *expected) {
     logErrCodeAnalysis(SYN_ERR, t->ln, t->col, "expected %s, but got '%s'", expected, StrRead((str_T*)(&(t->atr))));
+}
+
+void logErrSemantic(const token_T *t, const char *format, ...) {
+    fprintf(stderr, "Semantic Error - ln %d, col %d: ", t->ln, t->col);
+    
+    va_list l;
+    va_start(l, format);
+    vfprintf(stderr, format, l);
+    va_end(l);
+    
+    fprintf(stderr, "\n");
 }
 
 /* Koniec súboru logErr.c */

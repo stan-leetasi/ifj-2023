@@ -41,6 +41,7 @@ TSData_T *SymTabCreateElement(char *key)
         return NULL;
     }
     strcpy(elem->id, key);
+    StrInit(&(elem->codename));
     return elem; 
 }
 

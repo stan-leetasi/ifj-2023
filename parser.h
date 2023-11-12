@@ -74,6 +74,11 @@ extern bool parser_inside_fn_def;
 extern str_T fn_name;
 
 /**
+ * @brief Zistí kompatibilitu priradenia dvoch typov
+*/
+bool isCompatibleAssign(char dest, char src);
+
+/**
  * @brief Uvoľní aktuálne načítaný token v globálnej premennej tkn a nahradí ho novým zo scannera
  * @return 0 v prípade úspechu, inak číslo chyby
 */

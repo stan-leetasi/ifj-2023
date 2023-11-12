@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <stdio.h>
+#include "strR.h"
 
 #define SYM_TYPE_FUNC       'F'
 #define SYM_TYPE_INT        'i'
@@ -36,17 +36,18 @@ typedef struct func_signature {
     char **par_names;   ///< názvy parametrov
     char **par_ids;     ///< identifikátory parametrov používané vo vnútri funkcie
     // func <názov_funkcie> (par_name par_id : par_type, ...) -> ret_type {}
-} *func_sig_T;
+} func_sig_T;
 
 /**
  * @brief Dátový element / prvok tabuľky symbolov, obsahuje informácie o symbole/identifikátore premennej alebo funkcie
  */
 typedef struct TSData {
     char *id;       ///< názov identifikátoru, zároveň kľúč v tabuľke
+    str_T codename; ///< identifikátor v cieľovom kóde
     char type;      ///< typ premennej/funkcia, používa hodnoty SYM_TYPE_XXX
     bool let;       ///< true znamená premenná let inak var 
     bool init;      ///< true znamená, že je premenná inicializovaná alebo funkcia definovaná
-    func_sig_T sig; ///< signatúra funkcie, v prípade premennej sig=NULL
+    func_sig_T *sig; ///< signatúra funkcie, v prípade premennej sig=NULL
 } TSData_T;
 
 /**
@@ -74,6 +75,11 @@ typedef struct SymbolsTable {
  * @return Ukazateľ na alokovaný prvok, NULL v prípade neúspechu
 */
 TSData_T *SymTabCreateElement(char *key);
+
+/**
+ * @brief Dealokuje zdroje používané prvkom tabuľky symbolov
+*/
+void SymTabDestroyElement(TSData_T *elem);
 
 /**
  * @brief Inicializuje tabuľku symbolov a vloží do nej jeden globálny rámec
