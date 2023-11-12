@@ -1,0 +1,4 @@
+/* syntakticka chyba, definicia premennej bez typu ci vyrazu */
+let a = 5
+var b
+var c = 4.0
