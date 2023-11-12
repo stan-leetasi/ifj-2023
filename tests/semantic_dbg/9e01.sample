@@ -1,0 +1,5 @@
+/* uprava nemodifikovatelnej premennej */
+let x : Int
+let y = 95.0
+x = 5
+x = (x + x) * 8.0

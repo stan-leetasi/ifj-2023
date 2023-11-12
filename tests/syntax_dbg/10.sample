@@ -1,0 +1,18 @@
+// jednoduchy program
+
+func funkcia(_ num : Int? ) -> Int? {
+    return num
+}
+
+var _Double : Double
+_Double = 88.0e2
+
+var a : Double = 25.0
+var b : Int? = funkcia(6)
+var c : Int? = funkcia(nil)
+let d = funkcia ( a )
+
+if let d {
+    c = b
+}
+else { b = c }

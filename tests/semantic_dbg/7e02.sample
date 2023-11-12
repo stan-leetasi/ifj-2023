@@ -1,0 +1,5 @@
+/* nekompatibilny typ - sekcia 4.4 Priradenie */
+var n : Int
+n = 6
+n = "l"
+n = 90

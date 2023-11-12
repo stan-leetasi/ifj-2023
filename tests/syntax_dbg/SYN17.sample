@@ -1,0 +1,26 @@
+// syntakticke chyby vo volaniach funkcii
+
+hello(x : "x",  : "b") // chyba id/term po ciarke
+func my_func () -> Int
+{ return 123}
+
+func hello(text t : String) {
+
+}
+
+let _a : Int = 82
+let _bbbb____15615 = my_func()
+
+var c : Int = my_func()
+func _nil_fn() -> Double?
+{
+    return nil
+}
+
+
+let d = _nil_fn()
+
+if let d { hello("not niL") }
+else { hello(  "is NIL"
+  ) }
+  

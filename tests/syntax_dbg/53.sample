@@ -1,0 +1,7 @@
+/* vyrazy s retazcami */
+var a = "AAA"
+
+var text = "hello" + " "
+text = text + "world"
+
+let three = ("one" + (" " + "two") + " " ) + "three"

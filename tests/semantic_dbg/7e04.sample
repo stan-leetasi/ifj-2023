@@ -1,0 +1,7 @@
+/* nepravdivostna hodnota v podmienke - sekcia 4.4 */
+
+var a = 4
+var b = 10
+while (a + b) * 2 {
+
+}

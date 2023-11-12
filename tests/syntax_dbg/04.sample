@@ -1,0 +1,6 @@
+// while
+var exp : Double = 80.0
+// treba doplnit do tohoto testu vyraz do while ked bude hotovy parseExpression !!!
+while x {
+    exp = 81.00e2
+}

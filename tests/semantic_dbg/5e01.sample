@@ -1,0 +1,5 @@
+/* neinicializovana premenna - sekcia 4.1.1 */
+var k = 2.0
+var l : Double
+k = k - l
+l = 8.0

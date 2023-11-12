@@ -4,5 +4,7 @@
 *.out
 # Test results
 *.result
-
+# VsCode config
 .vscode
+# IFJcode23
+*.prog

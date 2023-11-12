@@ -1,0 +1,16 @@
+/* redefinicia premennej - sekcia 4.1.1 */
+
+let a : Double? = 3.14
+var x = 2
+{
+    var x = "text"
+    var y = 8.0e-2
+    if let a {
+        var a = a
+        var x = 3.0
+        var a = "T"
+    }
+    else {
+        
+    }
+}

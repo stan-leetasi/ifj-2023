@@ -1,0 +1,5 @@
+func quad(A a: Int, B b : Double, C c: Double, _ d: Int) {
+    
+}
+
+quad (A:3, B:2.0, C:8.0, 8)

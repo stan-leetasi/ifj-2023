@@ -31,6 +31,19 @@ unsigned long hashTwo(const char *str)
     return hash;
 }
 
+TSData_T *SymTabCreateElement(char *key)
+{
+    TSData_T *elem = malloc(sizeof(TSData_T));
+    if(elem == NULL) return NULL;
+    elem->id = malloc(sizeof(char)*(strlen(key)+1));
+    if(elem->id == NULL) {
+        free(elem);
+        return NULL;
+    }
+    strcpy(elem->id, key);
+    return elem; 
+}
+
 bool SymTabInit(SymTab_T *st) {
 
     st -> global = malloc(sizeof (TSBlock_T) + sizeof(TSData_T*) * SYMTABLE_MAX_SIZE);

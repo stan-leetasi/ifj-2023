@@ -1,0 +1,12 @@
+func show(_ a: Int?) -> Int {
+    if let a {
+        return a
+    }
+    else {
+        return 0
+    }
+}
+
+var d = show(nil)
+var x = show(d)
+ley y = show(56)
