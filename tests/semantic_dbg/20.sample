@@ -1,0 +1,11 @@
+hello()
+fn()
+
+func fn () {
+    hello()
+    return 
+}
+
+func hello () -> Int {
+    return 5
+}

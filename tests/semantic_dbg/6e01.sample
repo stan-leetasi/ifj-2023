@@ -1,0 +1,10 @@
+/* neprazdny return - sekcia 4.4 return */
+
+func show(_ a: Int?) { // void funkcia
+    if let a {
+        return
+    }
+    else {
+        return 0
+    }
+}

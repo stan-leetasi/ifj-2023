@@ -1,0 +1,9 @@
+let hello : String? = "t"
+var wo = "world"
+
+if ((5 > 3) == (hello! >= wo)) {
+
+}
+else {
+
+}

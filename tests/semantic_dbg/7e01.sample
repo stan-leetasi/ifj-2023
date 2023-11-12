@@ -1,0 +1,3 @@
+/* nekompatibilny typ - sekcia 4.4 Definicia premennej */
+let a = 2.0
+let pi : Double = "3.14"

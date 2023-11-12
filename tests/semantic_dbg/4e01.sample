@@ -1,0 +1,5 @@
+/* chýbajúci return - sekcia 4.2 */
+
+func sum(_ a: Int, _ b: Int) -> Int {
+    
+}

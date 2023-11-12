@@ -1,0 +1,3 @@
+/* nedefinovana premenna */
+let n : Int = 6
+m = n + 1

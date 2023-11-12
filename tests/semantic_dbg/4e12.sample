@@ -1,0 +1,7 @@
+/* nespravne volanie (zle poradie argumentov) - sekcia 4.4 Volanie funkcie */
+
+func quad(_ a: Int, _ b : Double, _ c: Double, x d: Int) {
+    
+}
+
+quad (x: 3, 2.0, 8.0, 8)

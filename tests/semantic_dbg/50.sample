@@ -1,0 +1,5 @@
+var a = 5
+var b = 8
+let c = 2
+var d = 9
+d = a / b + c * d

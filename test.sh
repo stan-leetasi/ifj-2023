@@ -6,6 +6,7 @@
 # bash test.sh strR
 # bash test.sh symtable
 # bash test.sh syntax_dbg
+# bash test.sh semantic_dbg
 
 if [ $# -gt 0 ]; then
     if [ ! -d "tests/$1" ]; then 
@@ -21,4 +22,5 @@ else
     echo "bash test.sh strR"
     echo "bash test.sh symtable"
     echo "bash test.sh syntax_dbg"
+    echo "bash test.sh semantic_dbg"
 fi

@@ -1,0 +1,10 @@
+/* chýbajúci return - sekcia 4.2 */
+
+func show(_ a: Int?) -> Int {
+    if let a {
+
+    }
+    else {
+        return 0
+    }
+}

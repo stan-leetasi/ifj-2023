@@ -1,0 +1,9 @@
+/* redefinicia premennej - sekcia 4.1.1 */
+
+var x = 2
+let a: String?
+{
+    var x = "text"
+    var y = 8.0e-2
+    var a = a
+}

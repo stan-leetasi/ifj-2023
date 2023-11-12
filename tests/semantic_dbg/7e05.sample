@@ -1,0 +1,4 @@
+/* priradenie hodnoty z void funkcie - sekcia 4.4. */
+func fn(_ a: Int) {}
+
+var b = fn(5)
