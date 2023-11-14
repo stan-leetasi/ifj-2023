@@ -1,0 +1,6 @@
+/* neda sa odvodit typ - sekcia 4.4 Definicia premennej */
+var a : Double
+var t = "tt"
+var l : Int? = 4
+var x = nil
+var m = 50

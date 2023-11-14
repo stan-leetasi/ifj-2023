@@ -1,0 +1,4 @@
+/* typove kontroly vo vyrazoch */
+var a = 5
+var b = 8.6
+var d = a + b

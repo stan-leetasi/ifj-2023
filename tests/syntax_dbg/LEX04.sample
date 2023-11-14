@@ -1,0 +1,6 @@
+// nespravny lexem retazca
+var text : String = 
+"""
+tttt
+""
+var d : Double

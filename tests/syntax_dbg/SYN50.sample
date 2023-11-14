@@ -1,0 +1,8 @@
+/* syntakticke chyby vo vyrazoch */
+var x = 8 + 4 * 3 -  * 3 // chyba operand
+
+x = x - 8
+x = (x + 3)
+x = (((x * 2) - 3) * 1)
+var d = (52.0 / 2.0) + 3.0
+var z = 8 / 3

@@ -23,4 +23,3 @@ if [ "${total}" -eq "${passed}" ]; then
 else
     echo "Some tests failed ${passed}/${total}"
 fi
-make clean

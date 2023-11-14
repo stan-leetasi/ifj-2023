@@ -1,0 +1,5 @@
+// syntakticka chyba - deklaracie premennych a priradenia
+let a : String = "fgggg" 
+var t  Int                  // chyba :
+let h : Double?
+t = 8

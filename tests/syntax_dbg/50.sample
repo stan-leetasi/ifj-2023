@@ -1,0 +1,10 @@
+/* vyrazy matematicke */
+var one = 1
+var two = 2.0
+
+var x = 2 + 3
+var y = x * 7
+let z = 60 - y
+
+var a = 4 + 3 * 9
+var b = 8 * (4 - 1)

@@ -1,0 +1,18 @@
+// volanie funkcie
+
+let y : Int = fn()
+
+func fn () -> Int {
+    return 25
+}
+
+var x = fn()
+var z : Int
+
+z = fn()
+
+func void_fn(_ a : Int) {
+    
+}
+
+void_fn(x)

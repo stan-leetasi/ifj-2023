@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 #define SYM_TYPE_FUNC       'F'
 #define SYM_TYPE_INT        'i'
@@ -19,8 +20,10 @@
 #define SYM_TYPE_DOUBLE_NIL 'D'
 #define SYM_TYPE_STRING     's'
 #define SYM_TYPE_STRING_NIL 'S'
+#define SYM_TYPE_BOOL       'b'
 #define SYM_TYPE_VOID       'V'
 #define SYM_TYPE_UNKNOWN    'U'
+#define SYM_TYPE_NIL        'N'
 
 #define SYMTABLE_MAX_SIZE 997 // musí byť prvočíslo
 
@@ -133,6 +136,10 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem);
  * @return true v prípade úspechu, inak false
 */
 bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem);
+
+TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key);
+
+bool SymTabBlockInsert(TSBlock_T *block, TSData_T *elem);
 
 #endif // ifndef _SYMTABLE_H_
 /* Koniec súboru symtable.h */

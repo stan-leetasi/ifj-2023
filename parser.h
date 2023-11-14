@@ -2,7 +2,7 @@
  * @file parser.h
  * @brief Syntaktický a sémantický anayzátor
  * @author Michal Krulich (xkruli03)
- * @date 25.10.2023
+ * @date 11.10.2023
  */
 
 #ifndef _PARSER_H_
@@ -12,6 +12,7 @@
 #include "symtable.h"
 #include "scanner.h"
 #include "dll.h"
+#include "strR.h"
 
 #define COMPILATION_OK  0 ///< Preklad bez chýb
 #define LEX_ERR         1 ///< Chybný lexém 
@@ -34,14 +35,11 @@ do \
 { \
   int error_code = (operation); \
   if (error_code != 0) return error_code;  \
-} while (0);
+} while (0)
 
-
-
-
-/**
- * @brief Aktuálny načítaný token
-*/
+ /**
+  * @brief Aktuálny načítaný token
+ */
 extern token_T* tkn;
 
 /**
@@ -50,14 +48,41 @@ extern token_T* tkn;
 extern SymTab_T symt;
 
 /**
- * @brief Vygenerovaný kód pre funkcie
+ * @brief Indikuje, či sa parser nachádza vo vnútri cykla.
 */
-extern DLLstr_T code_fn;
+extern bool parser_inside_loop;
 
 /**
- * @brief Vygenerovaný kód pre hlavný program (všetko mimo funkcií)
+ * @brief Meno náveštia na najvrchnejší cyklus
 */
-extern DLLstr_T code_main;
+extern str_T first_loop_label;
+
+/**
+ * @brief Zoznam premenných,, ktoré musia byť dekalrované pred prvým nespracovaným cyklom
+*/
+extern DLLstr_T variables_declared_inside_loop;
+
+/**
+ * @brief Indikuje, či sa aktuálne spracúva kód vo vnútri funkcie.
+ * @details Podľa toho sa generovaný kód ukladá buď do code_fn alebo code_main.
+*/
+extern bool parser_inside_fn_def;
+
+/**
+ * @brief Názov funkcie, ktorej definícia je práve spracovávaná
+*/
+extern str_T fn_name;
+
+/**
+ * @brief Uvoľní aktuálne načítaný token v globálnej premennej tkn a nahradí ho novým zo scannera
+ * @return 0 v prípade úspechu, inak číslo chyby
+*/
+int nextToken();
+
+/**
+ * @brief Uloží token v globálnej premennej tkn do úschovňe skenera a prepíše tkn na NULL
+*/
+void saveToken();
 
 /**
  * @brief Inicializácia dátových štruktúr parsera
