@@ -31,6 +31,17 @@ unsigned long hashTwo(const char *str)
     return hash;
 }
 
+func_sig_T *SymTabCreateFuncSig() {
+    func_sig_T *f = malloc(sizeof(func_sig_T));
+    if (f != NULL) {
+        f->ret_type = SYM_TYPE_UNKNOWN;
+        StrInit(&(f->par_types));
+        DLLstr_Init(&(f->par_names));
+        DLLstr_Init(&(f->par_ids));
+    }
+    return f;
+}
+
 TSData_T *SymTabCreateElement(char *key)
 {
     TSData_T *elem = malloc(sizeof(TSData_T));
@@ -43,6 +54,20 @@ TSData_T *SymTabCreateElement(char *key)
     strcpy(elem->id, key);
     StrInit(&(elem->codename));
     return elem; 
+}
+
+void SymTabDestroyElement(TSData_T *elem) {
+    if(elem != NULL) {
+        if(elem->type == SYM_TYPE_FUNC) {
+            StrDestroy(&(elem->sig->par_types));
+            DLLstr_Dispose(&(elem->sig->par_names));
+            DLLstr_Dispose(&(elem->sig->par_ids));
+            free(elem->sig);
+        }
+        free(elem->id);
+        StrDestroy(&(elem->codename));
+        free(elem);
+    }
 }
 
 bool SymTabInit(SymTab_T *st) {

@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "strR.h"
+#include "dll.h"
 
 #define SYM_TYPE_FUNC       'F'
 #define SYM_TYPE_INT        'i'
@@ -31,10 +32,10 @@
  * @brief Signatúra funkcie
  */
 typedef struct func_signature {
-    char ret_type;      ///< typ návratovej hodnoty
-    char *par_types;    ///< dátové typy parametrov
-    char **par_names;   ///< názvy parametrov
-    char **par_ids;     ///< identifikátory parametrov používané vo vnútri funkcie
+    char ret_type;        ///< typ návratovej hodnoty
+    str_T par_types;   ///< dátové typy parametrov
+    DLLstr_T par_names;   ///< názvy parametrov
+    DLLstr_T par_ids;     ///< identifikátory parametrov používané vo vnútri funkcie
     // func <názov_funkcie> (par_name par_id : par_type, ...) -> ret_type {}
 } func_sig_T;
 
@@ -68,6 +69,12 @@ typedef struct SymbolsTable {
     TSBlock_T *global;      ///< ukazateľ na globálny blok (prvý blok)
     TSBlock_T *local;       ///< ukazateľ na lokálny blok  (posledný blok)
 } SymTab_T;
+
+/**
+ * @brief Alokuje dátovú štrutkúru signatúry funkcie a inicializuje jej zoznamy.
+ * @return Ukazateľ na alokovanú dátovú štruktúru, NULL v prípade neúspechu
+*/
+func_sig_T *SymTabCreateFuncSig();
 
 /**
  * @brief Alokuje prvok tabuľky symbolov
