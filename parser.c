@@ -14,12 +14,33 @@ token_T* tkn = NULL;
 
 SymTab_T symt;
 
-bool parser_inside_loop = false;
-str_T first_loop_label;
-DLLstr_T variables_declared_inside_loop;
-
 bool parser_inside_fn_def = false;
-str_T fn_name;
+
+/**
+ * @brief Názov funkcie, ktorej definícia je práve spracovávaná
+*/
+static str_T fn_name;
+
+/**
+ * @brief Zoznam mien funkcií, pri ktorých treba na konci sémantickej analýzy skontrovať, či boli definované.
+*/
+static DLLstr_T check_def_fns;
+
+/**
+ * @brief Indikuje, či sa parser nachádza vo vnútri cykla.
+*/
+static bool parser_inside_loop = false;
+
+/**
+ * @brief Meno náveštia na najvrchnejší cyklus
+*/
+static str_T first_loop_label;
+
+/**
+ * @brief Zoznam premenných,, ktoré musia byť dekalrované pred prvým nespracovaným cyklom
+*/
+static DLLstr_T variables_declared_inside_loop;
+
 
 /* ----------- PRIVATE FUNKCIE ----------- */
 
@@ -359,6 +380,7 @@ int parseFnCall(char* result_type) {
         }
         fn->sig->ret_type = SYM_TYPE_UNKNOWN;
         fn->let = false;
+        fn->init = false;
     }
     else {
         if (fn->init) {
@@ -946,9 +968,13 @@ void saveToken() {
 
 bool initializeParser() {
     if (!SymTabInit(&symt)) return false;
+
+    StrInit(&fn_name);
+
+    DLLstr_Init(&check_def_fns);
+
     StrInit(&first_loop_label);
     DLLstr_Init(&variables_declared_inside_loop);
-    StrInit(&fn_name);
 
     DLLstr_Init(&code_fn);
     DLLstr_Init(&code_main);
@@ -1028,5 +1054,21 @@ int parse() {
     return COMPILATION_OK;
 }
 
+void destroyParser() {
+    if(tkn != NULL) {
+        destroyToken(tkn);
+        tkn = NULL;
+    }
+    SymTabDestroy(&symt);
+
+    StrDestroy(&fn_name);
+    DLLstr_Dispose(&check_def_fns);
+
+    StrDestroy(&first_loop_label);
+    DLLstr_Dispose(&variables_declared_inside_loop);
+
+    DLLstr_Dispose(&code_main);
+    DLLstr_Dispose(&code_fn);
+}
 
 /* Koniec súboru parser.c */
