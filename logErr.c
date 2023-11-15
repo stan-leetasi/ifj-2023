@@ -43,7 +43,8 @@ void logErrCodeAnalysis(const int err_code, const int ln, const int c, const cha
 }
 
 void logErrSyntax(const token_T* t, const char* expected) {
-    logErrCodeAnalysis(SYN_ERR, t->ln, t->col, "expected %s, but got '%s'", expected, StrRead((str_T*)(&(t->atr))));
+    if (t != NULL) logErrCodeAnalysis(SYN_ERR, t->ln, t->col, "expected %s, but got '%s'", expected, StrRead((str_T*)(&(t->atr))));
+    else logErrCodeAnalysis(SYN_ERR, last_tkn_ln, last_tkn_col, "expected %s", expected);
 }
 
 void logErrSemantic(const token_T* t, const char* format, ...) {

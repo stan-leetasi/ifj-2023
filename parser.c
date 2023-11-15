@@ -521,9 +521,16 @@ int parseVariableDecl() {
 
 
     //TRY_OR_EXIT(genUniqVar("GF", variable->id, &(variable->codename)));
+    if (parser_inside_loop) {
+        // DLLstr_InsertLast(&variables_declared_inside_loop, variable->codename);
+    }
     // TRY_OR_EXIT(genCode("DEFVAR", StrRead(&(variable->codename)), NULL, NULL));
     // pops TRY_OR_EXIT()
-    if (!SymTabInsertLocal(&symt, variable)) return COMPILER_ERROR;
+    if (!SymTabInsertLocal(&symt, variable)) {
+        SymTabDestroyElement(variable);
+        logErrCompilerMemAlloc();
+        return COMPILER_ERROR;
+    }
 
     return COMPILATION_OK;
 }
@@ -755,16 +762,33 @@ int parseFunction() {
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseReturn() {
-    TRY_OR_EXIT(nextToken());
-
     if (!parser_inside_fn_def) {
         logErrSemantic(tkn, "return outside function definition");
         return SEM_ERR_OTHER;
     }
-    char result_type;
-    TRY_OR_EXIT(parseExpression(&result_type));
+    
+    TRY_OR_EXIT(nextToken());
+
+    char result_type = SYM_TYPE_UNKNOWN;
+    switch (tkn->type)
+    {
+    case ID:
+    case INT_CONST:
+    case DOUBLE_CONST:
+    case STRING_CONST:
+    case NIL:
+    case BRT_RND_L:
+        TRY_OR_EXIT(parseExpression(&result_type));
+        break;
+    default:
+        saveToken();
+        result_type = SYM_TYPE_VOID;
+        break;
+    }
+    
     TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&fn_name));
-    if (!isCompatibleAssign(fn->sig->ret_type, result_type)) {
+    if (fn->sig->ret_type != SYM_TYPE_VOID
+        && !isCompatibleAssign(fn->sig->ret_type, result_type)) {
         logErrSemanticFn(fn->id, "different return type");
         return SEM_ERR_FUNC;
     }
@@ -882,6 +906,9 @@ int parseIf() {
 int parseWhile() {
     // <STAT>      ->  while exp { <PROG> }
     bool loop_inside_loop = parser_inside_loop;
+    if(!loop_inside_loop) {
+        StrFillWith(&first_loop_label, "WHILE");
+    }
     parser_inside_loop = true;
 
     TRY_OR_EXIT(nextToken());
@@ -911,6 +938,10 @@ int parseWhile() {
     TRY_OR_EXIT(parseStatBlock());
 
     parser_inside_loop = loop_inside_loop;
+    if(!parser_inside_loop) {
+        DLLstr_Dispose(&variables_declared_inside_loop);
+        // gen code
+    }
     return COMPILATION_OK;
 }
 
