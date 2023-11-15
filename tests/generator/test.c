@@ -48,7 +48,7 @@ int main()
     StrInit(&s);
 
     test = genConstVal(9, "3.14", &s);
-    TEST(strcmp(StrRead(&s), "float@0x1.91eb86p+1") == 0);
+    TEST(strcmp(StrRead(&s), "float@0x1.91eb851eb851fp+1") == 0);
 
     StrDestroy(&s);
     StrInit(&s);
@@ -116,9 +116,8 @@ int main()
         TEST(strcmp(code_main.last->string, "LABEL &while25") == 0);
     }
 
-    DLLstr_Destroy(variables);
+    DLLstr_Dispose(variables);
 
-    DLLstr_T *variables;
     DLLstr_Init(variables);
     DLLstr_InsertLast(variables, "LF@a%%");
     DLLstr_InsertLast(variables, "LF@b%%");
@@ -131,9 +130,8 @@ int main()
     TEST(strcmp(code_fn.last->prev->string, "DEFVAR LF@b%%") == 0);
     TEST(strcmp(code_fn.last->string, "POPS LF@b%%") == 0);
 
-    DLLstr_Destroy(variables);
+    DLLstr_Dispose(variables);
 
-    DLLstr_T *variables;
     DLLstr_Init(variables);
     DLLstr_InsertLast(variables, "int@6");
     DLLstr_InsertLast(variables, "LF@x$1");
@@ -148,8 +146,9 @@ int main()
         TEST(strcmp(code_main.last->prev->prev->string, "PUSH LF@y$2") == 0);
         TEST(strcmp(code_main.last->prev->string, "PUSH LF@x$1") == 0);
         TEST(strcmp(code_main.last->string, "CALL sum") == 0);
-    
     }
+
+    DLLstr_Dispose(variables);
 
     if(failures != 0)
     {
