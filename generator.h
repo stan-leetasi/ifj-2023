@@ -10,6 +10,7 @@
 
 #include "dll.h"
 #include "parser.h"
+#include "decode.h"
 
 #define BOOL_CONST -50  ///< Konštanta - true/false ... Musí byť rôzna od hodnôt token_ids.
 
