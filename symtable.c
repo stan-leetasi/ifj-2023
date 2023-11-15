@@ -51,6 +51,7 @@ TSData_T *SymTabCreateElement(char *key)
         free(elem);
         return NULL;
     }
+    elem->type = SYM_TYPE_UNKNOWN;
     strcpy(elem->id, key);
     StrInit(&(elem->codename));
     return elem; 
@@ -125,13 +126,12 @@ void SymTabRemoveLocalBlock(SymTab_T *st) {
     TSBlock_T *currentLocal = st->local;
     st->local = currentLocal->prev;
 
-    for (size_t i = 0; i < SYMTABLE_MAX_SIZE - 1; i++) {
+    for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
         TSData_T *data = currentLocal->array[i];
-            if(data != NULL) {
-                free(data->id);
-                free(data); 
-            }
-    }
+        if(data != NULL) {
+            SymTabDestroyElement(data);
+        }
+    }   
 
     free(currentLocal); 
 }
@@ -141,7 +141,10 @@ void SymTabDestroy(SymTab_T *st) {
         SymTabRemoveLocalBlock(st);
     }
 
-    free(st);
+    st->global = NULL;
+    st->local = NULL;
+
+    //free(st);
 }
 
 TSData_T *SymTabLookup(SymTab_T *st, char *key) {
