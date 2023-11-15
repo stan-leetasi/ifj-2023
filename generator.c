@@ -30,31 +30,20 @@ int genCode(char *instruction, char *op1, char *op2, char *op3) {
 }
 
 int genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
-    str_T string;
     str_T var;
-    StrInit(&string);
     StrInit(&var);
-    DLLstr_T *list;
-    
-    if (parser_inside_fn_def) {
-        list = &code_fn;
-    } else {
-        list = &code_main;
-    }
 
     DLLstr_First(variables);
     while(DLLstr_IsActive(variables)) {
         DLLstr_GetValue(variables, &var);
-        createInstructionString(&string, var.size, "DEFVAR %s", StrRead(&var));
-        DLLstr_InsertLast(list, StrRead(&string) );
+
+        genCode("DEFVAR",StrRead(&var), NULL, NULL);
         DLLstr_Next(variables);
     }
-    DLLstr_GetValue(variables, &var);
-    createInstructionString(&string, strlen(label), "LABEL %s", label);
-    DLLstr_InsertLast(list, StrRead(&string));
 
-    StrDestroy(&string);
+    genCode("LABEL", label, NULL, NULL);
     StrDestroy(&var);
+
     return COMPILATION_OK;
 }
 
@@ -67,9 +56,10 @@ int genFnDefBegin(char *fn, DLLstr_T *params) {
     StrInit(&string);
     StrInit(&par);
 
-    DLLstr_InsertLast(&code_fn, "CREATEFRAME");
-    DLLstr_InsertLast(&code_fn, "PUSHFRAME");
+    genCode("CREATEFRAME", NULL, NULL, NULL);
+    genCode("PUSHFRAME", NULL, NULL, NULL);
     DLLstr_First(params);
+
     while(DLLstr_IsActive(params)) {
         DLLstr_GetValue(params, &par);
 
@@ -86,39 +76,21 @@ int genFnDefBegin(char *fn, DLLstr_T *params) {
 }
 
 int genFnCall(char *fn, DLLstr_T *args) {
-    //Výsledný řetězec, kde bude zapsaná instrukce
-    str_T string;
     //zde budou uloženy argumenty funkce fn
     str_T arg;
-    //Inicializace řetězců
-    StrInit(&string);
     StrInit(&arg);
 
-    DLLstr_T *list;
-    //Zde se rozhodne, do kterého seznamu se vloží instrukce
-    if (parser_inside_fn_def) {
-        list = &code_fn;
-    } else {
-        list = &code_main;
-    }
     DLLstr_Last(args);
     //Průchod přes všechny argumenty funkce
     while (DLLstr_IsActive(args)) {
         DLLstr_GetValue(args, &arg);
-        StrFillWith(&string, "PUSH ");
-        //Nyní bude v řetězci "string" uložena celá instrukce
-        StrCat(&string, &arg);
-        //Výběr, do kterého seznamu se uloží instrukce
-        DLLstr_InsertLast(list, StrRead(&string));
+        genCode("PUSH", StrRead(&arg), NULL, NULL);
         DLLstr_Previous(args);
     }
     //Vložení na zásobník CALL instrukce
-    StrFillWith(&string, "CALL ");
-    StrFillWith(&arg, fn);
-    StrCat(&string, &arg);
-    DLLstr_InsertLast(list, StrRead(&string));
+    genCode("CALL", fn, NULL, NULL);
+   
     //Uvolnění řetězců
-    StrDestroy(&string);
     StrDestroy(&arg);
     return COMPILATION_OK;
 }
@@ -130,13 +102,8 @@ int genFnCall(char *fn, DLLstr_T *args) {
  *  "len_of_longest_arg" = délka nejdelšího argumentu formátu
  *  "format" = formátovaný řetězec
  */
-void createInstructionString(str_T *str, int len_of_longest_arg, char *format,...) {
-    va_list args;
-    char buffer[strlen(format) + len_of_longest_arg + 1];
-    va_start(args, format);
-    snprintf(buffer, sizeof(buffer), format, va_arg(args, char *));
-    StrFillWith(str, buffer);
-    va_end(args);
+void fnParamIdentificator(char *identificator, str_T *id) {
+    StrFillWith(id, "LF@");
 }
 
 
