@@ -17,7 +17,7 @@ int genUniqVar(char *scope, char *sub, str_T *id) {
     char numStr[100];
     sprintf(numStr, "%d", count);
 
-    if(numStr == NULL || scope == NULL || sub == NULL || id == NULL)
+    if(numStr == NULL || scope == NULL || sub == NULL)
         return COMPILER_ERROR;
 
     StrCatString(id, scope);
@@ -50,8 +50,7 @@ int genUniqLabel(char *fn, char *sub, str_T *label){
     return COMPILATION_OK;
 }
 
-int genConstVal(int const_type, char *value, str_T *cval) {  
-
+int genConstVal(int const_type, char *value, str_T *cval) {
     switch (const_type) {
         case 8:
             StrCatString(cval, "int@");
@@ -82,8 +81,6 @@ int genConstVal(int const_type, char *value, str_T *cval) {
         default:
             return COMPILER_ERROR;
     }
-
-    // printf("result: %s\n", StrRead(cval));
 
     return COMPILATION_OK;
 }
