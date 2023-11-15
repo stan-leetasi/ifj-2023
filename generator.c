@@ -100,15 +100,15 @@ int genCode(char *instruction, char *op1, char *op2, char *op3) {
     if (op1 != NULL) {
         StrAppend(code, ' ');
         StrCatString(code, op1);
-        StrAppend(code, ' ');
     }
 
     if (op2 != NULL) {
-        StrCatString(code, op2);
         StrAppend(code, ' ');
+        StrCatString(code, op2);
     }
 
     if (op3 != NULL) {
+        StrAppend(code, ' ');
         StrCatString(code, op3);
     }
 
