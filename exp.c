@@ -12,6 +12,7 @@ int parseExpression(char* result_type) {
 
     /* DUMMY IMPLEMENTATION. FOR TOP-DOWN TESTING PURPOSES */
 
+    *result_type = SYM_TYPE_UNKNOWN;
     bool first_loaded = false;
     bool binary_op_loaded = false;
     bool stop = false;
@@ -35,23 +36,18 @@ int parseExpression(char* result_type) {
                     return SEM_ERR_UNDEF;
                 }
                 *result_type = variable->type;
-                first_loaded = true;
                 break;
             case INT_CONST:
                 *result_type = SYM_TYPE_INT;
-                first_loaded = true;
                 break;
             case DOUBLE_CONST:
                 *result_type = SYM_TYPE_DOUBLE;
-                first_loaded = true;
                 break;
             case STRING_CONST:
                 *result_type = SYM_TYPE_STRING;
-                first_loaded = true;
                 break;
             case NIL:
                 *result_type = SYM_TYPE_NIL;
-                first_loaded = true;
                 break;
             default:
                 break;
@@ -60,13 +56,18 @@ int parseExpression(char* result_type) {
         switch (tkn->type)
         {
         case ID:
-        case BRT_RND_L:
         case INT_CONST:
         case DOUBLE_CONST:
         case STRING_CONST:
         case NIL:
+            if (!binary_op_loaded && first_loaded) {
+                saveToken();
+                stop = true;
+            }
+            else binary_op_loaded = false;
+            break;
+        case BRT_RND_L:
         case BRT_RND_R:
-            binary_op_loaded = false;
             break;
         case EQ:
         case NEQ:
@@ -82,6 +83,10 @@ int parseExpression(char* result_type) {
         case OP_MUL:
         case OP_DIV:
         case TEST_NIL:
+            if (binary_op_loaded) {
+                logErrSyntax(tkn, "exp syntax");
+                return SYN_ERR;
+            }
             binary_op_loaded = true;
             break;
         default:
@@ -89,10 +94,12 @@ int parseExpression(char* result_type) {
             stop = true;
             break;
         }
-        if(!stop) TRY_OR_EXIT(nextToken());
+        
+        if(tkn != NULL) if (tkn->type != BRT_RND_L && tkn->type != BRT_RND_R) first_loaded = true;
+        if (!stop) TRY_OR_EXIT(nextToken());
     }
 
-    if(binary_op_loaded) {
+    if (binary_op_loaded) {
         logErrSyntax(tkn, "exp syntax");
         return SYN_ERR;
     }
