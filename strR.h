@@ -55,5 +55,7 @@ void StrFillWith(str_T *dest, char *src);
 */
 void StrCat(str_T *dest, str_T *src);
 
+void StrCatString(str_T *dest, char *src);
+
 #endif // ifndef _STRR_H_
 /* Koniec súboru strR.h */

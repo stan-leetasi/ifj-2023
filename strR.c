@@ -84,4 +84,23 @@ void StrCat(str_T *dest, str_T *src)
     
     strcat(dest->data, src->data);
 }
+
+void StrCatString(str_T *dest, char *src)
+{
+    size_t len_dest = strlen(dest->data);
+    size_t len_src = strlen(src);
+    
+    
+    if (len_dest + len_src + 1 >= dest->size) {
+        dest->size = len_dest + len_src + 1;
+        dest->data = (char *)realloc(dest->data, dest->size);
+        
+        if (dest->data == NULL) {
+            fprintf(stderr, "StrCatString() memory allocation error.\n");
+            exit(1);
+        }
+    }
+
+    strcat(dest->data, src);
+}
 /* Koniec súboru strR.c */
