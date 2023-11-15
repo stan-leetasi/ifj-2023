@@ -48,30 +48,29 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
 }
 
 int genFnDefBegin(char *fn, DLLstr_T *params) {
-    //Výsledný řetězec, kde bude zapsaná instrukce
-    str_T string;
+    //zde bude zapsán celý identifikator parametru
+    str_T idpar;
     //zde budou uloženy parametry funkce
-    str_T par;
+    str_T fnpar;
     //Inicializace řetězců
-    StrInit(&string);
-    StrInit(&par);
+    StrInit(&idpar);
+    StrInit(&fnpar);
 
+    genCode("LABEL", fn, NULL, NULL);
     genCode("CREATEFRAME", NULL, NULL, NULL);
     genCode("PUSHFRAME", NULL, NULL, NULL);
     DLLstr_First(params);
 
     while(DLLstr_IsActive(params)) {
-        DLLstr_GetValue(params, &par);
-
-        createInstructionString(&string, par.size, "DEFVAR LF@%s%%", StrRead(&par));
-        DLLstr_InsertLast(&code_fn, StrRead(&string));
-        createInstructionString(&string, par.size, "POPS LF@%s%%", StrRead(&par));
-        DLLstr_InsertLast(&code_fn, StrRead(&string));
-
+        DLLstr_GetValue(params, &fnpar);
+        fnParamIdentificator(StrRead(&fnpar), &idpar);
+        genCode("DEFVAR", StrRead(&idpar), NULL, NULL);
+        genCode("POPS", StrRead(&idpar), NULL, NULL);
         DLLstr_Next(params);
     }
-    StrDestroy(&string);
-    StrDestroy(&par);
+
+    StrDestroy(&idpar);
+    StrDestroy(&fnpar);
     return COMPILATION_OK;
 }
 
@@ -104,6 +103,8 @@ int genFnCall(char *fn, DLLstr_T *args) {
  */
 void fnParamIdentificator(char *identificator, str_T *id) {
     StrFillWith(id, "LF@");
+    StrCatString(id, identificator);
+    StrAppend(id, '%');
 }
 
 
