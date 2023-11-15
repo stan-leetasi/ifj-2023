@@ -11,7 +11,7 @@
 DLLstr_T code_fn;
 DLLstr_T code_main;
 
-void fnParamIdentificator(char *identificator, str_T *id);
+void createInstructionString(str_T *, int, char *,...);
 
 int genUniqVar(char *scope, char *sub, str_T *id) {
     return COMPILATION_OK;
