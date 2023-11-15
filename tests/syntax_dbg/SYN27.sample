@@ -4,7 +4,7 @@ hello("some text")
 func my_func () -> Int 
 { return 123 }
 
-func hello(text t : ) { // chyba typ parametra
+func hello(_ t : ) { // chyba typ parametra
 
 }
 
