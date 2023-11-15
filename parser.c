@@ -381,6 +381,12 @@ int parseFnCall(char* result_type) {
         fn->sig->ret_type = SYM_TYPE_UNKNOWN;
         fn->let = false;
         fn->init = false;
+
+        if (!DLLstr_InsertLast(&check_def_fns, fn->id))
+        {
+            logErrCompilerMemAlloc();
+            return COMPILER_ERROR;
+        }
     }
     else {
         if (fn->init) {
@@ -538,9 +544,10 @@ int parseVariableDecl() {
 /**
  * @brief Pravidlo pre spracovanie bloku kódu
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token BRT_CUR_L, zanechá načítaný BRT_CUR_R
+ * @param had_return Ukazateľ na bool, ktorý bude značiť, či sa v bloku nachádzal príkaz return. Ak NULL, nič sa nezapisuje.
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseStatBlock() {
+int parseStatBlock(bool* had_return) {
     // <STAT>      ->  { <PROG> }
     if (tkn->type != BRT_CUR_L) {
         logErrSyntax(tkn, "'{'");
@@ -553,7 +560,9 @@ int parseStatBlock() {
         TRY_OR_EXIT(parse());
         TRY_OR_EXIT(nextToken());
     }
+    if (had_return != NULL) *had_return = SymTabCheckLocalReturn(&symt);
     SymTabRemoveLocalBlock(&symt);
+
     return COMPILATION_OK;
 }
 
@@ -596,7 +605,7 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
                 if (strcmp(StrRead(&tmp), StrRead(&(tkn->atr))) != 0) {
                     logErrSemantic(tkn, "different parameter name");
                     return SEM_ERR_FUNC;
-                }                
+                }
             }
             else {
                 PERFORM_RISKY_OP(DLLstr_InsertLast(&(sig->par_names), StrRead(&(tkn->atr))));
@@ -613,7 +622,7 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
             if (strcmp(StrRead(&tmp), StrRead(&(tkn->atr))) == 0) {
                 logErrSemantic(tkn, "parameter name and identifier must be different");
                 return SEM_ERR_FUNC;
-            }  
+            }
             PERFORM_RISKY_OP(DLLstr_InsertLast(&(sig->par_ids), StrRead(&(tkn->atr))));
         }
         else {
@@ -747,6 +756,10 @@ int parseFunction() {
         TRY_OR_EXIT(parse());
         TRY_OR_EXIT(nextToken());
     }
+    if (!SymTabCheckLocalReturn(&symt) && fn->sig->ret_type != SYM_TYPE_VOID) {
+        logErrSemanticFn(fn->id, "it is possible to exit function without return value");
+        return SEM_ERR_FUNC;
+    }
     SymTabRemoveLocalBlock(&symt);
 
     SymTabRemoveLocalBlock(&symt); // blok parametrov
@@ -766,7 +779,7 @@ int parseReturn() {
         logErrSemantic(tkn, "return outside function definition");
         return SEM_ERR_OTHER;
     }
-    
+
     TRY_OR_EXIT(nextToken());
 
     char result_type = SYM_TYPE_UNKNOWN;
@@ -785,13 +798,21 @@ int parseReturn() {
         result_type = SYM_TYPE_VOID;
         break;
     }
-    
+
     TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&fn_name));
     if (fn->sig->ret_type != SYM_TYPE_VOID
         && !isCompatibleAssign(fn->sig->ret_type, result_type)) {
         logErrSemanticFn(fn->id, "different return type");
         return SEM_ERR_FUNC;
     }
+    else if (fn->sig->ret_type == SYM_TYPE_VOID
+        && result_type != SYM_TYPE_VOID) {
+        logErrSemanticFn(fn->id, "void function returns a value");
+        return SEM_ERR_RETURN;
+    }
+
+    SymTabModifyLocalReturn(&symt, true);
+
     return COMPILATION_OK;
 }
 
@@ -828,7 +849,7 @@ int parseIf() {
             return SEM_ERR_UNDEF;
         }
 
-        
+
 
         if (!SymTabAddLocalBlock(&symt)) {
             return COMPILER_ERROR;
@@ -883,7 +904,8 @@ int parseIf() {
     }
 
     TRY_OR_EXIT(nextToken());
-    TRY_OR_EXIT(parseStatBlock());
+    bool if_had_return;
+    TRY_OR_EXIT(parseStatBlock(&if_had_return));
     if (let_variable != NULL) SymTabRemoveLocalBlock(&symt);
 
     TRY_OR_EXIT(nextToken());
@@ -893,7 +915,12 @@ int parseIf() {
     }
 
     TRY_OR_EXIT(nextToken());
-    TRY_OR_EXIT(parseStatBlock());
+    bool else_had_return;
+    TRY_OR_EXIT(parseStatBlock(&else_had_return));
+
+    if (if_had_return && else_had_return) {
+        SymTabModifyLocalReturn(&symt, true);
+    }
 
     return COMPILATION_OK;
 }
@@ -906,7 +933,7 @@ int parseIf() {
 int parseWhile() {
     // <STAT>      ->  while exp { <PROG> }
     bool loop_inside_loop = parser_inside_loop;
-    if(!loop_inside_loop) {
+    if (!loop_inside_loop) {
         StrFillWith(&first_loop_label, "WHILE");
     }
     parser_inside_loop = true;
@@ -935,10 +962,10 @@ int parseWhile() {
     }
 
     TRY_OR_EXIT(nextToken());
-    TRY_OR_EXIT(parseStatBlock());
+    TRY_OR_EXIT(parseStatBlock(NULL));
 
     parser_inside_loop = loop_inside_loop;
-    if(!parser_inside_loop) {
+    if (!parser_inside_loop) {
         DLLstr_Dispose(&variables_declared_inside_loop);
         // gen code
     }
@@ -1058,7 +1085,9 @@ int parse() {
         break;
     case BRT_CUR_L:
         // <STAT>  ->  { <PROG> }
-        TRY_OR_EXIT(parseStatBlock());
+        bool block_had_return;
+        TRY_OR_EXIT(parseStatBlock(&block_had_return));
+        if (block_had_return) SymTabModifyLocalReturn(&symt, block_had_return);
         break;
     case FUNC:
         // <STAT> ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
@@ -1085,8 +1114,23 @@ int parse() {
     return COMPILATION_OK;
 }
 
+int checkIfAllFnDef() {
+    DLLstr_First(&check_def_fns);
+    while (DLLstr_IsActive(&check_def_fns))
+    {
+        DLLstr_GetValue(&check_def_fns, &fn_name);
+        TSData_T* fn_info = SymTabLookupGlobal(&symt, StrRead(&fn_name));
+        if (!fn_info->init) {
+            logErrSemanticFn(StrRead(&fn_name), "was not defined");
+            return SEM_ERR_REDEF;
+        }
+        DLLstr_Next(&check_def_fns);
+    }
+    return COMPILATION_OK;
+}
+
 void destroyParser() {
-    if(tkn != NULL) {
+    if (tkn != NULL) {
         destroyToken(tkn);
         tkn = NULL;
     }

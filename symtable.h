@@ -58,6 +58,7 @@ typedef struct TSBlock {
     size_t used;            ///< počet zaplnených miest
     struct TSBlock *prev;   ///< ukazateľ na predchádzajúci blok
     struct TSBlock *next;   ///< ukazateľ na nasledujúci blok
+    bool has_return;        ///< pomocná premenná pre sémantickú analýzu, značí či daný blok kódu obsahoval príkaz return
     TSData_T *array[];      ///< pole ukazateľov na symboly
 } TSBlock_T;
 
@@ -149,6 +150,17 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem);
  * @return true v prípade úspechu, inak false
 */
 bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem);
+
+/**
+ * @brief Informácia o tom či v aktuálnom lokálnom bloku sa nachádzal príkaz return
+ * @return st->local->has_return
+*/
+bool SymTabCheckLocalReturn(SymTab_T *st);
+
+/**
+ * @brief Nastaví informácia o tom či v aktuálnom lokálnom bloku sa nachádzal príkaz return
+*/
+void SymTabModifyLocalReturn(SymTab_T *st, bool value);
 
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key);
 

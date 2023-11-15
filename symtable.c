@@ -82,6 +82,7 @@ bool SymTabInit(SymTab_T *st) {
     st -> global -> used = 0;
     st -> global -> prev = NULL;
     st -> global -> next = NULL;
+    st -> global -> has_return = false;
 
     // NULL značí prázdne (voľné) miesto v tabuľke
     for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
@@ -116,6 +117,7 @@ bool SymTabAddLocalBlock(SymTab_T *st) {
 
     newBlock -> prev = st -> local;
     newBlock -> next = NULL;
+    newBlock -> has_return = false;
 
     st -> local = newBlock;
 
@@ -206,6 +208,15 @@ bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
 
     return SymTabBlockInsert(st->local, elem);
 }
+
+bool SymTabCheckLocalReturn(SymTab_T *st) {
+    return st->local->has_return;
+}
+
+void SymTabModifyLocalReturn(SymTab_T *st, bool value) {
+    st->local->has_return = value;
+}
+
 
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {
 

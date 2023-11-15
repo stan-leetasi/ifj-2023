@@ -84,6 +84,12 @@ bool initializeParser();
 int parse();
 
 /**
+ * @brief Skontroluje, či boli definované všetky volané funkcie
+ * @return 0 ak je všetko v poriadku, inak číslo chyby
+*/
+int checkIfAllFnDef();
+
+/**
  * @brief Uvoľní všetky hlavné zdroje využívané prekladačom (parsera)
 */
 void destroyParser();

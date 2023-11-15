@@ -26,6 +26,7 @@ int main()
         TRY_OR_END_COMPILER(parse());
         TRY_OR_END_COMPILER(nextToken());
     }
+    TRY_OR_END_COMPILER(checkIfAllFnDef());
 
     destroyParser();
 
