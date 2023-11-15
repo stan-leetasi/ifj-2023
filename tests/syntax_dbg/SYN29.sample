@@ -2,7 +2,7 @@
 
 hello("some text")
 func my_func () -> Int 
-{ return func } // term
+{ return 5 + func } // term
 
 func hello(_ t : String) {
 
