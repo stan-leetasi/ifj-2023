@@ -26,6 +26,36 @@ int genConstVal(int const_type, char *value, str_T *cval) {
 }
 
 int genCode(char *instruction, char *op1, char *op2, char *op3) {
+    if (instruction == NULL)
+        return COMPILER_ERROR;
+
+    str_T *code;
+    StrInit(code);
+
+    StrFillWith(code, instruction);
+
+    if (op1 != NULL) {
+        StrAppend(code, ' ');
+        StrCatString(code, op1);
+    }
+
+    if (op2 != NULL) {
+        StrAppend(code, ' ');
+        StrCatString(code, op2);
+    }
+
+    if (op3 != NULL) {
+        StrAppend(code, ' ');
+        StrCatString(code, op3);
+    }
+
+    bool insert;
+
+    if(parser_inside_fn_def == true)
+        insert = DLLstr_InsertLast(&code_fn, StrRead(code));
+    else
+        insert = DLLstr_InsertLast(&code_main, StrRead(code));
+
     return COMPILATION_OK;
 }
 
