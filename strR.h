@@ -55,6 +55,9 @@ void StrFillWith(str_T *dest, char *src);
 */
 void StrCat(str_T *dest, str_T *src);
 
+/**
+ * @brief Spojí dva reťazce dest.src a výsledok uloží do dest. src je C string.
+*/
 void StrCatString(str_T *dest, char *src);
 
 #endif // ifndef _STRR_H_

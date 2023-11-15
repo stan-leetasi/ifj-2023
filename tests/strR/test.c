@@ -33,6 +33,9 @@ int main()
     StrCat(&alphabet, &s);
     TEST(strcmp(StrRead(&alphabet), "abcdefghijklmnopqrstuvwxyzC retazec") == 0);
 
+    StrCatString(&alphabet, "C retazec");
+    TEST(strcmp(StrRead(&alphabet), "abcdefghijklmnopqrstuvwxyzC retazecC retazec") == 0);
+
     if(failures != 0)
     {
         printf("Total tests failed: %d\n", failures);
