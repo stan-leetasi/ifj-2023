@@ -5,6 +5,7 @@
 # rozdelenie samplov:
 # (bez prefixu) *.sample ... sémanticky správne
 # #e*.sample ... sémanticky nesprávne, kde # značí číslo chyby
+# testy s číslami 20-49 sú programy, kde sú volané funkcie predtým ako sú definované
 # testy s cislami 50+ su pre vyrazy
 
 make || exit 1

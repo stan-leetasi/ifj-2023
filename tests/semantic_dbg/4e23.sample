@@ -1,9 +1,11 @@
-hello(text: "some text")
+/* rozdielne volanie a neskorsia definicia funkcie */
+
+hello("some text") // bez text
 
 func my_func () -> Int
 { return 123}
 
-func hello(text t : String) {
+func hello(text t : String) { // s text
 
 }
 
@@ -20,6 +22,6 @@ func _nil_fn() -> Double?
 let d = _nil_fn()
 
 if let d { hello(text: "not niL") }
-else {hello( text :    "is NIL"
+else { hello(  "is NIL"
   ) }
   
