@@ -182,8 +182,7 @@ int parseFnArg(str_T* par_name, str_T* term, char* term_type) {
             // <PAR_IN>        ->  id : term
             TRY_OR_EXIT(nextToken());
             StrFillWith(term, StrRead(&(tkn->atr)));
-            char result_type;
-            TRY_OR_EXIT(parseTerm(&result_type));
+            TRY_OR_EXIT(parseTerm(term_type));
         }
         else {
             logErrSyntax(tkn, "',' or ':'");
@@ -244,25 +243,41 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_RND_R)
     {
-        if (defined || called_before) {
-            if (strlen(StrRead(&(sig->par_types))) <= loaded_args) {
-                logErrSemantic(tkn, "too many arguments in function call");
-                return SEM_ERR_FUNC;
-            }
-        }
-
-        if (loaded_args > 0) {
+        if (loaded_args > 0) { // ??? dat pred kontrolu poctu argumentov ???
             if (tkn->type != COMMA) {
                 logErrSyntax(tkn, "comma");
                 return SYN_ERR;
             }
             TRY_OR_EXIT(nextToken());
         }
+        else {
+            switch (tkn->type)
+            {
+            case ID:
+            case INT_CONST:
+            case DOUBLE_CONST:
+            case STRING_CONST:
+            case NIL:
+                break;
+            default:
+                logErrSyntax(tkn, "term or parameter name");
+                return SYN_ERR;
+                break;
+            }
+        }
+
+
+        if (defined || called_before) { /// ??? semnaticka > syntax chybou ???
+            if (strlen(StrRead(&(sig->par_types))) <= loaded_args) {
+                logErrSemantic(tkn, "too many arguments in function call");
+                return SEM_ERR_FUNC;
+            }
+        }
 
         TRY_OR_EXIT(parseFnArg(&par_name, &arg, &arg_type));
 
         if (defined || called_before) {
-            if (isCompatibleAssign(StrRead(&(sig->par_types))[loaded_args], arg_type)) {
+            if (!isCompatibleAssign(StrRead(&(sig->par_types))[loaded_args], arg_type)) {
                 logErrSemantic(tkn, "different type in function call");
                 return SEM_ERR_FUNC;
             }
@@ -293,7 +308,7 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
                 break;
             }
 
-            if (DLLstr_InsertLast(&(sig->par_names), StrRead(&par_name))) {
+            if (!DLLstr_InsertLast(&(sig->par_names), StrRead(&par_name))) {
                 logErrCompilerMemAlloc();
                 return COMPILER_ERROR;
             }
@@ -358,6 +373,8 @@ int parseFnCall(char* result_type) {
     }
 
     TRY_OR_EXIT(parseFnCallArgs(fn->init, called_before, fn->sig));
+
+    *result_type = fn->sig->ret_type;
 
     return COMPILATION_OK;
 }
@@ -427,14 +444,13 @@ int parseVariableDecl() {
     TSData_T* variable = SymTabCreateElement(StrRead(&(tkn->atr)));
     if (variable == NULL)
     {
+        logErrCompilerMemAlloc();
         return COMPILER_ERROR;
     }
     variable->init = false;
     variable->let = let;
     variable->sig = NULL;
     variable->type = SYM_TYPE_UNKNOWN;
-
-    if (!SymTabInsertLocal(&symt, variable)) return COMPILER_ERROR;
 
     TRY_OR_EXIT(nextToken());
     switch (tkn->type)
@@ -456,6 +472,17 @@ int parseVariableDecl() {
         else {
             // <INIT_VAL>  ->  €
             saveToken();
+            // implicitne inicializované na nil v prípade dátového typu zahrňujúceho nil
+            switch (variable->type)
+            {
+            case SYM_TYPE_INT_NIL:
+            case SYM_TYPE_DOUBLE_NIL:
+            case SYM_TYPE_STRING_NIL:
+                variable->init = true;
+                break;
+            default:
+                break;
+            }
         }
         break;
     case ASSIGN:
@@ -470,9 +497,11 @@ int parseVariableDecl() {
         break;
     }
 
+
     //TRY_OR_EXIT(genUniqVar("GF", variable->id, &(variable->codename)));
     // TRY_OR_EXIT(genCode("DEFVAR", StrRead(&(variable->codename)), NULL, NULL));
     // pops TRY_OR_EXIT()
+    if (!SymTabInsertLocal(&symt, variable)) return COMPILER_ERROR;
 
     return COMPILATION_OK;
 }
@@ -704,6 +733,8 @@ int parseFunction() {
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseReturn() {
+    TRY_OR_EXIT(nextToken());
+
     if (!parser_inside_fn_def) {
         logErrSemantic(tkn, "return outside function definition");
         return SEM_ERR_OTHER;
@@ -711,8 +742,8 @@ int parseReturn() {
     char result_type;
     TRY_OR_EXIT(parseExpression(&result_type));
     TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&fn_name));
-    if (fn->type != result_type) {
-        logErrSemantic(tkn, "different return type");
+    if (!isCompatibleAssign(fn->sig->ret_type, result_type)) {
+        logErrSemanticFn(fn->id, "different return type");
         return SEM_ERR_FUNC;
     }
     return COMPILATION_OK;
@@ -751,7 +782,7 @@ int parseIf() {
             return SEM_ERR_UNDEF;
         }
 
-        // ??? treba test či môže obsahovať nil hodnotu if ()
+        
 
         if (!SymTabAddLocalBlock(&symt)) {
             return COMPILER_ERROR;
@@ -764,7 +795,22 @@ int parseIf() {
         let_variable->init = variable->init;
         let_variable->let = variable->let;
         let_variable->sig = NULL;
-        let_variable->type = variable->type;
+        let_variable->type = variable->type; // ??? treba test či môže obsahovať nil hodnotu if ()
+        switch (variable->type)
+        {
+        case SYM_TYPE_INT_NIL:
+            let_variable->type = SYM_TYPE_INT;
+            break;
+        case SYM_TYPE_DOUBLE_NIL:
+            let_variable->type = SYM_TYPE_DOUBLE;
+            break;
+        case SYM_TYPE_STRING_NIL:
+            let_variable->type = SYM_TYPE_STRING;
+            break;
+        default:
+            // ??? treba test či môže obsahovať nil hodnotu if ()
+            break;
+        }
         StrFillWith(&(let_variable->codename), StrRead(&(variable->codename)));
 
         if (!SymTabInsertLocal(&symt, let_variable)) return COMPILER_ERROR;
@@ -874,6 +920,8 @@ bool isCompatibleAssign(char dest, char src) {
     case SYM_TYPE_BOOL:
         return dest == SYM_TYPE_BOOL;
     default:
+        // dest je dátový typ zahrňujúci nil
+        return dest == src;
         break;
     }
     return false;
@@ -883,6 +931,7 @@ int nextToken() {
     if (tkn != NULL) destroyToken(tkn);
     tkn = getToken();
     if (tkn == NULL) return COMPILER_ERROR;
+    logErrUpdateTokenInfo(tkn);
     if (tkn->type == INVALID) {
         logErrCodeAnalysis(LEX_ERR, tkn->ln, tkn->col, "invalid token");
         return LEX_ERR;
@@ -960,7 +1009,6 @@ int parse() {
         break;
     case RETURN:
         // <STAT>      ->  return <RET_VAL>
-        TRY_OR_EXIT(nextToken());
         TRY_OR_EXIT(parseReturn());
         break;
     case IF:

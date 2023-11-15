@@ -35,6 +35,16 @@ void logErrSyntax(const token_T *t, const char *expected);
 */
 void logErrSemantic(const token_T *t, const char *format, ...);
 
+/**
+ * @brief Vypíše do stderr informáciu o sémantickej chybe v definícií funkcie.
+*/
+void logErrSemanticFn(const char *fn, const char *format, ...);
+
+/**
+ * @brief Aktualizuje informácie o pozícií posledného tokenu
+*/
+void logErrUpdateTokenInfo(const token_T *t);
+
 #endif
 
 /* Koniec súboru logErr.h */
