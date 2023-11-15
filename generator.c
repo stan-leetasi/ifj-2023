@@ -26,8 +26,6 @@ int genUniqVar(char *scope, char *sub, str_T *id) {
     StrAppend(id,'$');
     StrCatString(id,numStr);
 
-    // printf("id: %s\n", StrRead(id));
-
     return COMPILATION_OK;
 }
 
@@ -46,7 +44,6 @@ int genUniqLabel(char *fn, char *sub, str_T *label){
     StrCatString(label, sub);
     StrCatString(label, numStr);
 
-
     return COMPILATION_OK;
 }
 
@@ -56,12 +53,13 @@ int genConstVal(int const_type, char *value, str_T *cval) {
             StrCatString(cval, "int@");
             StrCatString(cval, value);
             break;
-        case 9: // float
+        case 9: // double
             StrCatString(cval, "float@");
-            char num[100];
-            float result2 = strtof(value, NULL);
-            sprintf(num, "%a", result2);
-            StrCatString(cval, num);
+            char p[100];
+            double d;
+            sscanf(value, "%lf", &d);
+            sprintf(p, "%a", d);
+            StrCatString(cval, p);
             break;
         case 18:
             StrCatString(cval, "nil@nil");
