@@ -96,9 +96,9 @@ int genCode(char *instruction, char *op1, char *op2, char *op3) {
     StrInit(code);
 
     StrFillWith(code, instruction);
-    StrAppend(code, ' ');
 
     if (op1 != NULL) {
+        StrAppend(code, ' ');
         StrCatString(code, op1);
         StrAppend(code, ' ');
     }
