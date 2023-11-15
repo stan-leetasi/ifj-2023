@@ -126,11 +126,8 @@ int genFnCall(char *fn, DLLstr_T *args) {
 
 
 /**
- *  Pomocná funkce, která vytvoří řetězec instrukce a uloží jej do "str"
- *  "str" = uložený řetězec
- *  "len_of_longest_arg" = délka nejdelšího argumentu formátu
- *  "format" = formátovaný řetězec
- */
+ *  Pomocná funkce, která vytvoří řetězec identifikátoru parametru funkce a uloží jej do "id"
+*/
 void fnParamIdentificator(char *identificator, str_T *id) {
     StrFillWith(id, "LF@");
     StrCatString(id, identificator);
