@@ -71,8 +71,9 @@ char convertNilTypeToNonNil(char nil_type) {
 }
 
 /**
+ * Očakáva, že v globálnej premennej tkn je už načítaný token COLON alebo ARROW
+ * 
  * @brief Pravidlo pre spracovanie dátového typu, zapíše do data_type spracovaný typ
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token COLON alebo ARROW
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseDataType(char* data_type) {
@@ -95,7 +96,7 @@ int parseDataType(char* data_type) {
         break;
     }
     TRY_OR_EXIT(nextToken());
-    if (tkn->type == QUEST_MARK) {
+    if (tkn->type == QUEST_MARK) { // dátový typ zahrnǔjúci nil: <TYP>?
         switch (*data_type)
         {
         case SYM_TYPE_INT:
@@ -111,7 +112,7 @@ int parseDataType(char* data_type) {
             break;
         }
     }
-    else {
+    else { // za dátovým typom nebol ?, token je vrátený naspäť
         saveToken();
     }
     return COMPILATION_OK;
@@ -126,23 +127,26 @@ int parseDataType(char* data_type) {
 int parseTerm(char* term_type) {
     switch (tkn->type)
     {
-    case ID:
+    case ID: // premenná
         TSData_T* variable = SymTabLookup(&symt, StrRead(&(tkn->atr)));
-        if (variable == NULL) {
+        if (variable == NULL) { 
+            // v TS nie je záznam s daným identifikátorom => nedeklarovaná premenná
             logErrSemantic(tkn, "%s was undeclared", StrRead(&(tkn->atr)));
             return SEM_ERR_UNDEF;
         }
         if (variable->type == SYM_TYPE_FUNC) {
+            // identifikátor označuje funkciu
             logErrSemantic(tkn, "%s is a function", StrRead(&(tkn->atr)));
             return SEM_ERR_RETURN;
         }
         if (!(variable->init)) {
+            // premenná nebola inicializovaná
             logErrSemantic(tkn, "%s was uninitialized", StrRead(&(tkn->atr)));
             return SEM_ERR_UNDEF;
         }
         *term_type = variable->type;
         break;
-    case INT_CONST:
+    case INT_CONST: // konštanty
         *term_type = SYM_TYPE_INT;
         break;
     case DOUBLE_CONST:
