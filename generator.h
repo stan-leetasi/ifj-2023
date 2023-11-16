@@ -129,17 +129,18 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn.
  * 
- * Vygenerovaný kód:    vytvorí nový rámec, vloží ho do zásobníka,
+ * Vygenerovaný kód:    náveštie na funkciu, vytvorí nový rámec, vloží ho do zásobníka,
  *                      definuje v novom rámci premenné parametrov funkcie,
  *                      zapíše do nich hodnoty zo zásobníka (na vrchole je prvý argument).
  * 
  * Identifikátory parametrov vyzerajú nasledovne "LF@<id>%".
  * 
  * Príklad:
- *      genFnDefBegin({"a", "b"}),
+ *      genFnDefBegin("sum", {"a", "b"}),
  *      vygeneruje kód:
  * 
  *      ...
+ *      LABEL sum
  *      CREATEFRAME
  *      PUSHFRAME
  *      DEFVAR  LF@a%
@@ -148,6 +149,7 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
  *      POPS    LF@b%
  * 
  * @brief Vygeneruje kód začiatku definície funkcie, resp. príprava nového rámca a argumentov.
+ * @param fn Názov funkcie
  * @param params Identifikátory parametrov funkcie
  * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */

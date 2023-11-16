@@ -90,7 +90,8 @@ int genCode(char *instruction, char *op1, char *op2, char *op3) {
     if (instruction == NULL)
         return COMPILER_ERROR;
 
-    str_T *code;
+    str_T *code = malloc(sizeof(str_T));
+    if(code == NULL) return COMPILER_ERROR;
     StrInit(code);
 
     StrFillWith(code, instruction);
@@ -116,7 +117,10 @@ int genCode(char *instruction, char *op1, char *op2, char *op3) {
         insert = DLLstr_InsertLast(&code_fn, StrRead(code));
     else
         insert = DLLstr_InsertLast(&code_main, StrRead(code));
+    if (!insert) return COMPILER_ERROR;
 
+    StrDestroy(code);
+    free(code);
     return COMPILATION_OK;
 }
 
