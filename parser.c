@@ -499,25 +499,32 @@ int parseVariableDecl() {
         }
         else {
             // <INIT_VAL>  ->  €
-            saveToken();
-            // implicitne inicializované na nil v prípade dátového typu zahrňujúceho nil
             switch (variable->type)
             {
             case SYM_TYPE_INT_NIL:
             case SYM_TYPE_DOUBLE_NIL:
             case SYM_TYPE_STRING_NIL:
+                // implicitne inicializované na nil v prípade dátového typu zahrňujúceho nil
                 variable->init = true;
                 break;
             default:
                 break;
             }
+            saveToken();
         }
         break;
     case ASSIGN:
         // <DEF_VAR>   ->  = <ASSIGN>
         TRY_OR_EXIT(parseAssignment(&(variable->type)));
         variable->init = true;
-        // unknown TODO
+        if (variable->type == SYM_TYPE_VOID) {
+            logErrSemantic(tkn, "void function does not return a value");
+            return SEM_ERR_TYPE;
+        }
+        else if (variable->type == SYM_TYPE_NIL) {
+            logErrSemantic(tkn, "could not deduce the data type");
+            return SEM_ERR_UKN_T;
+        }
         break;
     default:
         logErrSyntax(tkn, "':' or '='");
@@ -800,16 +807,34 @@ int parseReturn() {
     }
 
     TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&fn_name));
-    if (fn->sig->ret_type != SYM_TYPE_VOID
-        && !isCompatibleAssign(fn->sig->ret_type, result_type)) {
+
+    if (fn->sig->ret_type == SYM_TYPE_VOID) {
+        if (result_type != SYM_TYPE_VOID) {
+            logErrSemanticFn(fn->id, "void function returns a value");
+            return SEM_ERR_RETURN;
+        }
+    }
+    else {
+        if (result_type == SYM_TYPE_VOID) {
+            logErrSemanticFn(fn->id, "void return in non-void function");
+            return SEM_ERR_RETURN;
+        }
+        else if (!isCompatibleAssign(fn->sig->ret_type, result_type)) {
+            logErrSemanticFn(fn->id, "different return type");
+            return SEM_ERR_FUNC;
+        }
+    }
+
+    /*if(result_type == SYM_TYPE_VOID) {
+        if(fn->sig->ret_type != SYM_TYPE_VOID) {
+            logErrSemanticFn(fn->id, "void function returns a value");
+            return SEM_ERR_RETURN;
+        }
+    }
+    else if (!isCompatibleAssign(fn->sig->ret_type, result_type)) {
         logErrSemanticFn(fn->id, "different return type");
         return SEM_ERR_FUNC;
-    }
-    else if (fn->sig->ret_type == SYM_TYPE_VOID
-        && result_type != SYM_TYPE_VOID) {
-        logErrSemanticFn(fn->id, "void function returns a value");
-        return SEM_ERR_RETURN;
-    }
+    }*/
 
     SymTabModifyLocalReturn(&symt, true);
 
@@ -1065,7 +1090,7 @@ int parse() {
             TSData_T* variable = SymTabLookup(&symt, StrRead(&(first_tkn->atr)));
             if (variable == NULL) {
                 logErrSemantic(first_tkn, "%s was undeclared", StrRead(&(first_tkn->atr)));
-                return SEM_ERR_REDEF;
+                return SEM_ERR_UNDEF;
             }
             if (variable->init && variable->let) {
                 logErrSemantic(first_tkn, "%s is unmodifiable and was already initialised", StrRead(&(first_tkn->atr)));
@@ -1076,6 +1101,7 @@ int parse() {
                 logErrSemantic(first_tkn, "incompatible data types");
                 return SEM_ERR_TYPE;
             }
+            variable->init = true;
             destroyToken(first_tkn);
         }
         else {
