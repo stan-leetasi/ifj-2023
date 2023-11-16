@@ -129,6 +129,7 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
         DLLstr_GetValue(variables, &var);
 
         genCode("DEFVAR",StrRead(&var), NULL, NULL);
+        
         DLLstr_Next(variables);
     }
 
@@ -185,6 +186,70 @@ int genFnCall(char *fn, DLLstr_T *args) {
     return COMPILATION_OK;
 }
 
+int genWrite(DLLstr_T *args) {
+    //zde budou uloženy argumenty funkce write
+    str_T arg;
+    StrInit(&arg);
+
+    DLLstr_First(args);
+    while(DLLstr_IsActive(args)) {
+        DLLstr_GetValue(args, &arg);
+
+        genCode("WRITE", StrRead(&arg), NULL, NULL);
+
+        DLLstr_Next(args);
+    }
+}
+
+int genSubstring(char * ans) {
+    bool previous_parser_in_fn_def_value = parser_inside_fn_def;
+    parser_inside_fn_def = true;
+    
+    int num_of_params = 3;      //počet parametrů funkce 
+    int num_of_local_vars = 4;  //celkový počet lokálních proměnných, které se budou používat
+    
+    str_T arr_of_vars[num_of_local_vars];   //Pole lokálních proměnných
+        /*
+            Proměnné uložené na konkrétních indexech:
+            0 - end
+            1 - begin
+            2 - str
+            3 - char
+        */
+    
+    str_T label;                            //Sem se vždy uloží random text pro unikátní proměnné
+    
+    //Inicializace mist, kam se budou ukladat promenne
+    for (unsigned i = 0; i < num_of_local_vars; i++) {
+        StrInit(&arr_of_vars[i]);
+    }
+    StrInit(&label);
+
+    DLLstr_T params;    //Seznam parametrů funkce
+    DLLstr_Init(&params);
+
+    for (int i = 0; i < num_of_params; i++) {
+        genUniqVar("LF", "uniqvar", &arr_of_vars[i]);
+        DLLstr_InsertLast(&params, StrRead(&arr_of_vars[i]));
+    }
+    genUniqLabel("substring", "", &label);
+    genFnDefBegin(StrRead(&label), &params);
+
+    genUniqVar("LF", "char", &arr_of_vars[3]);
+    genCode("DEFVAR", StrRead(&arr_of_vars[3]), NULL, NULL);
+
+    genUniqLabel("cycle", "", &label);
+    genCode("LABEL", StrRead(&label), NULL, NULL);
+    
+    genCode("GETCHAR", StrRead(&arr_of_vars[3]), StrRead(&arr_of_vars[2]), StrRead(&arr_of_vars[1]));
+    genCode("CONCAT", ans, ans, StrRead(&arr_of_vars[3]));
+    genCode("ADD", StrRead(&arr_of_vars[1]), StrRead(&arr_of_vars[1]), "int@1");
+    genCode("JUMPIFNEQ", StrRead(&label), StrRead(&arr_of_vars[1]), StrRead(&arr_of_vars[0]));
+    genCode("RETURN", NULL, NULL, NULL);
+
+    parser_inside_fn_def = previous_parser_in_fn_def_value;
+    return COMPILATION_OK;
+}
 
 /**
  *  Pomocná funkce, která vytvoří řetězec identifikátoru parametru funkce a uloží jej do "id"

@@ -176,5 +176,47 @@ int genFnDefBegin(char *fn, DLLstr_T *params);
 */
 int genFnCall(char *fn, DLLstr_T *args);
 
+/**
+ * Vygenerovaný kód bude vložený na koniec zoznamu code_fn pokiaľ parser_inside_fn_def==true
+ * (globálna premenná v parser.h), inak na koniec code_main.
+ * 
+ * Argumenty funkce se budou zpracovávat z leva doprava. Jako kod se vygeneruje sekvence WRITE prikazu s argumenty v args
+ * Ve tvaru:
+ * 
+ *      ...
+ *      WRITE args[0]
+ *      WRITE args[1]
+ *      WRITE args[3]
+ *      ...      ...
+ * 
+ * @brief Vygeneruje kód potřebný pro provedení build-in funkce write()
+ * 
+ * @param args Předané argumenty
+ * @return V případě úspěchu COMPILATION_OK, v opačném případě COMPILER_ERROR
+ */
+int genWrite(DLLstr_T *args);
+
+/**
+ * Vygenerovaný kód bude vložený na koniec zoznamu code_fn.
+ * 
+ * Příklad:
+ *      LABEL substring
+ *      ...
+ * 
+ *      -- Zde bude kód potřebný pro provedení funkce substring --
+ * 
+ *      ...
+ *      RETURN
+ * 
+ * Všechny proměnné a labely, použité v této funkci, musí mít unikatní 
+ * pojmenování v rámci celého programu
+ * 
+ * @brief Vygeneruje kód potřebný pro provedení build-in funkce substring
+ * 
+ * @param ans Sem bude vrácen podřetězec
+ * @return V případě úspěchu COMPILATION_OK, v opačném případě COMPILER_ERROR
+ */
+int genSubstring(char *ans);
+
 #endif // ifndef _GENERATOR_H_
 /* Koniec súboru generator.h */
