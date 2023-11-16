@@ -69,6 +69,7 @@ int main()
     TEST(strcmp(StrRead(&s), "bool@true") == 0);
 
     StrDestroy(&s);
+    
     StrInit(&s);
 
     test = genConstVal(2, "true", &s);
@@ -100,6 +101,11 @@ int main()
     }
 
     DLLstr_T *variables = malloc(sizeof(DLLstr_T));
+    if(variables == NULL) {
+        printf("Malloc failed\n");
+        return 1;
+    }
+
     DLLstr_Init(variables);
     DLLstr_InsertLast(variables, "LF@x$1");
     DLLstr_InsertLast(variables, "LF@y$2");
@@ -114,44 +120,46 @@ int main()
         TEST(strcmp(code_main.last->prev->string, "DEFVAR LF@y$2") == 0);
         TEST(strcmp(code_main.last->prev->prev->string, "DEFVAR LF@x$1") == 0);
     }
+    DLLstr_Dispose(variables);
+    free(variables);
 
-    DLLstr_Dispose(&variables);
+    DLLstr_T *variables2 = malloc(sizeof(DLLstr_T));
+    DLLstr_Init(variables2);
+    DLLstr_InsertLast(variables2, "LF@a%%");
+    DLLstr_InsertLast(variables2, "LF@b%%");
 
-    // DLLstr_T *variables2 = malloc(sizeof(DLLstr_T));
-    // DLLstr_Init(variables2);
-    // DLLstr_InsertLast(variables2, "LF@a%%");
-    // DLLstr_InsertLast(variables2, "LF@b%%");
-
-    // test = genFnDefBegin("main", variables2);
+    test = genFnDefBegin("main", variables2);
 
     // TEST(strcmp(code_fn.last->prev->prev->prev->prev->prev->string, "CREATEFRAME") == 0);
     // TEST(strcmp(code_fn.last->prev->prev->prev->prev->string, "PUSHFRAME") == 0);
     // TEST(strcmp(code_fn.last->prev->prev->prev->string, "DEFVAR LF@a%%") == 0);
     // TEST(strcmp(code_fn.last->prev->prev->string, "POPS LF@a%%") == 0);
     // TEST(strcmp(code_fn.last->prev->string, "DEFVAR LF@b%%") == 0);
-    // TEST(strcmp(code_fn.last->string, "POPS LF@b%%") == 0);
+    TEST(strcmp(code_fn.last->string, "POPS LF@b%%") == 0);
 
-    // DLLstr_Dispose(&variables2);
+    DLLstr_Dispose(variables2);
+    free(variables2);
 
-    // DLLstr_T *variables3 = malloc(sizeof(DLLstr_T));
-    // DLLstr_Init(variables3);
-    // DLLstr_InsertLast(variables3, "int@6");
-    // DLLstr_InsertLast(variables3, "LF@x$1");
+    DLLstr_T *variables3 = malloc(sizeof(DLLstr_T));
+    DLLstr_Init(variables3);
+    DLLstr_InsertLast(variables3, "int@6");
+    DLLstr_InsertLast(variables3, "LF@x$1");
 
-    // test = genFnCall("sum", variables3);
+    test = genFnCall("sum", variables3);
 
-    // if(parser_inside_fn_def) {
-    //     TEST(strcmp(code_fn.last->prev->prev->string, "PUSH LF@x$1") == 0);
-    //     TEST(strcmp(code_fn.last->prev->string, "PUSH int@6") == 0);
-    //     TEST(strcmp(code_fn.last->string, "CALL sum") == 0);
-    // }
-    // else {
-    //     TEST(strcmp(code_main.last->prev->prev->string, "PUSH LF@x$1") == 0);
-    //     TEST(strcmp(code_main.last->prev->string, "PUSH int@6") == 0);
-    //     TEST(strcmp(code_main.last->string, "CALL sum") == 0);
-    // }
+    if(parser_inside_fn_def) {
+        TEST(strcmp(code_fn.last->prev->prev->string, "PUSH LF@x$1") == 0);
+        TEST(strcmp(code_fn.last->prev->string, "PUSH int@6") == 0);
+        TEST(strcmp(code_fn.last->string, "CALL sum") == 0);
+    }
+    else {
+        TEST(strcmp(code_main.last->prev->prev->string, "PUSH LF@x$1") == 0);
+        TEST(strcmp(code_main.last->prev->string, "PUSH int@6") == 0);
+        TEST(strcmp(code_main.last->string, "CALL sum") == 0);
+    }
 
-    // DLLstr_Dispose(&variables3);
+    DLLstr_Dispose(variables3);
+    free(variables3);
 
     if(failures != 0)
     {
@@ -160,4 +168,6 @@ int main()
     else{
         printf("Everything OK\n");
     }
+
+    return 0;
 }
