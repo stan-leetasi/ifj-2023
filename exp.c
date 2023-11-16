@@ -7,6 +7,7 @@
 
 #include "exp.h"
 #include "strR.h"
+#include "stdio.h"
 /* Poznamky::
 
 Syntaktická analýza: Check typov, zátvoriek, operátory, operandy, binárne unárne operátory
@@ -78,7 +79,7 @@ bool valid_token_type(int type){
     if (type == INVALID || type == INT_TYPE || type == DOUBLE_TYPE || type == ELSE ||
         type == STRING_TYPE || type == INT_NIL_YPE || type == DOUBLE_NIL_TYPE ||
         type == STRING_NIL_TYPE || type == VAR || type == LET || type == IF ||
-        type == WHILE || type == FUNC || type == RETURN || type == BRT_RND_R ||
+        type == WHILE || type == FUNC || type == RETURN || type == BRT_CUR_R ||
         type == UNDERSCORE || type == ARROW || type == ASSIGN || type == BRT_CUR_L ||
         type == QUEST_MARK || type == COMMA || type == COLON || type == EOF_TKN) {
         return false;
@@ -96,7 +97,7 @@ bool valid_token_type(int type){
 **/
 bool is_operand(int type){
     if(type == ID || type == INT_CONST || type == DOUBLE_CONST ||
-    type == STRING_CONST){
+    type == STRING_CONST || type == NIL){
         return true;
     }
     else{
@@ -147,86 +148,110 @@ int parseExpression(char* result_type) {
 
     int prevTokenType = NO_PREV; // Pomocná premenná pre uloženie typu tokenu pred momentálne spracovaným
     int bracketCount = 0; // Premenná na overenie korektnosti zátvoriek "()" vo výraze
-
+    
     // Syntaktická analýza
     while(true) // Pokým sa nespracuje celý výraz
     {
         if(!valid_token_type(tkn->type)) // Ak token nemôže patriť do výrazu 
         {
+            if(tkn->type == 0) // Token je typu INVALID
+            {
+                endParse(&stack, &postfixExpr); // Upratanie pred skončením funkcie
+                return LEX_ERR; // Lexikálna chyba
+            }
             if(prevTokenType == NO_PREV){ // Token je prvý vo výraze
                 break; // Výraz nie je valídny
             }
             else // Predpokladáme že token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+            {
+                if(is_binary_operator(prevTokenType)) // Predošlý token je binárny operátor
                 {
-                if(is_binary_operator(prevTokenType)){ // Predošlý token je binárny operátor
                     prevTokenType = NO_PREV;
                     break; // Finálny výraz nie je valídny
                 }
-                if(bracketCount != 0){ // Vo výraze nie sú uzatvorené všetky zátvorky
+                if(bracketCount != 0) // Vo výraze nie sú uzatvorené všetky zátvorky
+                {
                     prevTokenType = NO_PREV;
                     break; // Finálny výraz nie je valídny
                 }
                 
                 saveToken(); // Vloženie tokenu späť do input streamu
                 break; // Koniec syntaktickej analýzy výrazu
-                
             }
         }
-        if(tkn->type == BRT_RND_L){ // Ľavá zátvorka
-            bracketCount ++;
-        }
-        if(tkn->type == BRT_RND_R) // Pravá zátvorka
+
+        if(is_binary_operator(tkn->type)) // Binárny operátor
         {
-            if(is_binary_operator(prevTokenType)){ // Predošlý token je binárny operátor
-                prevTokenType = NO_PREV;
-                break; // Výraz nie je valídny
-            }
-            if(bracketCount == 0){ // Ak sa vo výraze nenachádzajú žiadne otvorené ľavé zátvorky
-                prevTokenType = NO_PREV;
-                break; // Výraz nie je valídny
-            }
-            else{
-                bracketCount--; // Uzatvorenie páru zátvoriek
-            }
-        }
-        if(is_binary_operator(tkn->type)){ // Binárny operátor
-            if(prevTokenType == NO_PREV){ // Token je prvý vo výraze
-                break; // Výraz nie je valídny
-            }
-            if(is_binary_operator(prevTokenType)) // Ak je predošlý token binárny operátor
+            if(prevTokenType == NO_PREV || is_binary_operator(prevTokenType) || prevTokenType == BRT_RND_L) // Token je prvý vo výraze, je za binárnym operátorom alebo ľavou zátvorkou
             {
                 prevTokenType = NO_PREV;
                 break; // Výraz nie je valídny
             }
         }
-        if(tkn->type == EXCL){ // Výkričník
-            if(!is_operand(prevTokenType)){ // Predošlý token nie je operand
-                prevTokenType = NO_PREV;
-                break; // Výraz nie je valídny
-            }
-        }
+
         if(is_operand(tkn->type)) // Operand
         {
             if(prevTokenType != NO_PREV) // Operand nie je prvý token vo výraze
             {
-                if(is_operand(prevTokenType)){ // Predošlý token je tiež operand
-                    prevTokenType = NO_PREV;
-                    break; // Výraz nie je valídny
+                if(is_operand(prevTokenType) || prevTokenType == EXCL || (prevTokenType == BRT_RND_R)) // Predošlý token je operand, "!" alebo pravá zátvorka
+                {
+                    if(bracketCount != 0) // Ak nie sú uzavreté všetky zátvorky
+                    {
+                        prevTokenType = NO_PREV;
+                        break; // Výraz nie je valídny
+                    }
+                    else
+                    {
+                        saveToken(); // Vloženie tokenu späť do input streamu
+                        break; // Koniec syntaktickej analýzy výrazu
+                    }
                 }
-
             }
         }
+        if(tkn->type == BRT_RND_L) // Ľavá zátvorka
+        {
+            if(prevTokenType != NO_PREV && !is_binary_operator(prevTokenType) && prevTokenType != BRT_RND_L) // Token nie je prvý vo výraze a predošlý token nie je binárny operátor
+            {
+                prevTokenType = NO_PREV;
+                break; // Výraz nie je valídny
+            }
+            else{
+            bracketCount ++; // Zvýšenie počtu otvorených ľavých zátvoriek
+            }
+        }
+        if(tkn->type == BRT_RND_R) // Pravá zátvorka
+        {
+            if(is_binary_operator(prevTokenType) || bracketCount == 0) // Predošlý token je binárny operátor alebo vo výraze nie je otvorená zátvorka
+            {
+                prevTokenType = NO_PREV;
+                break; // Výraz nie je valídny
+            }
 
+            bracketCount--; // Uzatvorenie páru zátvoriek
+
+        }
+        if(tkn->type == EXCL) // Výkričník
+        {
+            if(!is_operand(prevTokenType)) // Predošlý token nie je operand
+            {
+                prevTokenType = NO_PREV;
+                break; // Výraz nie je valídny
+            }
+
+        }
+
+        
         infix2postfix(&stack, tkn); // Pridanie tokenu do postfix výrazu
         prevTokenType = tkn->type; // Uloženie typu predošlého tokenu
         tkn = getToken(); // Požiadanie o ďalší token z výrazu
+
     }
 
-    if(prevTokenType == NO_PREV){ // Symbolizuje chybnú syntax
+    if(prevTokenType == NO_PREV) // Symbolizuje chybnú syntax
+    {
         endParse(&stack, &postfixExpr); // Upratanie pred skončením funkcie
         return SYN_ERR; // Vrátenie chybového stavu
     }
-
 
 
 
