@@ -1,7 +1,34 @@
 #include "../../parser.h"
+#include "../../exp.h"
+
+void create_variable_info(char *id, char var_type, bool init) {
+    TSData_T *var = SymTabCreateElement(id);
+    var->type = var_type;
+    var->init = init;
+    SymTabInsertLocal(&symt, var); 
+}
+
+void init_used_variables() {
+    create_variable_info("a", SYM_TYPE_INT, true);
+    create_variable_info("b", SYM_TYPE_INT, true);
+    create_variable_info("c", SYM_TYPE_INT, true);
+    create_variable_info("d", SYM_TYPE_INT, true);
+
+    create_variable_info("m", SYM_TYPE_DOUBLE, true);
+    create_variable_info("n", SYM_TYPE_DOUBLE, true);
+    create_variable_info("o", SYM_TYPE_DOUBLE, true);
+    create_variable_info("p", SYM_TYPE_DOUBLE, true);
+
+    create_variable_info("text", SYM_TYPE_STRING, true);
+}
 
 int main() {
+    initializeParser();
+    TRY_OR_EXIT(nextToken());
 
+    char result_type;
+    int ret_code = parseExpression(&result_type);
 
-    return COMPILATION_OK;
+    destroyParser();
+    return ret_code;
 }
