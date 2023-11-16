@@ -11,7 +11,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <stdio.h>
+#include "strR.h"
+#include "dll.h"
 
 #define SYM_TYPE_FUNC       'F'
 #define SYM_TYPE_INT        'i'
@@ -31,22 +32,23 @@
  * @brief Signatúra funkcie
  */
 typedef struct func_signature {
-    char ret_type;      ///< typ návratovej hodnoty
-    char *par_types;    ///< dátové typy parametrov
-    char **par_names;   ///< názvy parametrov
-    char **par_ids;     ///< identifikátory parametrov používané vo vnútri funkcie
+    char ret_type;        ///< typ návratovej hodnoty
+    str_T par_types;   ///< dátové typy parametrov
+    DLLstr_T par_names;   ///< názvy parametrov
+    DLLstr_T par_ids;     ///< identifikátory parametrov používané vo vnútri funkcie
     // func <názov_funkcie> (par_name par_id : par_type, ...) -> ret_type {}
-} *func_sig_T;
+} func_sig_T;
 
 /**
  * @brief Dátový element / prvok tabuľky symbolov, obsahuje informácie o symbole/identifikátore premennej alebo funkcie
  */
 typedef struct TSData {
     char *id;       ///< názov identifikátoru, zároveň kľúč v tabuľke
+    str_T codename; ///< identifikátor v cieľovom kóde
     char type;      ///< typ premennej/funkcia, používa hodnoty SYM_TYPE_XXX
     bool let;       ///< true znamená premenná let inak var 
     bool init;      ///< true znamená, že je premenná inicializovaná alebo funkcia definovaná
-    func_sig_T sig; ///< signatúra funkcie, v prípade premennej sig=NULL
+    func_sig_T *sig; ///< signatúra funkcie, v prípade premennej sig=NULL
 } TSData_T;
 
 /**
@@ -56,6 +58,7 @@ typedef struct TSBlock {
     size_t used;            ///< počet zaplnených miest
     struct TSBlock *prev;   ///< ukazateľ na predchádzajúci blok
     struct TSBlock *next;   ///< ukazateľ na nasledujúci blok
+    bool has_return;        ///< pomocná premenná pre sémantickú analýzu, značí či daný blok kódu obsahoval príkaz return
     TSData_T *array[];      ///< pole ukazateľov na symboly
 } TSBlock_T;
 
@@ -69,11 +72,22 @@ typedef struct SymbolsTable {
 } SymTab_T;
 
 /**
+ * @brief Alokuje dátovú štrutkúru signatúry funkcie a inicializuje jej zoznamy.
+ * @return Ukazateľ na alokovanú dátovú štruktúru, NULL v prípade neúspechu
+*/
+func_sig_T *SymTabCreateFuncSig();
+
+/**
  * @brief Alokuje prvok tabuľky symbolov
  * @param key Kľúč, ktorý sa uloží do prvku
  * @return Ukazateľ na alokovaný prvok, NULL v prípade neúspechu
 */
 TSData_T *SymTabCreateElement(char *key);
+
+/**
+ * @brief Dealokuje zdroje používané prvkom tabuľky symbolov
+*/
+void SymTabDestroyElement(TSData_T *elem);
 
 /**
  * @brief Inicializuje tabuľku symbolov a vloží do nej jeden globálny rámec
@@ -136,6 +150,17 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem);
  * @return true v prípade úspechu, inak false
 */
 bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem);
+
+/**
+ * @brief Informácia o tom či v aktuálnom lokálnom bloku sa nachádzal príkaz return
+ * @return st->local->has_return
+*/
+bool SymTabCheckLocalReturn(SymTab_T *st);
+
+/**
+ * @brief Nastaví informácia o tom či v aktuálnom lokálnom bloku sa nachádzal príkaz return
+*/
+void SymTabModifyLocalReturn(SymTab_T *st, bool value);
 
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key);
 

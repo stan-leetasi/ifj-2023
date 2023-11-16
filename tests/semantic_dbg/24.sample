@@ -19,7 +19,7 @@ func _nil_fn() -> Double?
 
 let d = _nil_fn()
 
-if let d { hello(text: "not niL") }
-else {hello( text :    "is NIL"
+if let d { hello(text : "not niL") }
+else { hello( text:"is NIL"
   ) }
   

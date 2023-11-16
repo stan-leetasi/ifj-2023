@@ -47,20 +47,6 @@ extern token_T* tkn;
 */
 extern SymTab_T symt;
 
-/**
- * @brief Indikuje, či sa parser nachádza vo vnútri cykla.
-*/
-extern bool parser_inside_loop;
-
-/**
- * @brief Meno náveštia na najvrchnejší cyklus
-*/
-extern str_T first_loop_label;
-
-/**
- * @brief Zoznam premenných,, ktoré musia byť dekalrované pred prvým nespracovaným cyklom
-*/
-extern DLLstr_T variables_declared_inside_loop;
 
 /**
  * @brief Indikuje, či sa aktuálne spracúva kód vo vnútri funkcie.
@@ -69,9 +55,9 @@ extern DLLstr_T variables_declared_inside_loop;
 extern bool parser_inside_fn_def;
 
 /**
- * @brief Názov funkcie, ktorej definícia je práve spracovávaná
+ * @brief Zistí kompatibilitu priradenia dvoch typov
 */
-extern str_T fn_name;
+bool isCompatibleAssign(char dest, char src);
 
 /**
  * @brief Uvoľní aktuálne načítaný token v globálnej premennej tkn a nahradí ho novým zo scannera
@@ -96,6 +82,17 @@ bool initializeParser();
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parse();
+
+/**
+ * @brief Skontroluje, či boli definované všetky volané funkcie
+ * @return 0 ak je všetko v poriadku, inak číslo chyby
+*/
+int checkIfAllFnDef();
+
+/**
+ * @brief Uvoľní všetky hlavné zdroje využívané prekladačom (parsera)
+*/
+void destroyParser();
 
 #endif // ifndef _PARSER_H_
 /* Koniec súboru parser.h */

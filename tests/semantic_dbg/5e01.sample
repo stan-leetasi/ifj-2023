@@ -1,5 +1,9 @@
 /* neinicializovana premenna - sekcia 4.1.1 */
+func _abc(_ m : Double) -> Double {
+    return 8.0
+}
+
 var k = 2.0
 var l : Double
-k = k - l
+k = _abc(l)
 l = 8.0

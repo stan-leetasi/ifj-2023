@@ -9,7 +9,7 @@
 
 DLLstr_T code_fn;
 DLLstr_T code_main;
-
+/*
 int genUniqVar(char *scope, char *sub, str_T *id) {
     return COMPILATION_OK;
 }
@@ -37,5 +37,5 @@ int genFnDefBegin(char *fn, DLLstr_T *params) {
 int genFnCall(char *fn, DLLstr_T *args) {
     return COMPILATION_OK;
 }
-
+*/
 /* Koniec súboru generator.c */

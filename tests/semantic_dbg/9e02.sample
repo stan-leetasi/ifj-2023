@@ -1,0 +1,3 @@
+/* return v hlavnom tele - sekcia 4.4 return - err asi #9 ???*/
+let x : Int = 8
+return x

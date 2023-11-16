@@ -1,10 +1,9 @@
-// syntakticke chyby v definiciach funkcii
-
 hello("some text")
-func my_func () -> Int 
-{ return 123 }
 
-func hello(_ t : ) { // chyba typ parametra
+func my_func () -> Int
+{ return 123}
+
+func hello(_ t : String) {
 
 }
 

@@ -10,7 +10,7 @@ _Double = 88.0e2
 var a : Double = 25.0
 var b : Int? = funkcia(6)
 var c : Int? = funkcia(nil)
-let d = funkcia ( a )
+let d = funkcia ( b )
 
 if let d {
     c = b

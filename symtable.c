@@ -31,6 +31,17 @@ unsigned long hashTwo(const char *str)
     return hash;
 }
 
+func_sig_T *SymTabCreateFuncSig() {
+    func_sig_T *f = malloc(sizeof(func_sig_T));
+    if (f != NULL) {
+        f->ret_type = SYM_TYPE_UNKNOWN;
+        StrInit(&(f->par_types));
+        DLLstr_Init(&(f->par_names));
+        DLLstr_Init(&(f->par_ids));
+    }
+    return f;
+}
+
 TSData_T *SymTabCreateElement(char *key)
 {
     TSData_T *elem = malloc(sizeof(TSData_T));
@@ -40,8 +51,24 @@ TSData_T *SymTabCreateElement(char *key)
         free(elem);
         return NULL;
     }
+    elem->type = SYM_TYPE_UNKNOWN;
     strcpy(elem->id, key);
+    StrInit(&(elem->codename));
     return elem; 
+}
+
+void SymTabDestroyElement(TSData_T *elem) {
+    if(elem != NULL) {
+        if(elem->type == SYM_TYPE_FUNC) {
+            StrDestroy(&(elem->sig->par_types));
+            DLLstr_Dispose(&(elem->sig->par_names));
+            DLLstr_Dispose(&(elem->sig->par_ids));
+            free(elem->sig);
+        }
+        free(elem->id);
+        StrDestroy(&(elem->codename));
+        free(elem);
+    }
 }
 
 bool SymTabInit(SymTab_T *st) {
@@ -55,6 +82,7 @@ bool SymTabInit(SymTab_T *st) {
     st -> global -> used = 0;
     st -> global -> prev = NULL;
     st -> global -> next = NULL;
+    st -> global -> has_return = false;
 
     // NULL značí prázdne (voľné) miesto v tabuľke
     for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
@@ -89,6 +117,7 @@ bool SymTabAddLocalBlock(SymTab_T *st) {
 
     newBlock -> prev = st -> local;
     newBlock -> next = NULL;
+    newBlock -> has_return = false;
 
     st -> local = newBlock;
 
@@ -99,13 +128,12 @@ void SymTabRemoveLocalBlock(SymTab_T *st) {
     TSBlock_T *currentLocal = st->local;
     st->local = currentLocal->prev;
 
-    for (size_t i = 0; i < SYMTABLE_MAX_SIZE - 1; i++) {
+    for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
         TSData_T *data = currentLocal->array[i];
-            if(data != NULL) {
-                free(data->id);
-                free(data); 
-            }
-    }
+        if(data != NULL) {
+            SymTabDestroyElement(data);
+        }
+    }   
 
     free(currentLocal); 
 }
@@ -115,7 +143,10 @@ void SymTabDestroy(SymTab_T *st) {
         SymTabRemoveLocalBlock(st);
     }
 
-    free(st);
+    st->global = NULL;
+    st->local = NULL;
+
+    //free(st);
 }
 
 TSData_T *SymTabLookup(SymTab_T *st, char *key) {
@@ -177,6 +208,15 @@ bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
 
     return SymTabBlockInsert(st->local, elem);
 }
+
+bool SymTabCheckLocalReturn(SymTab_T *st) {
+    return st->local->has_return;
+}
+
+void SymTabModifyLocalReturn(SymTab_T *st, bool value) {
+    st->local->has_return = value;
+}
+
 
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {
 
