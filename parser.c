@@ -71,8 +71,10 @@ char convertNilTypeToNonNil(char nil_type) {
 }
 
 /**
- * Očakáva, že v globálnej premennej tkn je už načítaný token COLON alebo ARROW
- * 
+ * Stav tkn:
+ *  - pred volaním: COLON alebo ARROW
+ *  - po volaní:    NULL
+ *
  * @brief Pravidlo pre spracovanie dátového typu, zapíše do data_type spracovaný typ
  * @return 0 v prípade úspechu, inak číslo chyby
 */
@@ -112,15 +114,18 @@ int parseDataType(char* data_type) {
             break;
         }
     }
-    else { // za dátovým typom nebol ?, token je vrátený naspäť
+    else { // za dátovým typom nebol token '?', token je vrátený naspäť
         saveToken();
     }
     return COMPILATION_OK;
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: token termu
+ *  - po volaní:    token termu
+ *
  * @brief Pravidlo pre spracovanie termu
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token
  * @param term_type Dátový typ termu
  * @return 0 v prípade úspechu, inak číslo chyby
 */
@@ -129,7 +134,7 @@ int parseTerm(char* term_type) {
     {
     case ID: // premenná
         TSData_T* variable = SymTabLookup(&symt, StrRead(&(tkn->atr)));
-        if (variable == NULL) { 
+        if (variable == NULL) {
             // v TS nie je záznam s daným identifikátorom => nedeklarovaná premenná
             logErrSemantic(tkn, "%s was undeclared", StrRead(&(tkn->atr)));
             return SEM_ERR_UNDEF;
@@ -159,6 +164,7 @@ int parseTerm(char* term_type) {
         *term_type = SYM_TYPE_NIL;
         break;
     default:
+        // nie je to term
         logErrSyntax(tkn, "term");
         return SYN_ERR;
         break;
@@ -167,11 +173,14 @@ int parseTerm(char* term_type) {
 }
 
 /**
- * @brief Pravidlo pre spracovanie argumentov volanej funkcie
- * @details Očakáva, že v globálnej premennej tkn je už načítaný prvý token argumentu
- * @param par_name
- * @param term
- * @param term_type
+ * Stav tkn:
+ *  - pred volaním: prvý token argumentu
+ *  - po volaní:    NULL alebo term
+ *
+ * @brief Pravidlo pre spracovanie argumentu volanej funkcie, pričom cez svoje parametre vráti informácie o načítanom argumente.
+ * @param par_name  načítaný názov parametru
+ * @param term      načítaný term
+ * @param term_type dátový typ termu
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFnArg(str_T* par_name, str_T* term, char* term_type) {
@@ -185,7 +194,7 @@ int parseFnArg(str_T* par_name, str_T* term, char* term_type) {
         TRY_OR_EXIT(nextToken());
         if (tkn->type == COMMA || tkn->type == BRT_RND_R) {
             // <PAR_IN> ->  term
-            // term je premenná
+            // term je premenná a funkcia nemá názov pre parameter
             StrFillWith(par_name, "_");
             TSData_T* variable = SymTabLookup(&symt, StrRead(term));
             if (variable == NULL) {
@@ -203,6 +212,7 @@ int parseFnArg(str_T* par_name, str_T* term, char* term_type) {
             *term_type = variable->type;
             saveToken();
         }
+        // inak prvý token musí byť názov parametra
         else if (tkn->type == COLON) {
             // <PAR_IN>        ->  id : term
             TRY_OR_EXIT(nextToken());
@@ -214,9 +224,7 @@ int parseFnArg(str_T* par_name, str_T* term, char* term_type) {
             return SYN_ERR;
         }
         break;
-
-        // <PAR_IN> ->  term
-    case INT_CONST:
+    case INT_CONST: // <PAR_IN> ->  term , kde term je konštanta
         StrFillWith(par_name, "_");
         *term_type = SYM_TYPE_INT;
         break;
@@ -241,8 +249,11 @@ int parseFnArg(str_T* par_name, str_T* term, char* term_type) {
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: BRT_RND_L '('
+ *  - po volaní:    BRT_RND_R ')'
+ *
  * @brief Pravidlo pre spracovanie argumentov volanej funkcie
- * @details Očakáva, že v globálnej premennej tkn je už načítaný '(', zanechá načítaný ')'
  * @param defined Značí či bola funkcia definovaná
  * @param called_before Značí, či už bola daná funkcia predtým volaná
  * @param sig Signatúra funkcie, ktorá je volaná
@@ -253,13 +264,11 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
     // <PAR_LIST>      ->  €
     // <PAR_IN_NEXT>   ->  , <PAR_IN> <PAR_IN_NEXT>
     // <PAR_IN_NEXT>   ->  €
-    // <PAR_IN>        ->  id : term
-    // <PAR_IN>        ->  term
 
-    size_t loaded_args = 0;
+    size_t loaded_args = 0; // počet načítaných argumentov
 
-    char arg_type;
-    str_T par_name, arg, temp;
+    char arg_type;  // typ aktuálne načítaného argumentu
+    str_T par_name, arg, temp; // názov parametru, term/argument, pomocné reťazcové úložisko
     StrInit(&par_name);
     StrInit(&arg);
     StrInit(&temp);
@@ -267,7 +276,9 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
 
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_RND_R)
+    // ( argument1, argument2, ..., argumentN )
     {
+        // pred každým argumentom, okrem prvého, musí nasledovať čiarka
         if (loaded_args > 0) { // ??? dat pred kontrolu poctu argumentov ???
             if (tkn->type != COMMA) {
                 logErrSyntax(tkn, "comma");
@@ -276,6 +287,8 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
             TRY_OR_EXIT(nextToken());
         }
         else {
+            /*  Táto extra syntaktická kokontrola zaručuje vyššiu prioritu
+                syntaktickej chyby pred sémantickou. */
             switch (tkn->type)
             {
             case ID:
@@ -291,7 +304,7 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
             }
         }
 
-
+        // kontrola, či nie funkcia volaná s viacerými argumentami
         if (defined || called_before) { /// ??? semnaticka > syntax chybou ???
             if (strlen(StrRead(&(sig->par_types))) <= loaded_args) {
                 logErrSemantic(tkn, "too many arguments in function call");
@@ -299,23 +312,29 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
             }
         }
 
-        TRY_OR_EXIT(parseFnArg(&par_name, &arg, &arg_type));
+        TRY_OR_EXIT(parseFnArg(&par_name, &arg, &arg_type)); // príkaz na spracovanie jedného argumentu
 
+        // sémantická kontrola argumentu
         if (defined || called_before) {
+            // kontrola dátového typu argumentu s predpisom funkcie
             if (!isCompatibleAssign(StrRead(&(sig->par_types))[loaded_args], arg_type)) {
                 logErrSemantic(tkn, "different type in function call");
                 return SEM_ERR_FUNC;
             }
 
+            // kontrola názvu parametra s predpisom
             DLLstr_GetValue(&(sig->par_names), &temp);
             if (strcmp(StrRead(&par_name), StrRead(&temp)) != 0) {
                 logErrSemantic(tkn, "different parameter name");
                 return SEM_ERR_FUNC;
             }
         }
-        else {
+        else {  // funkcia ešte nebola volaná alebo definovaná, preto sa zapíšu informácie z jej prvého volania do predpisu
             switch (arg_type)
             {
+                /*  Aj keď je predávaný argument typu nezahrňujúci nil, môže 
+                    funkcia mať v neskošej definícii v predpise typ zahrňujúci nil.
+                */
             case SYM_TYPE_INT:
                 StrAppend(&(sig->par_types), SYM_TYPE_INT_NIL);
                 break;
@@ -333,6 +352,7 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
                 break;
             }
 
+            // zápis názvu parametru
             if (!DLLstr_InsertLast(&(sig->par_names), StrRead(&par_name))) {
                 logErrCompilerMemAlloc();
                 return COMPILER_ERROR;
@@ -344,13 +364,14 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
         DLLstr_Next(&(sig->par_names));
     }
 
-    if (defined || called_before) {
+    if (defined || called_before) { // kontrola, či bola funkcia zavolaná so správnym počtom argumentov
         if (strlen(StrRead(&(sig->par_types))) != loaded_args) {
             logErrSemantic(tkn, "different count of arguments in function call");
             return SEM_ERR_FUNC;
         }
     }
 
+    // dealokácia pomocných reťazcov
     StrDestroy(&par_name);
     StrDestroy(&arg);
     StrDestroy(&temp);
@@ -359,23 +380,25 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: identifikátor volanej funkcie
+ *  - po volaní:    BRT_RND_R
+ * 
  * @brief Pravidlo pre spracovanie volania funkcie
- * @details Očakáva, že v globálnej premennej tkn je už načítaný identifikátor volanej funkcie
+ * @param result_type návratový typ funkcie
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFnCall(char* result_type) {
     // <CALL_FN>       ->  id ( <PAR_LIST> )
 
+    // získanie informácii o funkcii z TS
     TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&(tkn->atr)));
-    bool called_before = fn != NULL;
-    if (fn == NULL)
+    bool called_before = fn != NULL; 
+    if (fn == NULL) // funkcia nebola definovaná a ani volaná
     {
+        // vytvorí sa o nej záznam do TS
         fn = SymTabCreateElement(StrRead(&(tkn->atr)));
         if (fn == NULL) return COMPILER_ERROR;
-        if (!SymTabInsertGlobal(&symt, fn)) {
-            SymTabDestroyElement(fn);
-            return COMPILER_ERROR;
-        }
         StrFillWith(&(fn->codename), StrRead(&(tkn->atr)));
         fn->type = SYM_TYPE_FUNC;
         fn->sig = SymTabCreateFuncSig();
@@ -385,7 +408,12 @@ int parseFnCall(char* result_type) {
         fn->sig->ret_type = SYM_TYPE_UNKNOWN;
         fn->let = false;
         fn->init = false;
+        if (!SymTabInsertGlobal(&symt, fn)) {
+            SymTabDestroyElement(fn);
+            return COMPILER_ERROR;
+        }
 
+        // poznačiť názov funkcie do zoznamu nedefinovaných funkcií, pre kontrolu na koniec
         if (!DLLstr_InsertLast(&check_def_fns, fn->id))
         {
             logErrCompilerMemAlloc();
@@ -404,6 +432,7 @@ int parseFnCall(char* result_type) {
         return SYN_ERR;
     }
 
+    // spracovanie argumentov funkcie
     TRY_OR_EXIT(parseFnCallArgs(fn->init, called_before, fn->sig));
 
     *result_type = fn->sig->ret_type;
@@ -412,15 +441,18 @@ int parseFnCall(char* result_type) {
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: ´=´
+ *  - po volaní:    NULL
+ * 
  * @brief Pravidlo pre spracovanie priradenia
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token '='
  * @param result_type Dátový typ výsledku
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseAssignment(char* result_type) {
     TRY_OR_EXIT(nextToken());
     token_T* first_tkn;
-    switch (tkn->type)
+    switch (tkn->type) // treba rozlíšiť volanie funkcie a výraz
     {
     case BRT_RND_L:
     case INT_CONST:
@@ -431,8 +463,12 @@ int parseAssignment(char* result_type) {
         TRY_OR_EXIT(parseExpression(result_type));
         break;
     case ID:
+        /*  Identifikátor môže byť názov premennej vo výraze alebo názov funkcie.
+            Preto sa treba pozrieť na ďalší token. Ak ďalší token je ľavá zátvorka,
+            potom je to volanie funkcie.
+        */
         first_tkn = tkn;
-        tkn = NULL;
+        tkn = NULL; // ! Bez tohoto by bol first_tkn uvoľnený v nextToken().
         TRY_OR_EXIT(nextToken());
         if (tkn->type == BRT_RND_L) {
             // <ASSIGN>  ->  <CALL_FN>
@@ -449,30 +485,35 @@ int parseAssignment(char* result_type) {
     default:
         logErrSyntax(tkn, "assignment or function call");
         return SYN_ERR;
-        break;
     }
-    // *result_type = ...;
+
     return COMPILATION_OK;
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: LET alebo VAR
+ *  - po volaní:    NULL
+ * 
  * @brief Pravidlo pre spracovanie deklarácie/definície premennej
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token LET alebo VAR
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseVariableDecl() {
     // <STAT>  ->  {let,var} id <DEF_VAR>
-    bool let = tkn->type == LET ? true : false;
+    bool let = tkn->type == LET ? true : false; // (ne)modifikovateľná premenná
+
     TRY_OR_EXIT(nextToken());
-    if (tkn->type != ID) {
+    if (tkn->type != ID) { // musí nasledovať názov premennej
         logErrSyntax(tkn, "identifier");
         return SYN_ERR;
     }
-    // --- vytvorenie noveho symbolu v tabulke symbolov
-    if (SymTabLookupLocal(&symt, StrRead(&(tkn->atr))) != NULL) {
+
+    // kontrola, či premenná s daným identifikátorom už nebola deklarovaná v tomto bloku
+    if (SymTabLookupLocal(&symt, StrRead(&(tkn->atr))) != NULL) { 
         logErrSemantic(tkn, "%s is already declared in this block", StrRead(&(tkn->atr)));
         return SEM_ERR_REDEF;
     }
+    // zápis novej premennej do TS
     TSData_T* variable = SymTabCreateElement(StrRead(&(tkn->atr)));
     if (variable == NULL)
     {
@@ -484,24 +525,29 @@ int parseVariableDecl() {
     variable->sig = NULL;
     variable->type = SYM_TYPE_UNKNOWN;
 
+    // ďalej musí nasledovať dátový typ alebo priradenie
     TRY_OR_EXIT(nextToken());
     switch (tkn->type)
     {
-    case COLON:
-        // <DEF_VAR>  ->  : <TYPE> <INIT_VAL>
+    case COLON: // <DEF_VAR>  ->  : <TYPE> <INIT_VAL>
+        // zistenie dátového typu
         TRY_OR_EXIT(parseDataType(&(variable->type)));
+
+        // treba zistiť, či za deklaráciou dátového typu sa ešte nenachádza priradenie/inicializácia
         TRY_OR_EXIT(nextToken());
         if (tkn->type == ASSIGN) {
             // <INIT_VAL>  ->  = <ASSIGN>
             char assign_type = SYM_TYPE_UNKNOWN;
             TRY_OR_EXIT(parseAssignment(&assign_type));
             variable->init = true;
+
+            // kontrola výsledného typu výrazu s deklarovaným dátovým typom
             if (!isCompatibleAssign(variable->type, assign_type)) {
                 logErrSemantic(tkn, "incompatible data types");
                 return SEM_ERR_TYPE;
             }
         }
-        else {
+        else { // bez počiatočnej inicializácie
             // <INIT_VAL>  ->  €
             switch (variable->type)
             {
@@ -517,15 +563,15 @@ int parseVariableDecl() {
             saveToken();
         }
         break;
-    case ASSIGN:
-        // <DEF_VAR>   ->  = <ASSIGN>
+    case ASSIGN: // <DEF_VAR> ->  = <ASSIGN>
         TRY_OR_EXIT(parseAssignment(&(variable->type)));
         variable->init = true;
-        if (variable->type == SYM_TYPE_VOID) {
+
+        if (variable->type == SYM_TYPE_VOID) { // priradenie hodnoty z void funkcie
             logErrSemantic(tkn, "void function does not return a value");
             return SEM_ERR_TYPE;
         }
-        else if (variable->type == SYM_TYPE_NIL) {
+        else if (variable->type == SYM_TYPE_NIL) {  // len z nil nie je možné odvodiť typ
             logErrSemantic(tkn, "could not deduce the data type");
             return SEM_ERR_UKN_T;
         }
@@ -536,13 +582,14 @@ int parseVariableDecl() {
         break;
     }
 
-
     //TRY_OR_EXIT(genUniqVar("GF", variable->id, &(variable->codename)));
     if (parser_inside_loop) {
         // DLLstr_InsertLast(&variables_declared_inside_loop, variable->codename);
     }
     // TRY_OR_EXIT(genCode("DEFVAR", StrRead(&(variable->codename)), NULL, NULL));
     // pops TRY_OR_EXIT()
+
+    // vloženie záznamu o premennej do TS
     if (!SymTabInsertLocal(&symt, variable)) {
         SymTabDestroyElement(variable);
         logErrCompilerMemAlloc();
@@ -553,24 +600,34 @@ int parseVariableDecl() {
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: BRT_CUR_L '{'
+ *  - po volaní:    BRT_CUR_R '}'
+ * 
  * @brief Pravidlo pre spracovanie bloku kódu
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token BRT_CUR_L, zanechá načítaný BRT_CUR_R
  * @param had_return Ukazateľ na bool, ktorý bude značiť, či sa v bloku nachádzal príkaz return. Ak NULL, nič sa nezapisuje.
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseStatBlock(bool* had_return) {
     // <STAT>      ->  { <PROG> }
+
+    // počiatočná ľavá zátvorka
     if (tkn->type != BRT_CUR_L) {
         logErrSyntax(tkn, "'{'");
         return SYN_ERR;
     }
+
+    // vytvorenie nového lokálneho bloku v TS
     if (!SymTabAddLocalBlock(&symt)) return COMPILER_ERROR;
+    
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_CUR_R)
     {
         TRY_OR_EXIT(parse());
         TRY_OR_EXIT(nextToken());
     }
+
+    // vrátiť prítomnosť príkazu return a vymazať lokálny blok z TS
     if (had_return != NULL) *had_return = SymTabCheckLocalReturn(&symt);
     SymTabRemoveLocalBlock(&symt);
 
@@ -578,20 +635,24 @@ int parseStatBlock(bool* had_return) {
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: BRT_RND_L
+ *  - po volaní:    BRT_RND_R
+ * 
  * @brief Pravidlo pre spracovanie definície parametrov funkcie, končí načítaním pravej zátvorky
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token BRT_RND_L, zanechá načítaný BRT_RND_R
  * @param compare_and_update Keď true: režim porovnávania s aktuálne zaznamenanou signatúrou volania, inak vytvára novú signatúru.
+ * @todo Kontrola dátových typov parametrov pri funkcii volanou pred definíciou. + ĎALSIE VECI
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
     // <FN_SIG>        ->  <FN_PAR> <FN_PAR_NEXT>
     // <FN_SIG>        ->  €
 
-    size_t loaded_params = 0;
+    size_t loaded_params = 0; // počet načítaných parametrov
     DLLstr_First(&(sig->par_names));
     DLLstr_First(&(sig->par_ids));
 
-    str_T tmp;
+    str_T tmp; // pomocný reťazec
     StrInit(&tmp);
 
     TRY_OR_EXIT(nextToken());
@@ -601,7 +662,8 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
         // <FN_PAR_NEXT>   ->  €
         // <FN_PAR>        ->  id id : <TYPE>
         // <FN_PAR>        ->  _  id : <TYPE>
-        if (loaded_params > 0) {
+
+        if (loaded_params > 0) { // pred každým parametrom, okrem prvého, musí nasledovať čiarka
             if (tkn->type != COMMA) {
                 logErrSyntax(tkn, "comma");
                 return SYN_ERR;
@@ -610,15 +672,17 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
         }
 
         // ??? musia byť rôzne názvy parametrov ?
-        if (tkn->type == ID || tkn->type == UNDERSCORE) {
-            if (compare_and_update) {
+        if (tkn->type == ID || tkn->type == UNDERSCORE) { // názov parametra musí byť identifikátor alebo '_'
+
+            if (compare_and_update) { // funkcia bola volaná pred jej definíciou
+                /*  Treba skontrolovať názov parametra s prvým volaním. */
                 DLLstr_GetValue(&(sig->par_names), &tmp);
                 if (strcmp(StrRead(&tmp), StrRead(&(tkn->atr))) != 0) {
                     logErrSemantic(tkn, "different parameter name");
                     return SEM_ERR_FUNC;
                 }
             }
-            else {
+            else { // zápis názvu parametra do predpisu funkcie
                 PERFORM_RISKY_OP(DLLstr_InsertLast(&(sig->par_names), StrRead(&(tkn->atr))));
             }
         }
@@ -627,9 +691,12 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
             return SYN_ERR;
         }
 
+        // nasleduje identifikátor parametra vo vnútri funkcie
         TRY_OR_EXIT(nextToken());
         if (tkn->type == ID) {
             compare_and_update ? DLLstr_GetValue(&(sig->par_names), &tmp) : DLLstr_GetLast(&(sig->par_names), &tmp);
+
+            // názov parametra a identifikátor parametra sa musia líšiť
             if (strcmp(StrRead(&tmp), StrRead(&(tkn->atr))) == 0) {
                 logErrSemantic(tkn, "parameter name and identifier must be different");
                 return SEM_ERR_FUNC;
@@ -641,16 +708,16 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
             return SYN_ERR;
         }
 
-        TRY_OR_EXIT(nextToken());
+        // nasleduje dátový typ parametra
+        TRY_OR_EXIT(nextToken()); // dvojbodka
         if (tkn->type != COLON) {
             logErrSyntax(tkn, "':'");
             return SYN_ERR;
         }
-
         char data_type;
         TRY_OR_EXIT(parseDataType(&data_type));
-        if (compare_and_update) {
-            // TODO kontrola 
+        if (compare_and_update) { // funkcia bola volaná pred jej definíciou
+            // !!! TODO kontrola 
             sig->par_types.data[loaded_params] = data_type;
         }
         else {
@@ -664,12 +731,18 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
     }
 
     // !!! TODO kontrola názvov rôznych id parametrov 
+
+    // dealokácia pomocných štruktúr
     StrDestroy(&tmp);
 
     return COMPILATION_OK;
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: FUNC
+ *  - po volaní:    BRT_CUR_R
+ * 
  * @brief Pravidlo pre spracovanie definície funkcie
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token FUNC
  * @return 0 v prípade úspechu, inak číslo chyby
@@ -677,17 +750,18 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
 int parseFunction() {
     // <STAT> ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
     bool code_inside_fn_def = parser_inside_fn_def;
-    parser_inside_fn_def = true;
+    parser_inside_fn_def = true; // parser sa nachádza v definícií funkcie
 
-    TRY_OR_EXIT(nextToken());
-    if (tkn->type != ID) {
+    TRY_OR_EXIT(nextToken()); // názov funkcie
+    if (tkn->type != ID) { 
         logErrSyntax(tkn, "function identifier");
         return SYN_ERR;
     }
 
     TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&(tkn->atr)));
-    bool already_called = fn != NULL;
+    bool already_called = fn != NULL; // funkcia bola volaná pred jej definíciou, pretože existuje záznam v TS
     if (fn == NULL) {
+        // vytvorenie záznamu o funkcii do TS
         fn = SymTabCreateElement(StrRead(&(tkn->atr)));
         if (fn == NULL) return COMPILER_ERROR;
         if (!SymTabInsertGlobal(&symt, fn)) {
@@ -703,17 +777,18 @@ int parseFunction() {
         fn->sig->ret_type = SYM_TYPE_VOID;
     }
     else {
-        if (fn->type != SYM_TYPE_FUNC) {
+        if (fn->type != SYM_TYPE_FUNC) { // existuje globálna premenná s rovnakým názvom
             logErrSemantic(tkn, "identifier is already used as a variable");
             return SEM_ERR_OTHER;
         }
-        if (fn->init) {
+        if (fn->init) { // funkcia už bola definovaná
             logErrSemantic(tkn, "function was already defined");
             return SEM_ERR_OTHER;
         }
+        // v ostatných prípadoch záznam o funkcii existuje preto, lebo bola už volaná 
     }
 
-    StrFillWith(&fn_name, fn->id);
+    StrFillWith(&fn_name, fn->id); // zápis názvu aktuálne definovanej funkcie do globálnej premennej
 
     TRY_OR_EXIT(nextToken());
     if (tkn->type != BRT_RND_L) {
@@ -721,16 +796,17 @@ int parseFunction() {
         return SYN_ERR;
     }
 
+    // spracovanie predpisu, resp. definície parametrov
     TRY_OR_EXIT(parseFunctionSignature(already_called, fn->sig));
 
+    // zistenie návratového typu funkcie
     TRY_OR_EXIT(nextToken());
-
     fn->sig->ret_type = SYM_TYPE_VOID;
-    if (tkn->type == ARROW) {
+    if (tkn->type == ARROW) { 
         //<FN_RET_TYPE>   ->  "->" <TYPE>
         TRY_OR_EXIT(parseDataType(&(fn->sig->ret_type)));
         TRY_OR_EXIT(nextToken());
-    }
+    } // ak nenasleduje šípka '->', potom je to void funkcia
 
     if (tkn->type == BRT_CUR_L) {
         // <FN_RET_TYPE>   ->  €
@@ -741,7 +817,8 @@ int parseFunction() {
         return SYN_ERR;
     }
 
-    // priprava parametrov do TS
+    // Príprava parametrov pre telo funkcie
+    // parametre budú vo vlastnom lokálnom bloku TS
     if (!SymTabAddLocalBlock(&symt)) return COMPILER_ERROR;
     DLLstr_First(&(fn->sig->par_ids));
     str_T par_id;
@@ -762,37 +839,41 @@ int parseFunction() {
     }
     StrDestroy(&par_id);
 
+    // Spracovanie tela funkcie
     if (!SymTabAddLocalBlock(&symt)) return COMPILER_ERROR;
     while (tkn->type != BRT_CUR_R) {
         TRY_OR_EXIT(parse());
         TRY_OR_EXIT(nextToken());
     }
+    // kontrola, či funkcia s návratovou hodnotou má všade kde je to treba, príkaz return
     if (!SymTabCheckLocalReturn(&symt) && fn->sig->ret_type != SYM_TYPE_VOID) {
         logErrSemanticFn(fn->id, "it is possible to exit function without return value");
         return SEM_ERR_FUNC;
     }
     SymTabRemoveLocalBlock(&symt);
 
-    SymTabRemoveLocalBlock(&symt); // blok parametrov
+    SymTabRemoveLocalBlock(&symt); // odstránenie lokálneho bloku s parametrami
 
-    fn->init = true;
+    fn->init = true; // funkcia je odteraz definovaná
     parser_inside_fn_def = code_inside_fn_def;
     return COMPILATION_OK;
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: RETURN
+ *  - po volaní:    NULL
+ * 
  * @brief Pravidlo pre spracovanie vrátenia návratovej hodnoty funkcie - return
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token RETURN
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseReturn() {
-    if (!parser_inside_fn_def) {
+    if (!parser_inside_fn_def) { // return sa nachádza v hlavnom tele programu
         logErrSemantic(tkn, "return outside function definition");
         return SEM_ERR_OTHER;
     }
 
     TRY_OR_EXIT(nextToken());
-
     char result_type = SYM_TYPE_UNKNOWN;
     switch (tkn->type)
     {
@@ -802,28 +883,30 @@ int parseReturn() {
     case STRING_CONST:
     case NIL:
     case BRT_RND_L:
+        // spracovanie výrazu a zistenie typu návratovej hodnoty v return
         TRY_OR_EXIT(parseExpression(&result_type));
         break;
     default:
+        // void return
         saveToken();
         result_type = SYM_TYPE_VOID;
         break;
     }
 
-    TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&fn_name));
+    TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&fn_name)); // získanie informácii o predpise aktuálnej funkcie
 
-    if (fn->sig->ret_type == SYM_TYPE_VOID) {
-        if (result_type != SYM_TYPE_VOID) {
+    if (fn->sig->ret_type == SYM_TYPE_VOID) { // vo vnútri void funkcie
+        if (result_type != SYM_TYPE_VOID) { // void funkcia nesmie vraciať hodnotu
             logErrSemanticFn(fn->id, "void function returns a value");
             return SEM_ERR_RETURN;
         }
     }
-    else {
-        if (result_type == SYM_TYPE_VOID) {
+    else { // funkcia má vraciať hodnotu
+        if (result_type == SYM_TYPE_VOID) { // return nič nevracia
             logErrSemanticFn(fn->id, "void return in non-void function");
             return SEM_ERR_RETURN;
         }
-        else if (!isCompatibleAssign(fn->sig->ret_type, result_type)) {
+        else if (!isCompatibleAssign(fn->sig->ret_type, result_type)) { // návratový typ nesedí s predpisom funkcie
             logErrSemanticFn(fn->id, "different return type");
             return SEM_ERR_FUNC;
         }
@@ -840,7 +923,7 @@ int parseReturn() {
         return SEM_ERR_FUNC;
     }*/
 
-    SymTabModifyLocalReturn(&symt, true);
+    SymTabModifyLocalReturn(&symt, true); // zapísať informáciu o prítomnosti return v aktuálnom bloku
 
     return COMPILATION_OK;
 }
