@@ -1,0 +1,1243 @@
+Token: 6, typ 8
+Je operand
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: "TTT", typ 10
+Je operand
+NOVY TOKEN
+Token: let, typ 12
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: 8, typ 8
+Je operand
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: }, typ 24
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: 0, typ 8
+Je operand
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 9, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: id_variable, typ 1
+Je operand
+Nie je prvy vo vyraze
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: 8, typ 8
+Je operand
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: 4, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: 1, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: 8, typ 8
+Je operand
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 4, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: 7, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: "uz nepatri do vyrazu", typ 10
+Je operand
+Nie je prvy vo vyraze
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: a, typ 1
+Je operand
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: 8, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: 4, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: a, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: return, typ 17
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: c, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 2, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: d, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 1, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: 52.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: , typ 28
+Je binarny operator
+NOVY TOKEN
+Token: 2.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 3.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: "one", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: " ", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: "two", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: " ", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: "three", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: text, typ 1
+Je operand
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: "world", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: a, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: b, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: >, typ 32
+Je binarny operator
+NOVY TOKEN
+Token: 250, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: {, typ 23
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: "a", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: "aa", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: <, typ 34
+Je binarny operator
+NOVY TOKEN
+Token: "a", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: two, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: nil, typ 18
+Je operand
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: nil, typ 18
+Je operand
+NOVY TOKEN
+Token: ??, typ 38
+Je binarny operator
+NOVY TOKEN
+Token: 40.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: 8, typ 8
+Je operand
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 4, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: _a, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: $, typ 0
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: 52.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: , typ 28
+Je binarny operator
+NOVY TOKEN
+Token: 2.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 1.0el, typ 0
+Token: 8, typ 8
+Je operand
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 4, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+Token je prvý vo výraze, je za binárnym operátorom alebo ľavou zátvorkou
+/////////////////////////////////////////////////////////chybna syntax
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: x, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 2, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 1, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+predosly token je binarny operator alebo nie su uzavrete zatvorky
+/////////////////////////////////////////////////////////chybna syntax
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: x, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 2, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 1, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+nie sú uzatvorené všetky zátvorky
+/////////////////////////////////////////////////////////chybna syntax
+Token: +, typ 25
+Je binarny operator
+Token je prvý vo výraze, je za binárnym operátorom alebo ľavou zátvorkou
+/////////////////////////////////////////////////////////chybna syntax
+Token: d, typ 1
+Je operand
+NOVY TOKEN
+Token: ==, typ 30
+Je binarny operator
+NOVY TOKEN
+Token: !, typ 36
+token je vykricnik
+predosly token nie je operand
+/////////////////////////////////////////////////////////chybna syntax
+Token: let, typ 12
+nemôže patriť do výrazu 
+token je prvy vo vyraze
+/////////////////////////////////////////////////////////chybna syntax
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: c, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: d, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+predosly token je binarny operator alebo nie su uzavrete zatvorky
+/////////////////////////////////////////////////////////chybna syntax
+Token: x, typ 1
+Je operand
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: y, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+Token je prvý vo výraze, je za binárnym operátorom alebo ľavou zátvorkou
+/////////////////////////////////////////////////////////chybna syntax
+Token: 6, typ 8
+Je operand
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: "TTT", typ 10
+Je operand
+NOVY TOKEN
+Token: let, typ 12
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: 8, typ 8
+Je operand
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: }, typ 24
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: 0, typ 8
+Je operand
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 9, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: id_variable, typ 1
+Je operand
+Nie je prvy vo vyraze
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: 8, typ 8
+Je operand
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: 4, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: 1, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: 8, typ 8
+Je operand
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 4, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: 7, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: "uz nepatri do vyrazu", typ 10
+Je operand
+Nie je prvy vo vyraze
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: a, typ 1
+Je operand
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: 8, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: 4, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: a, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: return, typ 17
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: c, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 2, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: d, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: !, typ 36
+token je vykricnik
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 1, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: 52.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: , typ 28
+Je binarny operator
+NOVY TOKEN
+Token: 2.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 3.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: "one", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: " ", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: "two", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: " ", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: "three", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: text, typ 1
+Je operand
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: "world", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: a, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: b, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: >, typ 32
+Je binarny operator
+NOVY TOKEN
+Token: 250, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: {, typ 23
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: "a", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: "aa", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: <, typ 34
+Je binarny operator
+NOVY TOKEN
+Token: "a", typ 10
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: two, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: nil, typ 18
+Je operand
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: nil, typ 18
+Je operand
+NOVY TOKEN
+Token: ??, typ 38
+Je binarny operator
+NOVY TOKEN
+Token: 40.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+Uspesny koniec
+//////////////////////////////////////////////////////////////// OK
+Token: 8, typ 8
+Je operand
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 4, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: _a, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: $, typ 0
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: 52.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: , typ 28
+Je binarny operator
+NOVY TOKEN
+Token: 2.0, typ 9
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 1.0el, typ 0
+Token: 8, typ 8
+Je operand
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: 4, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+Token je prvý vo výraze, je za binárnym operátorom alebo ľavou zátvorkou
+/////////////////////////////////////////////////////////chybna syntax
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: x, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 2, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 1, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+predosly token je binarny operator alebo nie su uzavrete zatvorky
+/////////////////////////////////////////////////////////chybna syntax
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: x, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 2, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+Uzatvorenie páru zátvoriek
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+NOVY TOKEN
+Token: 3, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: 1, typ 8
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: EOF, typ 41
+nemôže patriť do výrazu 
+token už nie je súčasťou výrazu => znamená to ukončenie výrazu
+nie sú uzatvorené všetky zátvorky
+/////////////////////////////////////////////////////////chybna syntax
+Token: +, typ 25
+Je binarny operator
+Token je prvý vo výraze, je za binárnym operátorom alebo ľavou zátvorkou
+/////////////////////////////////////////////////////////chybna syntax
+Token: d, typ 1
+Je operand
+NOVY TOKEN
+Token: ==, typ 30
+Je binarny operator
+NOVY TOKEN
+Token: !, typ 36
+token je vykricnik
+predosly token nie je operand
+/////////////////////////////////////////////////////////chybna syntax
+Token: let, typ 12
+nemôže patriť do výrazu 
+token je prvy vo vyraze
+/////////////////////////////////////////////////////////chybna syntax
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: c, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: d, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: ), typ 22
+token je prava zatvorka
+predosly token je binarny operator alebo nie su uzavrete zatvorky
+/////////////////////////////////////////////////////////chybna syntax
+Token: x, typ 1
+Je operand
+NOVY TOKEN
+Token: *, typ 27
+Je binarny operator
+NOVY TOKEN
+Token: y, typ 1
+Je operand
+Nie je prvy vo vyraze
+NOVY TOKEN
+Token: +, typ 25
+Je binarny operator
+NOVY TOKEN
+Token: (, typ 21
+token je lava zatvorka
+NOVY TOKEN
+Token: -, typ 26
+Je binarny operator
+Token je prvý vo výraze, je za binárnym operátorom alebo ľavou zátvorkou
+/////////////////////////////////////////////////////////chybna syntax
