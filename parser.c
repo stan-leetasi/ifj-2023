@@ -116,6 +116,10 @@ bool listHasUniqueValues(DLLstr_T* list, bool* is_unique) {
 	return true;
 }
 
+void loadBuiltInFunctionSignatures() {
+    
+}
+
 /**
  * Stav tkn:
  *  - pred volaním: COLON alebo ARROW

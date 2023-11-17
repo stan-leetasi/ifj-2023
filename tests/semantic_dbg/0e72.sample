@@ -1,0 +1,11 @@
+/* vstavané funkcie */
+
+var l = length("ahoj")
+let s : String = "TEXT"
+var m : Int = length(s)
+
+var t = substring(of: s, startingAt: 2, endingBefore: l)
+
+var val : Int = ord(m)
+
+var world = /* retazec "W" */  chr(87) 
