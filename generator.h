@@ -205,18 +205,50 @@ int genWrite(DLLstr_T *args);
  *      LABEL substring
         CREATEFRAME
         PUSHFRAME
+
         DEFVAR LF@?!end$1
         POPS LF@?!end$1
         DEFVAR LF@?!begin$2
         POPS LF@?!begin$2
         DEFVAR LF@?!string$3
         POPS LF@?!string$3
-        DEFVAR LF@?!char$4
+
+        DEFVAR LF@?!strlen$4
+        DEFVAR LF@?!check$5
+        DEFVAR LF@?!output$6
+        DEFVAR LF@?!char$7
+
+        MOVE LF@?!output$6 nil@nil
+        STRLEN LF@?!strlen$4 LF@?!string$3
+
+        GT LF@?!check$5 LF@?!begin$2 LF@?!strlen$4
+        EQ LF@?!check$5 LF@?!begin$2 LF@?!strlen$4
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        GT LF@?!check$5 LF@?!end$1 LF@?!strlen$4
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        LT LF@?!check$5 LF@?!begin$2 int@0
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        LT LF@?!check$5 LF@?!end$1 int@0
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        GT LF@?!check$5 LF@?!begin$2 LF@?!end$1
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        MOVE LF@?!output$6 string@
+        EQ LF@?!check$5 LF@?!begin$2 LF@?!end$1
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
         LABEL cycle&2
-            GETCHAR LF@?!char$4 LF@?!string$3 LF@?!begin$2
-            CONCAT GF@vysledek GF@vysledek LF@?!char$4
+            GETCHAR LF@?!strlen$4 LF@?!string$3 LF@?!begin$2
+            CONCAT LF@?!output$6 LF@?!output$6 LF@?!strlen$4
             ADD LF@?!begin$2 LF@?!begin$2 int@1
             JUMPIFNEQ cycle&2 LF@?!begin$2 LF@?!end$1
+
+        LABEL end&3
+            PUSHS LF@?!output$6
         RETURN
  * 
  * Všechny proměnné a labely, použité v této funkci, musí mít unikatní 
@@ -227,7 +259,7 @@ int genWrite(DLLstr_T *args);
  * @param ans Předpokládá se nějaké externí proměnná (z pohledu této funkce), kam bude uložen výsledek
  * @return V případě úspěchu COMPILATION_OK, v opačném případě COMPILER_ERROR
  */
-int genSubstring(char *ans);
+int genSubstring();
 
 #endif // ifndef _GENERATOR_H_
 /* Koniec súboru generator.h */

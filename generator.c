@@ -205,16 +205,17 @@ int genWrite(DLLstr_T *args) {
     }
 }
 
-int genSubstring(char * ans) {
+int genSubstring() {
     bool previous_parser_in_fn_def_value = parser_inside_fn_def;
+    //Nastavení této proměnné true, aby se kód vygenerovaný genCode ukládal do code_fn
     parser_inside_fn_def = true;
     
     int num_of_params = 3;      //počet parametrů funkce 
-    int num_of_local_vars = 4;  //celkový počet lokálních proměnných, které se budou používat
-    int num_of_lables = 2;
+    int num_of_local_vars = 7;  //celkový počet lokálních proměnných, které se budou používat
+    int num_of_lables = 3;
 
-    char *local_variables[] = {"?!end", "?!begin", "?!string", "?!char"};
-    char *lables[] = {"substring", "cycle"};
+    char *local_variables[] = {"?!end", "?!begin", "?!string", "?!strlen", "?!check", "?!output", "?!char"};
+    char *lables[] = {"substring", "cycle", "end"};
     
     str_T uniq_vars[num_of_local_vars];   //Pole lokálních proměnných
     str_T uniq_lables[num_of_lables];
@@ -239,12 +240,46 @@ int genSubstring(char * ans) {
         genCode("DEFVAR", StrRead(&uniq_vars[i]), NULL, NULL);    
         genCode("POPS", StrRead(&uniq_vars[i]), NULL, NULL);
     }
-    genCode("DEFVAR", StrRead(&uniq_vars[3]), NULL, NULL);
+    //Inicializace lokalnich promennych (neberou se v potza parametry, ty uz jsou nainicializovane)
+    for (int i = num_of_params; i < num_of_local_vars; i++) {
+        genCode("DEFVAR", StrRead(&uniq_vars[i]), NULL, NULL);
+    }
+    //Overeni spravnosti zadanych mezi retezce
+    genCode("MOVE", StrRead(&uniq_vars[5]), "nil@nil", NULL);
+    genCode("STRLEN", StrRead(&uniq_vars[3]), StrRead(&uniq_vars[2]), NULL);
+    /*Overovani*/
+    genCode("GT", StrRead(&uniq_vars[4]), StrRead(&uniq_vars[1]), StrRead(&uniq_vars[3]));
+    genCode("EQ", StrRead(&uniq_vars[4]), StrRead(&uniq_vars[1]), StrRead(&uniq_vars[3]));
+    genCode("JUMPIFEQ", StrRead(&uniq_lables[2]), StrRead(&uniq_vars[4]), "bool@true");
+
+    genCode("GT", StrRead(&uniq_vars[4]), StrRead(&uniq_vars[0]), StrRead(&uniq_vars[3]));
+    genCode("JUMPIFEQ", StrRead(&uniq_lables[2]), StrRead(&uniq_vars[4]), "bool@true");
+
+    genCode("LT", StrRead(&uniq_vars[4]), StrRead(&uniq_vars[1]), "int@0");
+    genCode("JUMPIFEQ", StrRead(&uniq_lables[2]), StrRead(&uniq_vars[4]), "bool@true");
+
+    genCode("LT", StrRead(&uniq_vars[4]), StrRead(&uniq_vars[0]), "int@0");
+    genCode("JUMPIFEQ", StrRead(&uniq_lables[2]), StrRead(&uniq_vars[4]), "bool@true");
+
+    genCode("GT", StrRead(&uniq_vars[4]), StrRead(&uniq_vars[1]), StrRead(&uniq_vars[0]));
+    genCode("JUMPIFEQ", StrRead(&uniq_lables[2]), StrRead(&uniq_vars[4]), "bool@true");
+    /*Konec overovani*/
+    //Inicializace vystupni promenne
+    genCode("MOVE", StrRead(&uniq_vars[5]), "string@", NULL);
+    //Jsou indexy stejne?
+    genCode("EQ", StrRead(&uniq_vars[4]), StrRead(&uniq_vars[1]), StrRead(&uniq_vars[0]));
+    genCode("JUMPIFEQ", StrRead(&uniq_lables[2]), StrRead(&uniq_vars[4]), "bool@true");
+
+    /*Hlavni cyklus*/
     genCode("LABEL", StrRead(&uniq_lables[1]), NULL, NULL);
     genCode("GETCHAR", StrRead(&uniq_vars[3]), StrRead(&uniq_vars[2]), StrRead(&uniq_vars[1]));
-    genCode("CONCAT", ans, ans, StrRead(&uniq_vars[3]));
+    genCode("CONCAT", StrRead(&uniq_vars[5]), StrRead(&uniq_vars[5]), StrRead(&uniq_vars[3]));
     genCode("ADD", StrRead(&uniq_vars[1]), StrRead(&uniq_vars[1]), "int@1");
     genCode("JUMPIFNEQ", StrRead(&uniq_lables[1]), StrRead(&uniq_vars[1]), StrRead(&uniq_vars[0]));
+    /*Konec hlavniho cyklu*/
+    genCode("LABEL", StrRead(&uniq_lables[2]), NULL, NULL);
+    genCode("PUSHS", StrRead(&uniq_vars[5]), NULL, NULL);
+
     genCode("RETURN", NULL, NULL, NULL);
     parser_inside_fn_def = previous_parser_in_fn_def_value;
     return COMPILATION_OK;
