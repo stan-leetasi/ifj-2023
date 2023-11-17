@@ -1,12 +1,12 @@
 #include "../../parser.h"
 #include "../../exp.h"
 
-void create_variable_info(char *id, char var_type, bool init) {
+void create_variable_info(char* id, char var_type, bool init) {
     TSData_T* var = SymTabCreateElement(id);
     var->type = var_type;
     var->init = init;
 
-    if(var_type == SYM_TYPE_FUNC) {
+    if (var_type == SYM_TYPE_FUNC) {
         var->sig = SymTabCreateFuncSig();
     }
 
@@ -28,7 +28,7 @@ void init_used_variables() {
 
     create_variable_info("A_nil", SYM_TYPE_INT_NIL, true);
     create_variable_info("M_nil", SYM_TYPE_DOUBLE_NIL, true);
-    
+
     create_variable_info("fun_fn", SYM_TYPE_FUNC, true);
 
     create_variable_info("uninit", SYM_TYPE_DOUBLE, false);
@@ -41,12 +41,12 @@ int main() {
     char result_type;
     int ret_code = parseExpression(&result_type);
 
-    destroyParser();
-
-    if(tkn != NULL) {
+    if (tkn != NULL && ret_code == COMPILATION_OK) {
         fprintf(stderr, "test.c: tkn must remain NULL after parseExpression\n");
         return 50;
     }
-    
+
+    destroyParser();
+
     return ret_code;
 }
