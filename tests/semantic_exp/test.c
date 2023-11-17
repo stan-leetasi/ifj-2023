@@ -1,7 +1,9 @@
+#include <stdio.h>
+#include <assert.h>
 #include "../../parser.h"
 #include "../../exp.h"
 
-void create_variable_info(char *id, char var_type, bool init) {
+void create_variable_info(char* id, char var_type, bool init) {
     TSData_T* var = SymTabCreateElement(id);
     var->type = var_type;
     var->init = init;
@@ -35,18 +37,28 @@ void init_used_variables() {
 }
 
 int main() {
+    char expected_type = getchar(); // na prvom riadku sample-u je očakávaný typ výsledku výrazu
+
     initializeParser();
     TRY_OR_EXIT(nextToken());
 
-    char result_type;
+    char result_type = SYM_TYPE_VOID;
     int ret_code = parseExpression(&result_type);
 
     destroyParser();
+
+    // X na začiatku sample znamená, že test neskúša návratový typ výrazu
+    if (expected_type != 'X') {
+        if (expected_type != result_type) {
+            fprintf(stderr, "test.c: INCORRECT RESULT TYPE - expected type '%c', but got '%c'\n", expected_type, result_type);
+            return 50;
+        }
+    }
 
     if(tkn != NULL) {
         fprintf(stderr, "test.c: tkn must remain NULL after parseExpression\n");
         return 50;
     }
-    
+
     return ret_code;
 }
