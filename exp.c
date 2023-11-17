@@ -24,7 +24,7 @@ Sémantická analýza: Kompatibilita typov, Overenie či sú premenné a konšta
 
 /******************************************************************************************
 * Štruktúry
-/*****************************************************************************************/
+*****************************************************************************************/
 
 typedef struct parsed_token
 {
@@ -46,7 +46,7 @@ typedef struct stack
 
 /******************************************************************************************
  *Funkcie zásobníka
-/*****************************************************************************************/
+*****************************************************************************************/
 
 /**
  * 
@@ -95,7 +95,7 @@ int stack_push_token(stack_t *stack, token_T *token){
     TSData_T *symtabData = SymTabLookup(&symt, StrRead(&(token->atr))); // Získanie dát o premennej z tabuľky symbolov
 
     if(symtabData == NULL || symtabData->init == false){ // Premenná nebola deklarovaná alebo inicializovaná
-        return SEM_ERR_UNDEF; // Chybovž stav
+        return SEM_ERR_UNDEF; // Chybový stav
     }
 
     ptoken_T *parsed_token = malloc(sizeof(ptoken_T)); // Nový parsed token
@@ -163,7 +163,7 @@ void stack_dispose(stack_t *stack){
 
 /******************************************************************************************
 * Overenie typu tokenu
-/*****************************************************************************************/
+*****************************************************************************************/
 
 /**
  * @brief Overuje, či token nie je jeden z typov ktoré sa nemôžu vo výraze vyskytovať.
@@ -222,7 +222,7 @@ bool is_binary_operator(int type){
 
 /******************************************************************************************
  *Ostatné funkcie
-/*****************************************************************************************/
+*****************************************************************************************/
 
 
 /**
@@ -288,16 +288,16 @@ int infix2postfix(stack_t *stack, stack_t *postfixExpr, token_T *infix_token){
     
     int status = 0; // Pomocná premenná pre uloženie návratového kódu funkcií
 
-    if(infix_token->type == BRT_RND_L) // Ľavá zátvorka
+    if(infix_token->type == BRT_RND_L || infix_token->type == EXCL) // Ľavá zátvorka alebo "!"
 	{
-		return stack_push_token(stack, infix_token); // Ľavú zátvorku vkladáme na zásobník
+		return stack_push_token(stack, infix_token); // Vkladáme na zásobník
 	}
 	if(infix_token->type == BRT_RND_R) // Pravá zátvorka
 	{
 		while(true) // Pokým nenájdeme ľavú zátvorku
 	    {
 		    if(stack->size == 0){ // Ukončenie funkcie pri prázdnom zásobníku
-		    	return;
+		    	return 0;
 		    }
 
 		    if(stack_top(stack)->type == BRT_RND_L) // Ľavá zátvorka bola nájdená
@@ -354,8 +354,6 @@ int infix2postfix(stack_t *stack, stack_t *postfixExpr, token_T *infix_token){
 	    }
 	}
 
-    // TODO: podmienka pre !
-
 	else // Žiadna predošlá podmienka nebola splnená => znak musí byť operand
 	{
 		return stack_push_token(stack, infix_token); // Vloženie operandu na zásobník, koniec funkcie
@@ -365,7 +363,9 @@ int infix2postfix(stack_t *stack, stack_t *postfixExpr, token_T *infix_token){
     return 0;
 }
 
-
+/******************************************************************************************
+ *Hlavná funkcia
+*****************************************************************************************/
 
 int parseExpression(char* result_type) {
 
@@ -374,10 +374,9 @@ int parseExpression(char* result_type) {
     Stack_Init(&stack); // Inicializácia zásobníka
     Stack_Init(&postfixExpr); // Inicializácia zásobníka
 
-
     int prevTokenType = NO_PREV; // Pomocná premenná pre uloženie typu tokenu pred momentálne spracovaným
     int bracketCount = 0; // Premenná na overenie korektnosti zátvoriek "()" vo výraze
-    int infix2postfixResult = 0; // Premenná na overenie priebehu každého volania infix2postfix
+    int status = 0; // Premenná na overenie priebehu volania funkcie
     
     // Syntaktická analýza
     while(true) // Pokým sa nespracuje celý výraz
@@ -468,7 +467,7 @@ int parseExpression(char* result_type) {
         }
         if(tkn->type == EXCL) // Výkričník
         {
-            if(!is_operand(prevTokenType)) // Predošlý token nie je operand
+            if(!is_operand(prevTokenType) && prevTokenType != BRT_RND_R) // Predošlý token nie je operand alebo "("
             {
                 prevTokenType = NO_PREV;
                 break; // Výraz nie je valídny
@@ -477,15 +476,18 @@ int parseExpression(char* result_type) {
         }
 
         
-        infix2postfixResult = infix2postfix(&stack, &postfixExpr, tkn); // Pridanie tokenu do postfix výrazu
-        if(infix2postfixResult != 0) // Pridanie tokenu do postfix výrazu nebolo úspešné
+        status = infix2postfix(&stack, &postfixExpr, tkn); // Pridanie tokenu do postfix výrazu
+        if(status != 0) // Pridanie tokenu do postfix výrazu nebolo úspešné
         {
             endParse(&stack, &postfixExpr); // Upratenie pred ukončením
-            return infix2postfixResult; // Vrátenie chybového kódu            
+            return status; // Vrátenie chybového kódu            
         }
 
         prevTokenType = tkn->type; // Uloženie typu predošlého tokenu
-        tkn = nextToken(); // Požiadanie o ďalší token z výrazu
+        status = nextToken(); // Požiadanie o ďalší token z výrazu
+        if(status != 0){ // nextToken vrátil chybu
+            return status; // Vrátenie chybovej hodnoty
+        }
 
     }
 
