@@ -224,7 +224,7 @@ int genWrite(DLLstr_T *args);
  * 
  * @brief Vygeneruje kód potřebný pro provedení build-in funkce substring
  * 
- * @param ans Sem bude vrácen podřetězec
+ * @param ans Předpokládá se nějaké externí proměnná (z pohledu této funkce), kam bude uložen výsledek
  * @return V případě úspěchu COMPILATION_OK, v opačném případě COMPILER_ERROR
  */
 int genSubstring(char *ans);
