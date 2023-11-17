@@ -148,8 +148,6 @@ int main()
 
     test = genFnCall("sum", variables3);
 
-    parser_inside_fn_def = false;
-
     if(parser_inside_fn_def) {
         TEST(strcmp(code_fn.last->prev->prev->string, "PUSH LF@x$1") == 0);
         TEST(strcmp(code_fn.last->prev->string, "PUSH int@6") == 0);
