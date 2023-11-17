@@ -1,0 +1,10 @@
+/* rozne pocty argumentov */
+
+A(12, 30, 80, 90)
+
+A(85, 30, 70)
+
+func A(_ x: Int, _ y : Int, _ z:Int) -> String {
+    return "t"
+}
+

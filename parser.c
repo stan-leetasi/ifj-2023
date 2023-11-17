@@ -719,10 +719,16 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
         if (tkn->type == ID || tkn->type == UNDERSCORE) { // názov parametra musí byť identifikátor alebo '_'
 
             if (compare_and_update) { // funkcia bola volaná pred jej definíciou
+                /* Kontrola počtu parametrov s počtom argumentov v prvom volaní. */
+                if(strlen(StrRead(&(sig->par_types))) <= loaded_params) { // funkcia bola volaná s menším počtom argumentov
+                    logErrSemantic(tkn, "different number of parameters in function definition and first call");
+                    return SEM_ERR_FUNC;
+                }
+
                 /*  Treba skontrolovať názov parametra s prvým volaním. */
                 DLLstr_GetValue(&(sig->par_names), &tmp);
                 if (strcmp(StrRead(&tmp), StrRead(&(tkn->atr))) != 0) {
-                    logErrSemantic(tkn, "different parameter name");
+                    logErrSemantic(tkn, "different parameter name in definition and first call");
                     return SEM_ERR_FUNC;
                 }
             }
@@ -796,6 +802,13 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
         DLLstr_Next(&(sig->par_names));
         DLLstr_Next(&(sig->par_ids));
         TRY_OR_EXIT(nextToken());
+    }
+
+    if(compare_and_update) { // kontrola počtu parametrov v definícii s počtom argumentov v prvom volaní
+        if (strlen(StrRead(&(sig->par_types))) != loaded_params) {
+            logErrSemantic(tkn, "different count of parameters in function definition and first call");
+            return SEM_ERR_FUNC;
+        }
     }
 
     // kontrola názvov rôznych názvov a identifikátorov parametrov 
