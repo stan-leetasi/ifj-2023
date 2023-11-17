@@ -2,7 +2,7 @@
  * @file parser.c
  * @brief Syntaktický a sémantický anayzátor
  * @author Michal Krulich (xkruli03)
- * @date 12.11.2023
+ * @date 17.11.2023
  */
 
 #include "parser.h"
@@ -68,6 +68,52 @@ char convertNilTypeToNonNil(char nil_type) {
         break;
     }
     return nil_type;
+}
+
+
+/**
+ * @brief Zistí, či sa v zozname nachádzajú medzi sebou rôzne reťazce (pozor! reťazce "_" sú ignorované), resp. nie je možné nájsť dva totožné.
+ * @param list zoznam
+ * @param is_unique Ukazateľ na bool, kde sa zapíše false ak existujú dve položky zoznamu s rovnakým reťazcom, inak true
+ * @warning Mení aktivitu zoznamu.
+ * @return true v prípade úspechu, false v prípade chyby programu
+*/
+
+bool listHasUniqueValues(DLLstr_T* list, bool* is_unique) {
+	str_T a, b; // reťazce položiek A a B
+	StrInit(&a);
+	StrInit(&b);
+
+	DLLstr_First(list);
+	for (size_t i = 0; DLLstr_IsActive(list); i++) {
+		for (size_t j = 0; j < i; j++) {
+			DLLstr_Next(list);
+		}
+		if (!DLLstr_IsActive(list)) break;
+		if (!DLLstr_GetValue(list, &a)) return false; // načítanie položky A
+        if(strcmp(StrRead(&a), "_") != 0) { // reťazce "_" sú ignorované
+            DLLstr_Next(list);
+            while(DLLstr_IsActive(list)) { // porovnávanie s položkami napravo od položky A
+                if (!DLLstr_GetValue(list, &b)) return false; // načítanie položky B
+                if (strcmp(StrRead(&a), StrRead(&b)) == 0) {
+                    // totožné reťazce
+                    StrDestroy(&a);
+                    StrDestroy(&b);
+                    *is_unique = false;
+                    return true;
+                }
+                DLLstr_Next(list);
+            }
+        }
+
+
+		DLLstr_First(list);
+	}
+
+	StrDestroy(&a);
+	StrDestroy(&b);
+	*is_unique = true;
+	return true;
 }
 
 /**
@@ -641,7 +687,6 @@ int parseStatBlock(bool* had_return) {
  * 
  * @brief Pravidlo pre spracovanie definície parametrov funkcie, končí načítaním pravej zátvorky
  * @param compare_and_update Keď true: režim porovnávania s aktuálne zaznamenanou signatúrou volania, inak vytvára novú signatúru.
- * @todo Kontrola dátových typov parametrov pri funkcii volanou pred definíciou. + ĎALSIE VECI
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
@@ -671,7 +716,6 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
             TRY_OR_EXIT(nextToken());
         }
 
-        // ??? musia byť rôzne názvy parametrov ?
         if (tkn->type == ID || tkn->type == UNDERSCORE) { // názov parametra musí byť identifikátor alebo '_'
 
             if (compare_and_update) { // funkcia bola volaná pred jej definíciou
@@ -699,7 +743,7 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
             // názov parametra a identifikátor parametra sa musia líšiť
             if (strcmp(StrRead(&tmp), StrRead(&(tkn->atr))) == 0) {
                 logErrSemantic(tkn, "parameter name and identifier must be different");
-                return SEM_ERR_FUNC;
+                return SEM_ERR_OTHER;
             }
             PERFORM_RISKY_OP(DLLstr_InsertLast(&(sig->par_ids), StrRead(&(tkn->atr))));
         }
@@ -717,8 +761,32 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
         char data_type;
         TRY_OR_EXIT(parseDataType(&data_type));
         if (compare_and_update) { // funkcia bola volaná pred jej definíciou
-            // !!! TODO kontrola 
-            sig->par_types.data[loaded_params] = data_type;
+            // kontrola typu v definícii s typom argumentu v prvom volaní
+            bool same_type = true;
+            char type_before = StrRead(&(sig->par_types))[loaded_params];
+            switch (data_type)
+            {
+            case SYM_TYPE_INT:
+            case SYM_TYPE_INT_NIL:
+                same_type = type_before == SYM_TYPE_INT || type_before == SYM_TYPE_INT_NIL;
+                break;
+            case SYM_TYPE_DOUBLE:
+            case SYM_TYPE_DOUBLE_NIL:
+                same_type = type_before == SYM_TYPE_DOUBLE || type_before == SYM_TYPE_DOUBLE_NIL;
+                break;
+            case SYM_TYPE_STRING:
+            case SYM_TYPE_STRING_NIL:
+                same_type = type_before == SYM_TYPE_STRING || type_before == SYM_TYPE_STRING_NIL;
+                break;
+            default:
+                break;
+            }
+            if(type_before == SYM_TYPE_UNKNOWN) same_type = true;
+            if(!same_type) {
+                logErrSemanticFn(StrRead(&fn_name), "parameter types does not correspond to previous call");
+                return SEM_ERR_FUNC;
+            }
+            sig->par_types.data[loaded_params] = data_type; // zapíše sa dátový typ zistení z definície
         }
         else {
             StrAppend(&(sig->par_types), data_type);
@@ -730,7 +798,18 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
         TRY_OR_EXIT(nextToken());
     }
 
-    // !!! TODO kontrola názvov rôznych id parametrov 
+    // kontrola názvov rôznych názvov a identifikátorov parametrov 
+    bool unique_names;
+    if(!listHasUniqueValues(&(sig->par_names), &unique_names)) return COMPILER_ERROR;
+    if(!unique_names) {
+        logErrSemanticFn(StrRead(&fn_name), "parameter names don't have different names");
+        return SEM_ERR_OTHER;
+    }
+    if(!listHasUniqueValues(&(sig->par_ids), &unique_names)) return COMPILER_ERROR;
+    if(!unique_names) {
+        logErrSemanticFn(StrRead(&fn_name), "parameter identifiers don't have different names");
+        return SEM_ERR_OTHER;
+    }
 
     // dealokácia pomocných štruktúr
     StrDestroy(&tmp);
@@ -912,57 +991,51 @@ int parseReturn() {
         }
     }
 
-    /*if(result_type == SYM_TYPE_VOID) {
-        if(fn->sig->ret_type != SYM_TYPE_VOID) {
-            logErrSemanticFn(fn->id, "void function returns a value");
-            return SEM_ERR_RETURN;
-        }
-    }
-    else if (!isCompatibleAssign(fn->sig->ret_type, result_type)) {
-        logErrSemanticFn(fn->id, "different return type");
-        return SEM_ERR_FUNC;
-    }*/
-
     SymTabModifyLocalReturn(&symt, true); // zapísať informáciu o prítomnosti return v aktuálnom bloku
 
     return COMPILATION_OK;
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: IF
+ *  - po volaní:    BRT_CUR_R
+ * 
  * @brief Pravidlo pre spracovanie podmieneného bloku kódu
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token IF
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseIf() {
     // <STAT>  ->  if <COND> { <PROG> } else { <PROG> }
     TRY_OR_EXIT(nextToken());
-
-    TSData_T* let_variable = NULL;
-    switch (tkn->type)
+    TSData_T* let_variable = NULL; // informácie o premennej v podmienke "let <premenná>"
+    switch (tkn->type) // rozlíšenie obyčajnej podmienky v tvare výrazu alebo test premennej na nil "let <premenná>"
     {
     case LET:
         //  <COND> ->  let id
-        TRY_OR_EXIT(nextToken());
-        if (tkn->type != ID) {
+        TRY_OR_EXIT(nextToken());   // identifikátor testovanej premennej
+        if (tkn->type != ID) { 
             logErrSyntax(tkn, "identifier");
             return SYN_ERR;
         }
-        TSData_T* variable = SymTabLookup(&symt, StrRead(&(tkn->atr)));
-        if (variable == NULL) {
+        TSData_T* variable = SymTabLookup(&symt, StrRead(&(tkn->atr))); // informácie o premennej
+        if (variable == NULL) { // premenná nebola deklarovaná
             logErrSemantic(tkn, "%s was undeclared", StrRead(&(tkn->atr)));
             return SEM_ERR_UNDEF;
         }
-        if (variable->type == SYM_TYPE_FUNC) {
+        if (variable->type == SYM_TYPE_FUNC) { // identifikátor označuje funkciu
             logErrSemantic(tkn, "%s is a function", StrRead(&(tkn->atr)));
             return SEM_ERR_RETURN;
         }
-        if (!(variable->init)) {
+        if (!(variable->init)) { // premenná nebola inicializovaná
             logErrSemantic(tkn, "%s was uninitialized", StrRead(&(tkn->atr)));
             return SEM_ERR_UNDEF;
         }
+        if (!(variable->let)) { // premenná musí byť nemodifikovateľná
+            logErrSemantic(tkn, "%s must be unmodifiable variable", StrRead(&(tkn->atr)));
+            return SEM_ERR_OTHER;
+        }
 
-
-
+        // premenná musí byť v samostatnom bloku, kde bude jej typ zmenený na typ nezahrňujúci nil
         if (!SymTabAddLocalBlock(&symt)) {
             return COMPILER_ERROR;
         }
@@ -974,28 +1047,13 @@ int parseIf() {
         let_variable->init = variable->init;
         let_variable->let = variable->let;
         let_variable->sig = NULL;
-        let_variable->type = variable->type; // ??? treba test či môže obsahovať nil hodnotu if ()
-        switch (variable->type)
-        {
-        case SYM_TYPE_INT_NIL:
-            let_variable->type = SYM_TYPE_INT;
-            break;
-        case SYM_TYPE_DOUBLE_NIL:
-            let_variable->type = SYM_TYPE_DOUBLE;
-            break;
-        case SYM_TYPE_STRING_NIL:
-            let_variable->type = SYM_TYPE_STRING;
-            break;
-        default:
-            // ??? treba test či môže obsahovať nil hodnotu if ()
-            break;
-        }
+        let_variable->type = convertNilTypeToNonNil(variable->type); // ??? treba test či môže obsahovať nil hodnotu if ()
         StrFillWith(&(let_variable->codename), StrRead(&(variable->codename)));
 
         if (!SymTabInsertLocal(&symt, let_variable)) return COMPILER_ERROR;
         // TODO
         break;
-    case ID:
+    case ID:    // v podminke je obyčajný výraz
     case BRT_RND_L:
     case INT_CONST:
     case DOUBLE_CONST:
@@ -1017,7 +1075,7 @@ int parseIf() {
 
     TRY_OR_EXIT(nextToken());
     bool if_had_return;
-    TRY_OR_EXIT(parseStatBlock(&if_had_return));
+    TRY_OR_EXIT(parseStatBlock(&if_had_return)); // spracovanie príkazov keď podmienka je true
     if (let_variable != NULL) SymTabRemoveLocalBlock(&symt);
 
     TRY_OR_EXIT(nextToken());
@@ -1028,9 +1086,10 @@ int parseIf() {
 
     TRY_OR_EXIT(nextToken());
     bool else_had_return;
-    TRY_OR_EXIT(parseStatBlock(&else_had_return));
+    TRY_OR_EXIT(parseStatBlock(&else_had_return)); // spracovanie príkazov keď podmienka je false
 
     if (if_had_return && else_had_return) {
+        // pokiaľ sa v oboch častiach if aj else nachádzal return, potom bude return určite zastihnutý
         SymTabModifyLocalReturn(&symt, true);
     }
 
@@ -1038,21 +1097,23 @@ int parseIf() {
 }
 
 /**
+ * Stav tkn:
+ *  - pred volaním: WHILE
+ *  - po volaní:    BRT_CUR_R
+ * 
  * @brief Pravidlo pre spracovanie cyklu while
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token WHILE
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseWhile() {
     // <STAT>      ->  while exp { <PROG> }
-    bool loop_inside_loop = parser_inside_loop;
+    bool loop_inside_loop = parser_inside_loop; // cyklus v cykle
     if (!loop_inside_loop) {
-        StrFillWith(&first_loop_label, "WHILE");
+        StrFillWith(&first_loop_label, "WHILE"); // !!! TODO
     }
     parser_inside_loop = true;
 
     TRY_OR_EXIT(nextToken());
-
-    switch (tkn->type)
+    switch (tkn->type) // syntaktická kontrola, či sa v podmienke nachádza výraz
     {
     case ID:
     case BRT_RND_L:
@@ -1060,6 +1121,7 @@ int parseWhile() {
     case DOUBLE_CONST:
     case STRING_CONST:
     case NIL:
+        // začiatok výrazu potvrdený
         break;
     default:
         logErrSyntax(tkn, "expression");
@@ -1077,7 +1139,8 @@ int parseWhile() {
     TRY_OR_EXIT(parseStatBlock(NULL));
 
     parser_inside_loop = loop_inside_loop;
-    if (!parser_inside_loop) {
+    if (!parser_inside_loop) { // najvrchnejší cyklus bol opustený
+        // inštrukcie pre definície premenných vo vnútri cyklu musia byť vložené pred samotným cyklom
         DLLstr_Dispose(&variables_declared_inside_loop);
         // gen code
     }
@@ -1088,10 +1151,10 @@ int parseWhile() {
 
 bool isCompatibleAssign(char dest, char src) {
     if (dest == SYM_TYPE_UNKNOWN) return true;
-    if (src == SYM_TYPE_VOID) return false;
+    if (src == SYM_TYPE_VOID) return false; // nemožno priradiť nič
     if (src == SYM_TYPE_UNKNOWN) return true;
     if (src == SYM_TYPE_NIL) {
-        switch (dest)
+        switch (dest) // samotný nil je možné priradiť len do dátového typu zahrňujúceho nil
         {
         case SYM_TYPE_INT_NIL:
         case SYM_TYPE_DOUBLE_NIL:
@@ -1101,7 +1164,7 @@ bool isCompatibleAssign(char dest, char src) {
             return false;
         }
     }
-    switch (src)
+    switch (src) // dátový typ nezahrňujúci nil je možné dosadiť aj do typu zahrňujúci nil
     {
     case SYM_TYPE_INT:
         return dest == SYM_TYPE_INT || dest == SYM_TYPE_INT_NIL;
