@@ -129,17 +129,18 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn.
  * 
- * Vygenerovaný kód:    vytvorí nový rámec, vloží ho do zásobníka,
+ * Vygenerovaný kód:    náveštie na funkciu, vytvorí nový rámec, vloží ho do zásobníka,
  *                      definuje v novom rámci premenné parametrov funkcie,
  *                      zapíše do nich hodnoty zo zásobníka (na vrchole je prvý argument).
  * 
  * Identifikátory parametrov vyzerajú nasledovne "LF@<id>%".
  * 
  * Príklad:
- *      genFnDefBegin({"a", "b"}),
+ *      genFnDefBegin("sum", {"a", "b"}),
  *      vygeneruje kód:
  * 
  *      ...
+ *      LABEL sum
  *      CREATEFRAME
  *      PUSHFRAME
  *      DEFVAR  LF@a%
@@ -148,6 +149,7 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
  *      POPS    LF@b%
  * 
  * @brief Vygeneruje kód začiatku definície funkcie, resp. príprava nového rámca a argumentov.
+ * @param fn Názov funkcie
  * @param params Identifikátory parametrov funkcie
  * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */
@@ -175,6 +177,57 @@ int genFnDefBegin(char *fn, DLLstr_T *params);
  * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */
 int genFnCall(char *fn, DLLstr_T *args);
+
+/**
+ * Vygenerovaný kód bude vložený na koniec zoznamu code_fn pokiaľ parser_inside_fn_def==true
+ * (globálna premenná v parser.h), inak na koniec code_main.
+ * 
+ * Argumenty funkce se budou zpracovávat z leva doprava. Jako kod se vygeneruje sekvence WRITE prikazu s argumenty v args
+ * Ve tvaru:
+ * 
+ *      ...
+ *      WRITE args[0]
+ *      WRITE args[1]
+ *      WRITE args[3]
+ *      ...      ...
+ * 
+ * @brief Vygeneruje kód potřebný pro provedení build-in funkce write()
+ * 
+ * @param args Předané argumenty
+ * @return V případě úspěchu COMPILATION_OK, v opačném případě COMPILER_ERROR
+ */
+int genWrite(DLLstr_T *args);
+
+/**
+ * Vygenerovaný kód bude vložený na koniec zoznamu code_fn.
+ * 
+ * Vygeneruje se následující kód:
+ *      LABEL substring
+        CREATEFRAME
+        PUSHFRAME
+        DEFVAR LF@?!end$1
+        POPS LF@?!end$1
+        DEFVAR LF@?!begin$2
+        POPS LF@?!begin$2
+        DEFVAR LF@?!string$3
+        POPS LF@?!string$3
+        DEFVAR LF@?!char$4
+        LABEL cycle&2
+            GETCHAR LF@?!char$4 LF@?!string$3 LF@?!begin$2
+            CONCAT GF@vysledek GF@vysledek LF@?!char$4
+            ADD LF@?!begin$2 LF@?!begin$2 int@1
+            JUMPIFNEQ cycle&2 LF@?!begin$2 LF@?!end$1
+        RETURN
+ * 
+ * Všechny proměnné a labely, použité v této funkci, musí mít unikatní 
+ * pojmenování v rámci celého programu
+ * 
+ * @brief Vygeneruje kód potřebný pro provedení build-in funkce substring
+ * 
+ * @param ans Předpokládá se nějaké externí proměnná (z pohledu této funkce), kam bude uložen výsledek
+ * @return V případě úspěchu COMPILATION_OK, v opačném případě COMPILER_ERROR
+ */
+int genSubstring(char *ans);
 
 #endif // ifndef _GENERATOR_H_
 /* Koniec súboru generator.h */

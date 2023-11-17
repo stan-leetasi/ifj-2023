@@ -91,6 +91,7 @@ int genCode(char *instruction, char *op1, char *op2, char *op3) {
         return COMPILER_ERROR;
 
     str_T *code = malloc(sizeof(str_T));
+    if(code == NULL) return COMPILER_ERROR;
     StrInit(code);
 
     StrFillWith(code, instruction);
@@ -116,10 +117,10 @@ int genCode(char *instruction, char *op1, char *op2, char *op3) {
         insert = DLLstr_InsertLast(&code_fn, StrRead(code));
     else
         insert = DLLstr_InsertLast(&code_main, StrRead(code));
+    if (!insert) return COMPILER_ERROR;
 
     StrDestroy(code);
     free(code);
-
     return COMPILATION_OK;
 }
 
@@ -132,6 +133,7 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
         DLLstr_GetValue(variables, &var);
 
         genCode("DEFVAR",StrRead(&var), NULL, NULL);
+
         DLLstr_Next(variables);
     }
 
@@ -188,6 +190,65 @@ int genFnCall(char *fn, DLLstr_T *args) {
     return COMPILATION_OK;
 }
 
+int genWrite(DLLstr_T *args) {
+    //zde budou uloženy argumenty funkce write
+    str_T arg;
+    StrInit(&arg);
+
+    DLLstr_First(args);
+    while(DLLstr_IsActive(args)) {
+        DLLstr_GetValue(args, &arg);
+
+        genCode("WRITE", StrRead(&arg), NULL, NULL);
+
+        DLLstr_Next(args);
+    }
+}
+
+int genSubstring(char * ans) {
+    bool previous_parser_in_fn_def_value = parser_inside_fn_def;
+    parser_inside_fn_def = true;
+    
+    int num_of_params = 3;      //počet parametrů funkce 
+    int num_of_local_vars = 4;  //celkový počet lokálních proměnných, které se budou používat
+    int num_of_lables = 2;
+
+    char *local_variables[] = {"?!end", "?!begin", "?!string", "?!char"};
+    char *lables[] = {"substring", "cycle"};
+    
+    str_T uniq_vars[num_of_local_vars];   //Pole lokálních proměnných
+    str_T uniq_lables[num_of_lables];
+
+    /*Oblast inicializace a Generovaní unikátních identifikátorů*/
+    for (int i = 0; i < num_of_local_vars; i++) {
+        StrInit(&uniq_vars[i]);
+        genUniqVar("LF", local_variables[i], &uniq_vars[i]);
+    }
+    for (int i = 0; i < num_of_lables; i++) {
+        StrInit(&uniq_lables[i]);
+        genUniqLabel(lables[i], "", &uniq_lables[i]);
+    }
+    /*Konec inicializace a generování unikátních identifikátorů*/
+
+    /*Hlavní část vygenerování kódu*/
+    genCode("LABEL", "substring", NULL, NULL);
+    genCode("CREATEFRAME", NULL, NULL, NULL);
+    genCode("PUSHFRAME", NULL, NULL, NULL);
+
+    for (int i = 0; i < num_of_params; i++) {
+        genCode("DEFVAR", StrRead(&uniq_vars[i]), NULL, NULL);    
+        genCode("POPS", StrRead(&uniq_vars[i]), NULL, NULL);
+    }
+    genCode("DEFVAR", StrRead(&uniq_vars[3]), NULL, NULL);
+    genCode("LABEL", StrRead(&uniq_lables[1]), NULL, NULL);
+    genCode("GETCHAR", StrRead(&uniq_vars[3]), StrRead(&uniq_vars[2]), StrRead(&uniq_vars[1]));
+    genCode("CONCAT", ans, ans, StrRead(&uniq_vars[3]));
+    genCode("ADD", StrRead(&uniq_vars[1]), StrRead(&uniq_vars[1]), "int@1");
+    genCode("JUMPIFNEQ", StrRead(&uniq_lables[1]), StrRead(&uniq_vars[1]), StrRead(&uniq_vars[0]));
+    genCode("RETURN", NULL, NULL, NULL);
+    parser_inside_fn_def = previous_parser_in_fn_def_value;
+    return COMPILATION_OK;
+}
 
 /**
  *  Pomocná funkce, která vytvoří řetězec identifikátoru parametru funkce a uloží jej do "id"

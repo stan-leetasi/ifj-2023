@@ -14,6 +14,9 @@ int failures = 0;
 
 int main()
 {
+    DLLstr_Init(&code_main);
+    DLLstr_Init(&code_fn);
+
     str_T s;
     StrInit(&s);
 
@@ -120,22 +123,26 @@ int main()
         TEST(strcmp(code_main.last->prev->string, "DEFVAR LF@y$2") == 0);
         TEST(strcmp(code_main.last->prev->prev->string, "DEFVAR LF@x$1") == 0);
     }
+
     DLLstr_Dispose(variables);
     free(variables);
 
     DLLstr_T *variables2 = malloc(sizeof(DLLstr_T));
     DLLstr_Init(variables2);
-    DLLstr_InsertLast(variables2, "LF@a%%");
-    DLLstr_InsertLast(variables2, "LF@b%%");
+    DLLstr_InsertLast(variables2, "a");
+    DLLstr_InsertLast(variables2, "b");
+
+    parser_inside_fn_def = true;
 
     test = genFnDefBegin("main", variables2);
 
-    // TEST(strcmp(code_fn.last->prev->prev->prev->prev->prev->string, "CREATEFRAME") == 0);
-    // TEST(strcmp(code_fn.last->prev->prev->prev->prev->string, "PUSHFRAME") == 0);
-    // TEST(strcmp(code_fn.last->prev->prev->prev->string, "DEFVAR LF@a%%") == 0);
-    // TEST(strcmp(code_fn.last->prev->prev->string, "POPS LF@a%%") == 0);
-    // TEST(strcmp(code_fn.last->prev->string, "DEFVAR LF@b%%") == 0);
-    TEST(strcmp(code_fn.last->string, "POPS LF@b%%") == 0);
+    TEST(strcmp(code_fn.last->prev->prev->prev->prev->prev->prev->string, "LABEL main") == 0);
+    TEST(strcmp(code_fn.last->prev->prev->prev->prev->prev->string, "CREATEFRAME") == 0);
+    TEST(strcmp(code_fn.last->prev->prev->prev->prev->string, "PUSHFRAME") == 0);
+    TEST(strcmp(code_fn.last->prev->prev->prev->string, "DEFVAR LF@a%") == 0);
+    TEST(strcmp(code_fn.last->prev->prev->string, "POPS LF@a%") == 0);
+    TEST(strcmp(code_fn.last->prev->string, "DEFVAR LF@b%") == 0);
+    TEST(strcmp(code_fn.last->string, "POPS LF@b%") == 0);
 
     DLLstr_Dispose(variables2);
     free(variables2);
@@ -160,6 +167,9 @@ int main()
 
     DLLstr_Dispose(variables3);
     free(variables3);
+
+    DLLstr_Dispose(&code_fn);
+    DLLstr_Dispose(&code_main);
 
     if(failures != 0)
     {
