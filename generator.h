@@ -201,14 +201,23 @@ int genWrite(DLLstr_T *args);
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn.
  * 
- * Příklad:
+ * Vygeneruje se následující kód:
  *      LABEL substring
- *      ...
- * 
- *      -- Zde bude kód potřebný pro provedení funkce substring --
- * 
- *      ...
- *      RETURN
+        CREATEFRAME
+        PUSHFRAME
+        DEFVAR LF@?!end$1
+        POPS LF@?!end$1
+        DEFVAR LF@?!begin$2
+        POPS LF@?!begin$2
+        DEFVAR LF@?!string$3
+        POPS LF@?!string$3
+        DEFVAR LF@?!char$4
+        LABEL cycle&2
+            GETCHAR LF@?!char$4 LF@?!string$3 LF@?!begin$2
+            CONCAT GF@vysledek GF@vysledek LF@?!char$4
+            ADD LF@?!begin$2 LF@?!begin$2 int@1
+            JUMPIFNEQ cycle&2 LF@?!begin$2 LF@?!end$1
+        RETURN
  * 
  * Všechny proměnné a labely, použité v této funkci, musí mít unikatní 
  * pojmenování v rámci celého programu

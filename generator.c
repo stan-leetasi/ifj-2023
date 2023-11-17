@@ -133,7 +133,7 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
         DLLstr_GetValue(variables, &var);
 
         genCode("DEFVAR",StrRead(&var), NULL, NULL);
-        
+
         DLLstr_Next(variables);
     }
 
@@ -211,46 +211,41 @@ int genSubstring(char * ans) {
     
     int num_of_params = 3;      //počet parametrů funkce 
     int num_of_local_vars = 4;  //celkový počet lokálních proměnných, které se budou používat
-    
-    str_T arr_of_vars[num_of_local_vars];   //Pole lokálních proměnných
-        /*
-            Proměnné uložené na konkrétních indexech:
-            0 - end
-            1 - begin
-            2 - str
-            3 - char
-        */
-    
-    str_T label;                            //Sem se vždy uloží random text pro unikátní proměnné
-    
-    //Inicializace mist, kam se budou ukladat promenne
-    for (unsigned i = 0; i < num_of_local_vars; i++) {
-        StrInit(&arr_of_vars[i]);
-    }
-    StrInit(&label);
+    int num_of_lables = 2;
 
-    DLLstr_T params;    //Seznam parametrů funkce
-    DLLstr_Init(&params);
+    char *local_variables[] = {"?!end", "?!begin", "?!string", "?!char"};
+    char *lables[] = {"substring", "cycle"};
+    
+    str_T uniq_vars[num_of_local_vars];   //Pole lokálních proměnných
+    str_T uniq_lables[num_of_lables];
+
+    /*Oblast inicializace a Generovaní unikátních identifikátorů*/
+    for (int i = 0; i < num_of_local_vars; i++) {
+        StrInit(&uniq_vars[i]);
+        genUniqVar("LF", local_variables[i], &uniq_vars[i]);
+    }
+    for (int i = 0; i < num_of_lables; i++) {
+        StrInit(&uniq_lables[i]);
+        genUniqLabel(lables[i], "", &uniq_lables[i]);
+    }
+    /*Konec inicializace a generování unikátních identifikátorů*/
+
+    /*Hlavní část vygenerování kódu*/
+    genCode("LABEL", "substring", NULL, NULL);
+    genCode("CREATEFRAME", NULL, NULL, NULL);
+    genCode("PUSHFRAME", NULL, NULL, NULL);
 
     for (int i = 0; i < num_of_params; i++) {
-        genUniqVar("LF", "uniqvar", &arr_of_vars[i]);
-        DLLstr_InsertLast(&params, StrRead(&arr_of_vars[i]));
+        genCode("DEFVAR", StrRead(&uniq_vars[i]), NULL, NULL);    
+        genCode("POPS", StrRead(&uniq_vars[i]), NULL, NULL);
     }
-    genUniqLabel("substring", "", &label);
-    genFnDefBegin(StrRead(&label), &params);
-
-    genUniqVar("LF", "char", &arr_of_vars[3]);
-    genCode("DEFVAR", StrRead(&arr_of_vars[3]), NULL, NULL);
-
-    genUniqLabel("cycle", "", &label);
-    genCode("LABEL", StrRead(&label), NULL, NULL);
-    
-    genCode("GETCHAR", StrRead(&arr_of_vars[3]), StrRead(&arr_of_vars[2]), StrRead(&arr_of_vars[1]));
-    genCode("CONCAT", ans, ans, StrRead(&arr_of_vars[3]));
-    genCode("ADD", StrRead(&arr_of_vars[1]), StrRead(&arr_of_vars[1]), "int@1");
-    genCode("JUMPIFNEQ", StrRead(&label), StrRead(&arr_of_vars[1]), StrRead(&arr_of_vars[0]));
+    genCode("DEFVAR", StrRead(&uniq_vars[3]), NULL, NULL);
+    genCode("LABEL", StrRead(&uniq_lables[1]), NULL, NULL);
+    genCode("GETCHAR", StrRead(&uniq_vars[3]), StrRead(&uniq_vars[2]), StrRead(&uniq_vars[1]));
+    genCode("CONCAT", ans, ans, StrRead(&uniq_vars[3]));
+    genCode("ADD", StrRead(&uniq_vars[1]), StrRead(&uniq_vars[1]), "int@1");
+    genCode("JUMPIFNEQ", StrRead(&uniq_lables[1]), StrRead(&uniq_vars[1]), StrRead(&uniq_vars[0]));
     genCode("RETURN", NULL, NULL, NULL);
-
     parser_inside_fn_def = previous_parser_in_fn_def_value;
     return COMPILATION_OK;
 }
