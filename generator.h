@@ -41,7 +41,6 @@ extern DLLstr_T code_main;
  * @param sub Podreťazec identifikátora.
  * @param id Výsledný unikátny identifikátor. V prípade neúspechu nedefinované.
  *           Dátovú štruktúru treba inicializovať.
- * @return V prípade neuspechu exit(COMPILER_ERROR).
 */
 void genUniqVar(char *scope, char *sub, str_T *id);
 
@@ -62,7 +61,6 @@ void genUniqVar(char *scope, char *sub, str_T *id);
  * @param sub Podreťazec unikátneho náveštia.
  * @param label Výsledný unikátny názov náveštia. V prípade neúspechu nedefinované.
  *              Dátovú štruktúru treba inicializovať.
- * @return V prípade neúspechu exit(COMPILER_ERROR).
 */
 void genUniqLabel(char *fn, char *sub, str_T *label);
 
@@ -81,7 +79,6 @@ void genUniqLabel(char *fn, char *sub, str_T *label);
  * @param value Hodnota konštanty.
  * @param cval Výsledná konštanta v cieľovom kóde.
  *              Dátovú štruktúru treba inicializovať.
- * @return V prípade neúspechu exit(COMPILER_ERROR).
 */
 void genConstVal(int const_type, char *value, str_T *cval);
 
@@ -98,7 +95,6 @@ void genConstVal(int const_type, char *value, str_T *cval);
  * @param op1 Prvý operand. Ak sa rovná NULL, je ignorovaný.
  * @param op2 Druhý operand. Ak sa rovná NULL, je ignorovaný.
  * @param op3 Tretí operand. Ak sa rovná NULL, je ignorovaný.
- * @return V prípade neuspechu exit(COMPILER_ERROR).
 */
 void genCode(char *instruction, char *op1, char *op2, char *op3);
 
@@ -122,7 +118,6 @@ void genCode(char *instruction, char *op1, char *op2, char *op3);
  * @brief Vygeneruje kód pre deklaráciu premenných pred zadaný cyklus.
  * @param label Názov náveštia cyklu.
  * @param variables Zoznam identifikátorov premenných, ktoré treba definovať pred cyklom.
- * @return V prípade neuspechu exit(COMPILER_ERROR).
 */
 void genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
 
@@ -151,7 +146,6 @@ void genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
  * @brief Vygeneruje kód začiatku definície funkcie, resp. príprava nového rámca a argumentov.
  * @param fn Názov funkcie
  * @param params Identifikátory parametrov funkcie
- * @return V prípade neuspechu exit(COMPILER_ERROR).
 */
 void genFnDefBegin(char *fn, DLLstr_T *params);
 
@@ -175,7 +169,6 @@ void genFnDefBegin(char *fn, DLLstr_T *params);
  * @param fn Názov funkcie
  * @param args Predávané argumenty
     return COMPILATION_OK;
- * @return V prípade neuspechu exit(COMPILER_ERROR).
 */
 void genFnCall(char *fn, DLLstr_T *args);
 
@@ -195,7 +188,6 @@ void genFnCall(char *fn, DLLstr_T *args);
  * @brief Vygeneruje kód potřebný pro provedení build-in funkce write()
  * 
  * @param args Předané argumenty
- * @return V případě úspěchu COMPILATION_OK, v opačném případě COMPILER_ERROR
  */
 void genWrite(DLLstr_T *args);
 
@@ -258,7 +250,6 @@ void genWrite(DLLstr_T *args);
  * @brief Vygeneruje kód potřebný pro provedení build-in funkce substring
  * 
  * @param ans Předpokládá se nějaké externí proměnná (z pohledu této funkce), kam bude uložen výsledek
- * @return V případě neúspěchu exit(COMPILER_ERROR)
  */
 void genSubstring();
 
