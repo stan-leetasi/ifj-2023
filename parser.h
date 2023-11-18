@@ -2,7 +2,7 @@
  * @file parser.h
  * @brief Syntaktický a sémantický anayzátor
  * @author Michal Krulich (xkruli03)
- * @date 11.10.2023
+ * @date 17.11.2023
  */
 
 #ifndef _PARSER_H_
@@ -27,14 +27,13 @@
 #define COMPILER_ERROR  99 ///< Chyba prekladača
 
  /**
-  * @brief Vykoná zadanú operáciu a v prípade návratovej hodnotej rôznej od nuly, použije ju
-  *        ako návratovej hodnotu aktuálnej funkcie.
+  * @brief Vykoná zadanú operáciu a v prípade návratovej hodnotej rôznej od nuly (COMPILATION_OK),
+  *        použije ju ako návratovú hodnotu aktuálnej funkcie.
  */
-#define TRY_OR_EXIT(operation) \
-do \
-{ \
-  int error_code = (operation); \
-  if (error_code != 0) return error_code;  \
+#define TRY_OR_EXIT(operation)            \
+do {                                      \
+  int error_code = (operation);           \
+  if (error_code != 0) return error_code; \
 } while (0)
 
  /**
@@ -46,7 +45,6 @@ extern token_T* tkn;
  * @brief Tabuľka symbolov
 */
 extern SymTab_T symt;
-
 
 /**
  * @brief Indikuje, či sa aktuálne spracúva kód vo vnútri funkcie.
@@ -77,8 +75,11 @@ void saveToken();
 bool initializeParser();
 
 /**
+ * Stav tkn:
+ *  - pred volaním: načítaný token
+ *  - po volaní:    rôzny
+ *
  * @brief Hlavná časť parsera, funkcia spracúva jeden <STAT>
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parse();

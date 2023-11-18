@@ -1,0 +1,12 @@
+/* vstavané funkcie */
+
+var s_input : String = readString() // nespravny typ, musi byt String?
+let i_input = readInt()
+var d_input:Double?=readDouble()
+
+if let i_input {
+    var i_input = i_input
+}
+else {
+    var ls : String? = s_input
+}
