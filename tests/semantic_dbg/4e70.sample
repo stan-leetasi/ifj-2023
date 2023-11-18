@@ -1,0 +1,8 @@
+/* vstavané funkcie */
+
+var x = 2
+let ____d1 = Int2Double(x)
+var d2222 : Double? = Int2Double(9.2) // chyba
+
+var y : Int = Double2Int(____d1)
+var z = Double2Int(85.04e-4)

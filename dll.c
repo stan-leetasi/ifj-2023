@@ -1,20 +1,20 @@
 /** Projekt IFJ2023
  * @file dll.c
  * @brief Double linked list, dvojsmerný zoznam na generované inštrukcie
- * @author Michal Krulich
- * @date 11.11.2023
+ * @author Michal Krulich (xkruli03)
+ * @date 17.11.2023
  */
 
 #include <stdlib.h>
 #include "dll.h"
 
-/**
- * @brief Makro pre alokáciu novej kópie reťazca do dst
- * @param dest Deklarovaná premenná typu char*
- * @param src Reťazec, ktorého kópia sa bude vytvárať
- * @param in_case_of_failure Príkaz, ktorý sa vykonáva v prípade zlyhania alokácie pamäte
- * @return Vracia false ak zlyhá alokácia
-*/
+ /**
+  * @brief Makro pre alokáciu novej kópie reťazca do dst
+  * @param dest Deklarovaná premenná typu char*
+  * @param src Reťazec, ktorého kópia sa bude vytvárať
+  * @param in_case_of_failure Príkaz, ktorý sa vykonáva v prípade zlyhania alokácie pamäte
+  * @return Vracia false ak zlyhá alokácia
+ */
 #define TRY_DEEPCOPY_STRING(dest, src, in_case_of_failure) \
 	do \
 	{ \
@@ -25,65 +25,65 @@
 
 
 void DLLstr_ElementDestroy(DLLstr_el_ptr elem) {
-    free(elem->string);
-    free(elem);
+	free(elem->string);
+	free(elem);
 }
 
-void DLLstr_Init( DLLstr_T *list ) {
-    list->first = NULL;
+void DLLstr_Init(DLLstr_T* list) {
+	list->first = NULL;
 	list->active = NULL;
 	list->last = NULL;
 }
 
-bool DLLstr_IsActive( DLLstr_T *list ) {
-    return list->active != NULL;
+bool DLLstr_IsActive(DLLstr_T* list) {
+	return list->active != NULL;
 }
 
-void DLLstr_First( DLLstr_T *list ) {
-    list->active = list->first;
+void DLLstr_First(DLLstr_T* list) {
+	list->active = list->first;
 }
 
-void DLLstr_Last( DLLstr_T *list ){
-    list->active = list->last;
+void DLLstr_Last(DLLstr_T* list) {
+	list->active = list->last;
 }
 
-void DLLstr_Next( DLLstr_T *list ) {
+void DLLstr_Next(DLLstr_T* list) {
 	if (list->active != NULL) {
 		list->active = list->active->next;
 	}
 }
 
-void DLLstr_Previous( DLLstr_T *list ){
+void DLLstr_Previous(DLLstr_T* list) {
 	if (list->active != NULL) {
 		list->active = list->active->prev;
 	}
 }
 
-bool DLLstr_GetFirst( DLLstr_T *list, str_T *string) {
+bool DLLstr_GetFirst(DLLstr_T* list, str_T* string) {
 	if (list->first == NULL) {
 		return false;
 	}
 	StrFillWith(string, list->first->string);
-    return true;
+	return true;
 }
 
-bool DLLstr_GetLast( DLLstr_T *list, str_T *string){
+bool DLLstr_GetLast(DLLstr_T* list, str_T* string) {
 	if (list->last == NULL) {
 		return false;
 	}
 	StrFillWith(string, list->last->string);
-    return true;
+	return true;
 }
 
-bool DLLstr_GetValue( DLLstr_T *list, str_T *string){
+bool DLLstr_GetValue(DLLstr_T* list, str_T* string) {
 	if (list->active == NULL) {
 		return false;
 	}
 	StrFillWith(string, list->active->string);
-    return true;
+	return true;
 }
 
-bool DLLstr_InsertFirst( DLLstr_T *list, char *s) {
+bool DLLstr_InsertFirst(DLLstr_T* list, char* s) {
 	DLLstr_el_ptr element = malloc(sizeof(struct DLLstr_element));
 	if (element == NULL) { // chyba alokácie pamäte
 		return false;
@@ -100,10 +100,10 @@ bool DLLstr_InsertFirst( DLLstr_T *list, char *s) {
 		element->next = list->first;
 		list->first = element;
 	}
-    return true;
+	return true;
 }
 
-bool DLLstr_InsertLast( DLLstr_T *list, char *s){
+bool DLLstr_InsertLast(DLLstr_T* list, char* s) {
 	DLLstr_el_ptr element = malloc(sizeof(struct DLLstr_element));
 	if (element == NULL) { // chyba alokácie pamäte
 		return false;
@@ -121,10 +121,10 @@ bool DLLstr_InsertLast( DLLstr_T *list, char *s){
 		element->prev = list->last;
 		list->last = element;
 	}
-    return true;
+	return true;
 }
 
-bool DLLstr_InsertAfter( DLLstr_T *list, char *s){
+bool DLLstr_InsertAfter(DLLstr_T* list, char* s) {
 	if (list->active == NULL) { // neaktívny zoznam
 		return false;
 	}
@@ -146,9 +146,9 @@ bool DLLstr_InsertAfter( DLLstr_T *list, char *s){
 		element->prev = list->active; // active <- inserted
 		list->active->next = element; // active -> inserted
 	}
-    return true;
+	return true;
 }
-bool DLLstr_InsertBefore( DLLstr_T *list, char *s){
+bool DLLstr_InsertBefore(DLLstr_T* list, char* s) {
 	if (list->active == NULL) { // neaktívny zoznam
 		return false;
 	}
@@ -170,10 +170,10 @@ bool DLLstr_InsertBefore( DLLstr_T *list, char *s){
 		element->prev = list->active->prev; // before_inserted <- inserted
 		list->active->prev = element; // inserted <- active 
 	}
-    return true;
+	return true;
 }
 
-void DLLstr_DeleteFirst( DLLstr_T *list ){
+void DLLstr_DeleteFirst(DLLstr_T* list) {
 	if (list->first != NULL) { // zoznam nie je prázdny
 		if (list->first == list->active) { // prvý prvok je aj aktívny
 			list->active = NULL;
@@ -192,7 +192,7 @@ void DLLstr_DeleteFirst( DLLstr_T *list ){
 	}
 }
 
-void DLLstr_DeleteLast( DLLstr_T *list ) {
+void DLLstr_DeleteLast(DLLstr_T* list) {
 	if (list->last != NULL) { // zoznam nie je prázdny
 		if (list->last == list->active) { // posledný prvok je aj aktívny
 			list->active = NULL;
@@ -210,7 +210,7 @@ void DLLstr_DeleteLast( DLLstr_T *list ) {
 		}
 	}
 }
-void DLLstr_DeleteAfter( DLLstr_T *list ) {
+void DLLstr_DeleteAfter(DLLstr_T* list) {
 	if (list->active == NULL) { // neaktívny zoznam
 		return;
 	}
@@ -233,7 +233,7 @@ void DLLstr_DeleteAfter( DLLstr_T *list ) {
 	}
 }
 
-void DLLstr_DeleteBefore( DLLstr_T *list ) {
+void DLLstr_DeleteBefore(DLLstr_T* list) {
 	if (list->active == NULL) { // neaktívny zoznam
 		return;
 	}
@@ -256,7 +256,7 @@ void DLLstr_DeleteBefore( DLLstr_T *list ) {
 	}
 }
 
-void DLLstr_Dispose( DLLstr_T *list ) {
+void DLLstr_Dispose(DLLstr_T* list) {
 	DLLstr_el_ptr element = list->first;
 	DLLstr_el_ptr previous;
 	while (element != NULL) {
