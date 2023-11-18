@@ -35,6 +35,7 @@ echo "----------------------------------------------------------"
 
 if ${compile_ok} ; then 
     echo "[PASS] - Everything compiled successfully"
+    echo "         Now try system_run tests"
 else
     echo "[FAIL]"
 fi
