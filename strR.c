@@ -13,7 +13,7 @@ void StrInit(str_T *s)
 
     if(s -> data == NULL) {
         fprintf(stderr, "StrInit() memory allocation error.\n");
-        exit(1);
+        exit(99);
     }
 
     s -> data[0] = '\0';
@@ -41,7 +41,7 @@ void StrAppend(str_T *s, char c)
 
         if (s->data == NULL) {
             fprintf(stderr, "StrAppend() memory allocation error.\n");
-            exit(1);
+            exit(99);
         }
     }
 
@@ -60,7 +60,7 @@ void StrFillWith(str_T *dest, char *src)
 
         if (dest->data == NULL) {
             fprintf(stderr, "StrFillWith() memory allocation error..\n");
-            exit(1);
+            exit(99);
         }
     }
 
@@ -78,7 +78,7 @@ void StrCat(str_T *dest, str_T *src)
         
         if (dest->data == NULL) {
             fprintf(stderr, "StrCat() memory allocation error.\n");
-            exit(1);
+            exit(99);
         }
     }
     
@@ -97,7 +97,7 @@ void StrCatString(str_T *dest, char *src)
         
         if (dest->data == NULL) {
             fprintf(stderr, "StrCatString() memory allocation error.\n");
-            exit(1);
+            exit(99);
         }
     }
 
