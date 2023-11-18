@@ -538,10 +538,7 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
             }
 
             // zápis názvu parametru
-            if (!DLLstr_InsertLast(&(sig->par_names), StrRead(&par_name))) {
-                logErrCompilerMemAlloc();
-                return COMPILER_ERROR;
-            }
+            DLLstr_InsertLast(&(sig->par_names), StrRead(&par_name));
         }
 
         TRY_OR_EXIT(nextToken());
@@ -599,11 +596,7 @@ int parseFnCall(char* result_type) {
         }
 
         // poznačiť názov funkcie do zoznamu nedefinovaných funkcií, pre kontrolu na koniec
-        if (!DLLstr_InsertLast(&check_def_fns, fn->id))
-        {
-            logErrCompilerMemAlloc();
-            return COMPILER_ERROR;
-        }
+        DLLstr_InsertLast(&check_def_fns, fn->id);
     }
     else {
         if (fn->init) {
@@ -906,7 +899,7 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
                 }
             }
             else { // zápis názvu parametra do predpisu funkcie
-                PERFORM_RISKY_OP(DLLstr_InsertLast(&(sig->par_names), StrRead(&(tkn->atr))));
+                DLLstr_InsertLast(&(sig->par_names), StrRead(&(tkn->atr)));
             }
         }
         else {
@@ -924,7 +917,7 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
                 logErrSemantic(tkn, "parameter name and identifier must be different");
                 return SEM_ERR_OTHER;
             }
-            PERFORM_RISKY_OP(DLLstr_InsertLast(&(sig->par_ids), StrRead(&(tkn->atr))));
+            DLLstr_InsertLast(&(sig->par_ids), StrRead(&(tkn->atr)));
         }
         else {
             logErrSyntax(tkn, "parameter identifier");

@@ -106,13 +106,10 @@ void genCode(char *instruction, char *op1, char *op2, char *op3) {
         StrCatString(code, op3);
     }
 
-    bool insert;
-
     if(parser_inside_fn_def == true)
-        insert = DLLstr_InsertLast(&code_fn, StrRead(code));
+        DLLstr_InsertLast(&code_fn, StrRead(code));
     else
-        insert = DLLstr_InsertLast(&code_main, StrRead(code));
-    if (!insert) exit(COMPILER_ERROR);
+        DLLstr_InsertLast(&code_main, StrRead(code));
 
     StrDestroy(code);
     free(code);
