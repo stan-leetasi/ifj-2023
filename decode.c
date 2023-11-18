@@ -28,11 +28,11 @@ enum codes {
 char *string_codes[] = {
     "\\032",    //mezera
     "\\092",    //zpětné lomítko 
-    "\\010",    //nový řádek
+    "\\010",    //nový řádek \n
     "\\035",    //mřížka #
-    "\\\"",     //uvozovka
-    "\\r",      //přesun kurzoru na začátek
-    "\\t"       //odsazení
+    "\\034",     //uvozovka
+    "\\013",    //přesun kurzoru na začátek \r
+    "\\009"     //odsazení \t
 };
 /**
  * @brief Pomocná funkce, připojí obyčejný řetězec (char *) k řetězci datového typu str_T *
@@ -86,7 +86,7 @@ str_T strEncode(char * string) {
             strAdd(&decoded_string, string_codes[HASHTAG]);
 
             break;
-        case '\"':
+        case '"':
             //Uvozovka
             strAdd(&decoded_string, string_codes[QUOTE]);
             break;
