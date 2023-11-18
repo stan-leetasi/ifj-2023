@@ -10,6 +10,7 @@
 
 #include "dll.h"
 #include "parser.h"
+#include "decode.h"
 
 #define BOOL_CONST -50  ///< Konštanta - true/false ... Musí byť rôzna od hodnôt token_ids.
 
@@ -40,9 +41,8 @@ extern DLLstr_T code_main;
  * @param sub Podreťazec identifikátora.
  * @param id Výsledný unikátny identifikátor. V prípade neúspechu nedefinované.
  *           Dátovú štruktúru treba inicializovať.
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */
-int genUniqVar(char *scope, char *sub, str_T *id);
+void genUniqVar(char *scope, char *sub, str_T *id);
 
 /**
  * Vygenerované náveštie bude v tvare "<fn>&<sub><cislo>", kde 
@@ -61,9 +61,8 @@ int genUniqVar(char *scope, char *sub, str_T *id);
  * @param sub Podreťazec unikátneho náveštia.
  * @param label Výsledný unikátny názov náveštia. V prípade neúspechu nedefinované.
  *              Dátovú štruktúru treba inicializovať.
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */
-int genUniqLabel(char *fn, char *sub, str_T *label);
+void genUniqLabel(char *fn, char *sub, str_T *label);
 
 /**
  * V prípade reťazca treba reťazec prispoôsobiť požiadavkam cieľového kódu pomocou funkcie decode.
@@ -80,9 +79,8 @@ int genUniqLabel(char *fn, char *sub, str_T *label);
  * @param value Hodnota konštanty.
  * @param cval Výsledná konštanta v cieľovom kóde.
  *              Dátovú štruktúru treba inicializovať.
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */
-int genConstVal(int const_type, char *value, str_T *cval);
+void genConstVal(int const_type, char *value, str_T *cval);
 
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn pokiaľ parser_inside_fn_def==true
@@ -97,9 +95,8 @@ int genConstVal(int const_type, char *value, str_T *cval);
  * @param op1 Prvý operand. Ak sa rovná NULL, je ignorovaný.
  * @param op2 Druhý operand. Ak sa rovná NULL, je ignorovaný.
  * @param op3 Tretí operand. Ak sa rovná NULL, je ignorovaný.
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */
-int genCode(char *instruction, char *op1, char *op2, char *op3);
+void genCode(char *instruction, char *op1, char *op2, char *op3);
 
 /**
  * Funkcia pracuje so zoznamom code_fn pokiaľ parser_inside_fn_def==true
@@ -121,24 +118,24 @@ int genCode(char *instruction, char *op1, char *op2, char *op3);
  * @brief Vygeneruje kód pre deklaráciu premenných pred zadaný cyklus.
  * @param label Názov náveštia cyklu.
  * @param variables Zoznam identifikátorov premenných, ktoré treba definovať pred cyklom.
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */
-int genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
+void genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
 
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn.
  * 
- * Vygenerovaný kód:    vytvorí nový rámec, vloží ho do zásobníka,
+ * Vygenerovaný kód:    náveštie na funkciu, vytvorí nový rámec, vloží ho do zásobníka,
  *                      definuje v novom rámci premenné parametrov funkcie,
  *                      zapíše do nich hodnoty zo zásobníka (na vrchole je prvý argument).
  * 
  * Identifikátory parametrov vyzerajú nasledovne "LF@<id>%".
  * 
  * Príklad:
- *      genFnDefBegin({"a", "b"}),
+ *      genFnDefBegin("sum", {"a", "b"}),
  *      vygeneruje kód:
  * 
  *      ...
+ *      LABEL sum
  *      CREATEFRAME
  *      PUSHFRAME
  *      DEFVAR  LF@a%
@@ -147,10 +144,10 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
  *      POPS    LF@b%
  * 
  * @brief Vygeneruje kód začiatku definície funkcie, resp. príprava nového rámca a argumentov.
+ * @param fn Názov funkcie
  * @param params Identifikátory parametrov funkcie
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
 */
-int genFnDefBegin(char *fn, DLLstr_T *params);
+void genFnDefBegin(char *fn, DLLstr_T *params);
 
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn pokiaľ parser_inside_fn_def==true
@@ -171,9 +168,90 @@ int genFnDefBegin(char *fn, DLLstr_T *params);
  * @brief Vygeneruje kód volania funkcie.
  * @param fn Názov funkcie
  * @param args Predávané argumenty
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
+    return COMPILATION_OK;
 */
-int genFnCall(char *fn, DLLstr_T *args);
+void genFnCall(char *fn, DLLstr_T *args);
+
+/**
+ * Vygenerovaný kód bude vložený na koniec zoznamu code_fn pokiaľ parser_inside_fn_def==true
+ * (globálna premenná v parser.h), inak na koniec code_main.
+ * 
+ * Argumenty funkce se budou zpracovávat z leva doprava. Jako kod se vygeneruje sekvence WRITE prikazu s argumenty v args
+ * Ve tvaru:
+ * 
+ *      ...
+ *      WRITE args[0]
+ *      WRITE args[1]
+ *      WRITE args[3]
+ *      ...      ...
+ * 
+ * @brief Vygeneruje kód potřebný pro provedení build-in funkce write()
+ * 
+ * @param args Předané argumenty
+ */
+void genWrite(DLLstr_T *args);
+
+/**
+ * Vygenerovaný kód bude vložený na koniec zoznamu code_fn.
+ * 
+ * Vygeneruje se následující kód:
+ *      LABEL substring
+        CREATEFRAME
+        PUSHFRAME
+
+        DEFVAR LF@?!end$1
+        POPS LF@?!end$1
+        DEFVAR LF@?!begin$2
+        POPS LF@?!begin$2
+        DEFVAR LF@?!string$3
+        POPS LF@?!string$3
+
+        DEFVAR LF@?!strlen$4
+        DEFVAR LF@?!check$5
+        DEFVAR LF@?!output$6
+        DEFVAR LF@?!char$7
+
+        MOVE LF@?!output$6 nil@nil
+        STRLEN LF@?!strlen$4 LF@?!string$3
+
+        GT LF@?!check$5 LF@?!begin$2 LF@?!strlen$4
+        EQ LF@?!check$5 LF@?!begin$2 LF@?!strlen$4
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        GT LF@?!check$5 LF@?!end$1 LF@?!strlen$4
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        LT LF@?!check$5 LF@?!begin$2 int@0
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        LT LF@?!check$5 LF@?!end$1 int@0
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        GT LF@?!check$5 LF@?!begin$2 LF@?!end$1
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        MOVE LF@?!output$6 string@
+        EQ LF@?!check$5 LF@?!begin$2 LF@?!end$1
+        JUMPIFEQ end&3 LF@?!check$5 bool@true
+
+        LABEL cycle&2
+            GETCHAR LF@?!strlen$4 LF@?!string$3 LF@?!begin$2
+            CONCAT LF@?!output$6 LF@?!output$6 LF@?!strlen$4
+            ADD LF@?!begin$2 LF@?!begin$2 int@1
+            JUMPIFNEQ cycle&2 LF@?!begin$2 LF@?!end$1
+
+        LABEL end&3
+            PUSHS LF@?!output$6
+        RETURN
+ * 
+ * Všechny proměnné a labely, použité v této funkci, musí mít unikatní 
+ * pojmenování v rámci celého programu
+ * 
+ * @brief Vygeneruje kód potřebný pro provedení build-in funkce substring
+ * 
+ * @param ans Předpokládá se nějaké externí proměnná (z pohledu této funkce), kam bude uložen výsledek
+ */
+void genSubstring();
 
 #endif // ifndef _GENERATOR_H_
 /* Koniec súboru generator.h */

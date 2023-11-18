@@ -13,7 +13,7 @@ void StrInit(str_T *s)
 
     if(s -> data == NULL) {
         fprintf(stderr, "StrInit() memory allocation error.\n");
-        exit(1);
+        exit(99);
     }
 
     s -> data[0] = '\0';
@@ -41,7 +41,7 @@ void StrAppend(str_T *s, char c)
 
         if (s->data == NULL) {
             fprintf(stderr, "StrAppend() memory allocation error.\n");
-            exit(1);
+            exit(99);
         }
     }
 
@@ -60,7 +60,7 @@ void StrFillWith(str_T *dest, char *src)
 
         if (dest->data == NULL) {
             fprintf(stderr, "StrFillWith() memory allocation error..\n");
-            exit(1);
+            exit(99);
         }
     }
 
@@ -78,10 +78,29 @@ void StrCat(str_T *dest, str_T *src)
         
         if (dest->data == NULL) {
             fprintf(stderr, "StrCat() memory allocation error.\n");
-            exit(1);
+            exit(99);
         }
     }
     
     strcat(dest->data, src->data);
+}
+
+void StrCatString(str_T *dest, char *src)
+{
+    size_t len_dest = strlen(dest->data);
+    size_t len_src = strlen(src);
+    
+    
+    if (len_dest + len_src + 1 >= dest->size) {
+        dest->size = len_dest + len_src + 1;
+        dest->data = (char *)realloc(dest->data, dest->size);
+        
+        if (dest->data == NULL) {
+            fprintf(stderr, "StrCatString() memory allocation error.\n");
+            exit(99);
+        }
+    }
+
+    strcat(dest->data, src);
 }
 /* Koniec súboru strR.c */
