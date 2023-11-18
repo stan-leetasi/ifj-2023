@@ -69,7 +69,6 @@ char convertNilTypeToNonNil(char nil_type) {
     return nil_type;
 }
 
-
 /**
  * @brief Zistí, či sa v zozname nachádzajú medzi sebou rôzne reťazce (pozor! reťazce "_" sú ignorované), resp. nie je možné nájsť dva totožné.
  * @param list zoznam
@@ -77,7 +76,6 @@ char convertNilTypeToNonNil(char nil_type) {
  * @warning Mení aktivitu zoznamu.
  * @return true v prípade úspechu, false v prípade chyby programu
 */
-
 bool listHasUniqueValues(DLLstr_T* list, bool* is_unique) {
     str_T a, b; // reťazce položiek A a B
     StrInit(&a);
@@ -116,32 +114,37 @@ bool listHasUniqueValues(DLLstr_T* list, bool* is_unique) {
 /**
  * @brief Zistí či funkcia je vstavaná.
 */
-bool isBuiltInFunction(char * function_name) {
+bool isBuiltInFunction(char* function_name) {
     static size_t total_num_of_bif = 10;
-    static char *built_in_functions[] = {
+    static char* built_in_functions[] = {
         "readString", "readInt", "readDouble",
         "write", "Int2Double", "Double2Int",
         "length", "substring", "ord", "chr"
     };
     for (size_t i = 0; i < total_num_of_bif; i++) {
-        if(strcmp(function_name, built_in_functions[i]) == 0) return true;
+        if (strcmp(function_name, built_in_functions[i]) == 0) return true;
     }
     return false;
 }
 
 /**
- * @brief Vloží danú signatúru funkcie do TS
+ * @brief Vloží danú signatúru vstavanej funkcie do TS
+ * @param name      Názov funkcie
+ * @param count_par Počet parametrov
+ * @param ret_type  Návratový typ
+ * @param par_names Pole názvov parametrov
+ * @param par_types Reťazec označujúci dátové typy parametrov
 */
 void loadSingleBIFnSig(char* name, size_t count_par, char ret_type,
     char* par_names[], char* par_types) {
-    
+
     TSData_T* fn = SymTabCreateElement(name);
     fn->type = SYM_TYPE_FUNC;
     StrFillWith(&(fn->codename), name);
     fn->init = true;
     fn->sig = SymTabCreateFuncSig();
     fn->sig->ret_type = ret_type;
-    for(size_t i=0; i<count_par; i++) {
+    for (size_t i = 0; i < count_par; i++) {
         DLLstr_InsertLast(&(fn->sig->par_names), par_names[i]);
     }
     StrFillWith(&(fn->sig->par_types), par_types);
@@ -160,14 +163,14 @@ void loadBuiltInFunctionSignatures() {
 
     loadSingleBIFnSig("write", 0, SYM_TYPE_VOID, NULL, "");
 
-    char *empty_param[] = { "_" };
+    char* empty_param[] = { "_" };
     loadSingleBIFnSig("Int2Double", 1, SYM_TYPE_DOUBLE, empty_param, "i");
     loadSingleBIFnSig("Double2Int", 1, SYM_TYPE_INT, empty_param, "d");
     loadSingleBIFnSig("length", 1, SYM_TYPE_INT, empty_param, "s");
     loadSingleBIFnSig("ord", 1, SYM_TYPE_INT, empty_param, "s");
     loadSingleBIFnSig("chr", 1, SYM_TYPE_STRING, empty_param, "i");
 
-    char *substring_par_names[] = {"of", "startingAt", "endingBefore"};
+    char* substring_par_names[] = { "of", "startingAt", "endingBefore" };
     loadSingleBIFnSig("substring", 3, SYM_TYPE_STRING_NIL, substring_par_names, "sii");
 }
 
@@ -284,7 +287,7 @@ int parseTerm(char* term_type) {
  * @param bif_name Ak volaná funkcia nie je vstavaná, potom NULL, inak názov vstavanej funkcie.
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseFnArg(str_T* par_name, char* term_type, char *bif_name) {
+int parseFnArg(str_T* par_name, char* term_type, char* bif_name) {
     // <PAR_IN>        ->  id : term
     // <PAR_IN>        ->  term
     StrFillWith(par_name, StrRead(&(tkn->atr)));
@@ -360,7 +363,7 @@ int parseFnArg(str_T* par_name, char* term_type, char *bif_name) {
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
-        char *bif_name) {
+    char* bif_name) {
     // <PAR_LIST>      ->  <PAR_IN> <PAR_IN_NEXT>
     // <PAR_LIST>      ->  €
     // <PAR_IN_NEXT>   ->  , <PAR_IN> <PAR_IN_NEXT>
@@ -374,6 +377,8 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
     StrInit(&temp);
     DLLstr_First(&(sig->par_names));
 
+    // Špeciálny prístup sémantickej kontroly pri vstavanej funkcii "write",
+    // pretože môže mať variabilný počet argumentov.
     bool write_function = false;
     if (bif_name != NULL) {
         if (strcmp(bif_name, "write") == 0) write_function = true;
@@ -410,7 +415,7 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
         }
 
         // kontrola, či nie je funkcia volaná s viacerými argumentami
-        if ((defined || called_before) && !write_function) { /// ??? semnaticka > syntax chybou ???
+        if ((defined || called_before) && !write_function) {
             if (strlen(StrRead(&(sig->par_types))) <= loaded_args) {
                 logErrSemantic(tkn, "too many arguments in function call");
                 return SEM_ERR_FUNC;
@@ -420,9 +425,9 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
         TRY_OR_EXIT(parseFnArg(&par_name, &arg_type, bif_name)); // príkaz na spracovanie jedného argumentu
 
         // sémantická kontrola argumentu
-        if (write_function) {
+        if (write_function) { // všetky argumenty vo funkcií "write" nemajú názov parametra
             if (strcmp(StrRead(&par_name), "_") != 0) {
-                logErrSemantic(tkn, "function write does not use parameter names");
+                logErrSemantic(tkn, "function \"write\" does not use parameter names");
                 return SEM_ERR_FUNC;
             }
         }
@@ -493,7 +498,7 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
  * Stav tkn:
  *  - pred volaním: identifikátor volanej funkcie
  *  - po volaní:    BRT_RND_R
- * 
+ *
  * @brief Pravidlo pre spracovanie volania funkcie
  * @param result_type návratový typ funkcie
  * @return 0 v prípade úspechu, inak číslo chyby
