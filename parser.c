@@ -2,7 +2,7 @@
  * @file parser.c
  * @brief Syntaktický a sémantický anayzátor
  * @author Michal Krulich (xkruli03)
- * @date 17.11.2023
+ * @date 18.11.2023
  */
 
 #include "parser.h"
@@ -158,6 +158,8 @@ void loadBuiltInFunctionSignatures() {
     loadSingleBIFnSig("readInt", 0, SYM_TYPE_INT_NIL, NULL, "");
     loadSingleBIFnSig("readDouble", 0, SYM_TYPE_DOUBLE_NIL, NULL, "");
 
+    loadSingleBIFnSig("write", 0, SYM_TYPE_VOID, NULL, "");
+
     char *empty_param[] = { "_" };
     loadSingleBIFnSig("Int2Double", 1, SYM_TYPE_DOUBLE, empty_param, "i");
     loadSingleBIFnSig("Double2Int", 1, SYM_TYPE_INT, empty_param, "d");
@@ -278,15 +280,14 @@ int parseTerm(char* term_type) {
  *
  * @brief Pravidlo pre spracovanie argumentu volanej funkcie, pričom cez svoje parametre vráti informácie o načítanom argumente.
  * @param par_name  načítaný názov parametru
- * @param term      načítaný term
  * @param term_type dátový typ termu
+ * @param bif_name Ak volaná funkcia nie je vstavaná, potom NULL, inak názov vstavanej funkcie.
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseFnArg(str_T* par_name, str_T* term, char* term_type) {
+int parseFnArg(str_T* par_name, char* term_type, char *bif_name) {
     // <PAR_IN>        ->  id : term
     // <PAR_IN>        ->  term
     StrFillWith(par_name, StrRead(&(tkn->atr)));
-    StrFillWith(term, StrRead(&(tkn->atr)));
     switch (tkn->type)
     {
     case ID:
@@ -294,28 +295,27 @@ int parseFnArg(str_T* par_name, str_T* term, char* term_type) {
         if (tkn->type == COMMA || tkn->type == BRT_RND_R) {
             // <PAR_IN> ->  term
             // term je premenná a funkcia nemá názov pre parameter
-            StrFillWith(par_name, "_");
-            TSData_T* variable = SymTabLookup(&symt, StrRead(term));
+            TSData_T* variable = SymTabLookup(&symt, StrRead(par_name));
             if (variable == NULL) {
-                logErrSemantic(tkn, "%s was undeclared", StrRead(term));
+                logErrSemantic(tkn, "%s was undeclared", StrRead(par_name));
                 return SEM_ERR_UNDEF;
             }
             if (variable->type == SYM_TYPE_FUNC) {
-                logErrSemantic(tkn, "%s is a function", StrRead(term));
+                logErrSemantic(tkn, "%s is a function", StrRead(par_name));
                 return SEM_ERR_RETURN;
             }
             if (!(variable->init)) {
-                logErrSemantic(tkn, "%s was uninitialized", StrRead(term));
+                logErrSemantic(tkn, "%s was uninitialized", StrRead(par_name));
                 return SEM_ERR_UNDEF;
             }
             *term_type = variable->type;
+            StrFillWith(par_name, "_"); // funkcia má vynechaný názvo pre parameter
             saveToken();
         }
         // inak prvý token musí byť názov parametra
         else if (tkn->type == COLON) {
             // <PAR_IN>        ->  id : term
             TRY_OR_EXIT(nextToken());
-            StrFillWith(term, StrRead(&(tkn->atr)));
             TRY_OR_EXIT(parseTerm(term_type));
         }
         else {
@@ -356,9 +356,11 @@ int parseFnArg(str_T* par_name, str_T* term, char* term_type) {
  * @param defined Značí či bola funkcia definovaná
  * @param called_before Značí, či už bola daná funkcia predtým volaná
  * @param sig Signatúra funkcie, ktorá je volaná
+ * @param bif_name Ak volaná funkcia nie je vstavaná, potom NULL, inak názov vstavanej funkcie.
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
+int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
+        char *bif_name) {
     // <PAR_LIST>      ->  <PAR_IN> <PAR_IN_NEXT>
     // <PAR_LIST>      ->  €
     // <PAR_IN_NEXT>   ->  , <PAR_IN> <PAR_IN_NEXT>
@@ -367,11 +369,15 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
     size_t loaded_args = 0; // počet načítaných argumentov
 
     char arg_type;  // typ aktuálne načítaného argumentu
-    str_T par_name, arg, temp; // názov parametru, term/argument, pomocné reťazcové úložisko
+    str_T par_name, temp; // názov parametru, pomocné reťazcové úložisko
     StrInit(&par_name);
-    StrInit(&arg);
     StrInit(&temp);
     DLLstr_First(&(sig->par_names));
+
+    bool write_function = false;
+    if (bif_name != NULL) {
+        if (strcmp(bif_name, "write") == 0) write_function = true;
+    }
 
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_RND_R)
@@ -404,17 +410,23 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
         }
 
         // kontrola, či nie je funkcia volaná s viacerými argumentami
-        if (defined || called_before) { /// ??? semnaticka > syntax chybou ???
+        if ((defined || called_before) && !write_function) { /// ??? semnaticka > syntax chybou ???
             if (strlen(StrRead(&(sig->par_types))) <= loaded_args) {
                 logErrSemantic(tkn, "too many arguments in function call");
                 return SEM_ERR_FUNC;
             }
         }
 
-        TRY_OR_EXIT(parseFnArg(&par_name, &arg, &arg_type)); // príkaz na spracovanie jedného argumentu
+        TRY_OR_EXIT(parseFnArg(&par_name, &arg_type, bif_name)); // príkaz na spracovanie jedného argumentu
 
         // sémantická kontrola argumentu
-        if (defined || called_before) {
+        if (write_function) {
+            if (strcmp(StrRead(&par_name), "_") != 0) {
+                logErrSemantic(tkn, "function write does not use parameter names");
+                return SEM_ERR_FUNC;
+            }
+        }
+        else if (defined || called_before) {
             // kontrola dátového typu argumentu s predpisom funkcie
             if (!isCompatibleAssign(StrRead(&(sig->par_types))[loaded_args], arg_type)) {
                 logErrSemantic(tkn, "different type in function call");
@@ -463,7 +475,7 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
         DLLstr_Next(&(sig->par_names));
     }
 
-    if (defined || called_before) { // kontrola, či bola funkcia zavolaná so správnym počtom argumentov
+    if ((defined || called_before) && !write_function) { // kontrola, či bola funkcia zavolaná so správnym počtom argumentov
         if (strlen(StrRead(&(sig->par_types))) != loaded_args) {
             logErrSemantic(tkn, "different count of arguments in function call");
             return SEM_ERR_FUNC;
@@ -472,7 +484,6 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
 
     // dealokácia pomocných reťazcov
     StrDestroy(&par_name);
-    StrDestroy(&arg);
     StrDestroy(&temp);
 
     return COMPILATION_OK;
@@ -482,7 +493,7 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig) {
  * Stav tkn:
  *  - pred volaním: identifikátor volanej funkcie
  *  - po volaní:    BRT_RND_R
- *
+ * 
  * @brief Pravidlo pre spracovanie volania funkcie
  * @param result_type návratový typ funkcie
  * @return 0 v prípade úspechu, inak číslo chyby
@@ -492,8 +503,8 @@ int parseFnCall(char* result_type) {
 
     // získanie informácii o funkcii z TS
     TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&(tkn->atr)));
-    bool built_in_fn = isBuiltInFunction(fn->id);
     bool called_before = fn != NULL;
+    bool built_in_fn = false;
     if (fn == NULL) // funkcia nebola definovaná a ani volaná
     {
         // vytvorí sa o nej záznam do TS
@@ -522,7 +533,7 @@ int parseFnCall(char* result_type) {
     }
     else {
         if (fn->init) {
-
+            built_in_fn = isBuiltInFunction(fn->id);
         }
     }
 
@@ -533,7 +544,7 @@ int parseFnCall(char* result_type) {
     }
 
     // spracovanie argumentov funkcie
-    TRY_OR_EXIT(parseFnCallArgs(fn->init, called_before, fn->sig));
+    TRY_OR_EXIT(parseFnCallArgs(fn->init, called_before, fn->sig, built_in_fn ? fn->id : NULL));
 
     *result_type = fn->sig->ret_type;
 
