@@ -280,6 +280,7 @@ void DLLstr_printContent(DLLstr_T *list) {
 		printf("%s\n", StrRead(&text));
 		DLLstr_Next(list);
 	}
+	StrDestroy(&text);
 }
 
 /* Koniec súboru dll.c */

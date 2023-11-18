@@ -131,7 +131,7 @@ void genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
         DLLstr_Next(variables);
     }
 
-    genCode("LABEL", label, NULL, NULL);
+    //genCode("LABEL", label, NULL, NULL);
     StrDestroy(&var);
 }
 

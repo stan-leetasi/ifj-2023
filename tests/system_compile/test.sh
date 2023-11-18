@@ -24,7 +24,6 @@ do
         #echo -e "\t\tOK"
         result=0
     else
-        rm "${test_sample}.prog"
         compile_ok=false
         echo -e "Failed to compile ${f}\t\terr #${result}"
         echo "----------------------------------------------------------"

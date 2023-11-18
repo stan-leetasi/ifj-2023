@@ -133,6 +133,13 @@ bool isBuiltInFunction(char* function_name) {
 }
 
 /**
+ * @brief Určí či je potrebné pri volaní určitej funkcie pop-núť lokálny rámec
+*/
+bool shouldPopFrame(char *function_name) {
+    return !isBuiltInFunction(function_name) || strcmp(function_name, "substring") == 0;
+}
+
+/**
  * @brief Vloží danú signatúru vstavanej funkcie do TS
  * @param name      Názov funkcie
  * @param count_par Počet parametrov
@@ -177,6 +184,55 @@ void loadBuiltInFunctionSignatures() {
 
     char* substring_par_names[] = { "of", "startingAt", "endingBefore" };
     loadSingleBIFnSig("substring", 3, SYM_TYPE_STRING_NIL, substring_par_names, "sii");
+}
+
+/**
+ * @brief Vygeneruje cieľovú inštrukciu príslušnej vstavanej funkcie s argumentom v cieľovom kóde
+ * @param bif_name
+ * @param arg_codename
+ * @return true ak bif_name je jedna z vstavaných funkcií
+ *          {"write", "Int2Double", "Double2Int", "length", "ord", "chr"},
+ *          inak false
+*/
+bool biFnGenInstruction(char *bif_name, char *arg_codename) {
+    if (strcmp(bif_name, "write") == 0) {
+        genCode("WRITE", arg_codename, NULL, NULL);
+        return true;
+    }
+    else if (strcmp(bif_name, "Int2Double") == 0) {
+        genCode("PUSHS", arg_codename, NULL, NULL);
+        genCode("INT2FLOATS", NULL, NULL, NULL);
+        return true;
+    }
+    else if (strcmp(bif_name, "Double2Int") == 0) {
+        genCode("PUSHS", arg_codename, NULL, NULL);
+        genCode("FLOAT2INTS", NULL, NULL, NULL);
+        return true;
+    }
+    else if (strcmp(bif_name, "length") == 0) {
+        genCode("STRLEN", "GF@!tmp1", arg_codename, NULL);
+        genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+        return true;
+    }
+    else if (strcmp(bif_name, "ord") == 0) {
+        str_T label_empty_string;
+        StrInit(&label_empty_string);
+        genUniqLabel(StrRead(&fn_name), "ord", &label_empty_string);
+
+        genCode("MOVE", "GF@!tmp1", "int@0", NULL);
+        genCode("STRLEN", "GF@!tmp2", arg_codename, NULL);
+        genCode("JUMPIFEQ", StrRead(&label_empty_string), "GF@!tmp2", "int@0");
+        genCode("STRI2INT", "GF@!tmp1", arg_codename, "int@0");
+        genCode("LABEL", StrRead(&label_empty_string), NULL, NULL);
+        genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+        return true;
+    }
+    else if (strcmp(bif_name, "chr") == 0) {
+        genCode("PUSHS", arg_codename, NULL, NULL);
+        genCode("INT2CHARS", NULL, NULL, NULL);
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -236,9 +292,10 @@ int parseDataType(char* data_type) {
  *
  * @brief Pravidlo pre spracovanie termu
  * @param term_type Dátový typ termu
+ * @param term_codename Tvar termu v cieľovom kóde
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseTerm(char* term_type) {
+int parseTerm(char* term_type, str_T *term_codename) {
     switch (tkn->type)
     {
     case ID: // premenná
@@ -259,18 +316,23 @@ int parseTerm(char* term_type) {
             return SEM_ERR_UNDEF;
         }
         *term_type = variable->type;
+        StrFillWith(term_codename, StrRead(&(variable->codename)));
         break;
     case INT_CONST: // konštanty
         *term_type = SYM_TYPE_INT;
+        genConstVal(INT_CONST, StrRead(&(tkn->atr)), term_codename);
         break;
     case DOUBLE_CONST:
         *term_type = SYM_TYPE_DOUBLE;
+        genConstVal(DOUBLE_CONST, StrRead(&(tkn->atr)), term_codename);
         break;
     case STRING_CONST:
         *term_type = SYM_TYPE_STRING;
+        genConstVal(STRING_CONST, StrRead(&(tkn->atr)), term_codename);
         break;
     case NIL:
         *term_type = SYM_TYPE_NIL;
+        genConstVal(NIL, "", term_codename);
         break;
     default:
         // nie je to term
@@ -290,9 +352,11 @@ int parseTerm(char* term_type) {
  * @param par_name  načítaný názov parametru
  * @param term_type dátový typ termu
  * @param bif_name Ak volaná funkcia nie je vstavaná, potom NULL, inak názov vstavanej funkcie.
+ * @param used_args Získané argumenty funkcie v cieľovom kóde.
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseFnArg(str_T* par_name, char* term_type, char* bif_name) {
+int parseFnArg(str_T* par_name, char* term_type, char* bif_name,
+        DLLstr_T *used_args) {
     // <PAR_IN>        ->  id : term
     // <PAR_IN>        ->  term
     str_T arg_codename; // Tvar argumentu v cieľovom kóde
@@ -320,13 +384,14 @@ int parseFnArg(str_T* par_name, char* term_type, char* bif_name) {
             }
             *term_type = variable->type;
             StrFillWith(par_name, "_"); // funkcia má vynechaný názvo pre parameter
+            StrFillWith(&arg_codename, StrRead(&(variable->codename)));
             saveToken();
         }
         // inak prvý token musí byť názov parametra
         else if (tkn->type == COLON) {
             // <PAR_IN>        ->  id : term
             TRY_OR_EXIT(nextToken());
-            TRY_OR_EXIT(parseTerm(term_type));
+            TRY_OR_EXIT(parseTerm(term_type, &arg_codename));
         }
         else {
             logErrSyntax(tkn, "',' or ':'");
@@ -334,27 +399,20 @@ int parseFnArg(str_T* par_name, char* term_type, char* bif_name) {
         }
         break;
     case INT_CONST: // <PAR_IN> ->  term , kde term je konštanta
-        StrFillWith(par_name, "_");
-        *term_type = SYM_TYPE_INT;
-        
-        break;
     case DOUBLE_CONST:
-        StrFillWith(par_name, "_");
-        *term_type = SYM_TYPE_DOUBLE;
-        break;
     case STRING_CONST:
-        StrFillWith(par_name, "_");
-        *term_type = SYM_TYPE_STRING;
-        break;
     case NIL:
         StrFillWith(par_name, "_");
-        *term_type = SYM_TYPE_NIL;
+        TRY_OR_EXIT(parseTerm(term_type, &arg_codename));
         break;
     default:
         logErrSyntax(tkn, "parameter identifier or term");
         return SYN_ERR;
     }
 
+    if(!biFnGenInstruction(bif_name == NULL ? "" : bif_name, StrRead(&arg_codename))) {
+        DLLstr_InsertLast(used_args, StrRead(&arg_codename));
+    }
     StrDestroy(&arg_codename);
 
     return COMPILATION_OK;
@@ -370,10 +428,11 @@ int parseFnArg(str_T* par_name, char* term_type, char* bif_name) {
  * @param called_before Značí, či už bola daná funkcia predtým volaná
  * @param sig Signatúra funkcie, ktorá je volaná
  * @param bif_name Ak volaná funkcia nie je vstavaná, potom NULL, inak názov vstavanej funkcie.
+ * @param used_args Získané argumenty funkcie v cieľovom kóde.
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
-    char* bif_name) {
+    char* bif_name, DLLstr_T *used_args) {
     // <PAR_LIST>      ->  <PAR_IN> <PAR_IN_NEXT>
     // <PAR_LIST>      ->  €
     // <PAR_IN_NEXT>   ->  , <PAR_IN> <PAR_IN_NEXT>
@@ -432,7 +491,7 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
             }
         }
 
-        TRY_OR_EXIT(parseFnArg(&par_name, &arg_type, bif_name)); // príkaz na spracovanie jedného argumentu
+        TRY_OR_EXIT(parseFnArg(&par_name, &arg_type, bif_name, used_args)); // príkaz na spracovanie jedného argumentu
 
         // sémantická kontrola argumentu
         if (write_function) { // všetky argumenty vo funkcií "write" nemajú názov parametra
@@ -559,14 +618,29 @@ int parseFnCall(char* result_type) {
     }
 
     // spracovanie argumentov funkcie
-    TRY_OR_EXIT(parseFnCallArgs(fn->init, called_before, fn->sig, built_in_fn ? fn->id : NULL));
+    DLLstr_T args_codenames;
+    DLLstr_Init(&args_codenames);
+    TRY_OR_EXIT(parseFnCallArgs(fn->init, called_before, fn->sig, built_in_fn ? fn->id : NULL, &args_codenames));
 
     if(strcmp(fn->id, "substring") == 0) {
         bifn_substring_called = true;
     }
     if(!built_in_fn || strcmp(fn->id, "substring") == 0) {
-        genCode("CALL", fn->id, NULL, NULL);
+        genFnCall(fn->id, &args_codenames);
     }
+    else if(strcmp(fn->id, "readString") == 0) {
+        genCode("READ", "GF@!tmp1", "string", NULL);
+        genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+    }
+    else if(strcmp(fn->id, "readInt") == 0) {
+        genCode("READ", "GF@!tmp1", "int", NULL);
+        genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+    }
+    else if(strcmp(fn->id, "readDouble") == 0) {
+        genCode("READ", "GF@!tmp1", "float", NULL);
+        genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+    }
+    DLLstr_Dispose(&args_codenames);
 
     *result_type = fn->sig->ret_type;
 
@@ -608,8 +682,10 @@ int parseAssignment(char* result_type, char *result_codename) {
             // <ASSIGN>  ->  <CALL_FN>
             saveToken();
             tkn = first_tkn;
+            bool popframe = shouldPopFrame(StrRead(&(tkn->atr)));
             TRY_OR_EXIT(parseFnCall(result_type));
-            genCode("POPFRAME", NULL, NULL, NULL); // zbavenie sa lokálneho rámca funkcie
+            if(popframe) genCode("POPFRAME", NULL, NULL, NULL);
+            if(*result_type != SYM_TYPE_VOID) genCode("POPS", "GF@!tmp1", NULL, NULL);
         }
         else {
             saveToken();
@@ -1391,9 +1467,10 @@ int parse() {
             // <STAT>   ->  <CALL_FN>
             saveToken();
             tkn = first_tkn;
+            bool popframe = shouldPopFrame(StrRead(&(tkn->atr)));
             TRY_OR_EXIT(parseFnCall(&result_type));
-            genCode("POPFRAME", NULL, NULL, NULL);
-            if(result_type != SYM_TYPE_VOID) genCode("CLEARS", NULL, NULL, NULL); // ??? zmeniť na POPS ?
+            if(popframe) genCode("POPFRAME", NULL, NULL, NULL);
+            if(result_type != SYM_TYPE_VOID) genCode("POPS", "GF@!tmp1", NULL, NULL);
         }
         else if (tkn->type == ASSIGN) {
             // <STAT>   ->  id = <ASSIGN>
@@ -1467,6 +1544,9 @@ int checkIfAllFnDef() {
 
 void printOutCompiledCode() {
     printf(".IFJcode23\n"); // povinná hlavička
+    printf("DEFVAR GF@!tmp1\n");
+    printf("DEFVAR GF@!tmp2\n");
+    printf("DEFVAR GF@!tmp3\n");
     printf("JUMP !main\n");
 
     if(bifn_substring_called) genSubstring();
