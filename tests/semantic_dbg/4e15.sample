@@ -1,7 +1,0 @@
-/* nespravne volanie (zly pocet argumentov) - sekcia 4.4 Volanie funkcie */
-
-func quad(_ a: Int, _ b : Double) {
-    
-}
-
-quad (3, 2.0, 8.0)

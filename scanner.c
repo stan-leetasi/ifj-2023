@@ -235,7 +235,8 @@ token_T *getToken()
         //proměnná indikuje, jestli se má vložit znak zpět do streamu nebo ne
         bool push_to_stream = false;
 
-        switch (state) {
+        switch (state)
+        {
 /*=======================================STATE=======================================*/
             case INIT_STATE_S:
 
@@ -256,11 +257,11 @@ token_T *getToken()
                 } else if (isdigit(c)) {
                     //číslo
                     state = INT_NUMBER_S;
+                    
                 } else if (c == '"') {
                     //Řetězec
                     state = STRING_S;
-                    //Nebude se přidávat uvozovka do řetězce
-                    add_char_to_tkn = false;
+                    
                 } else if (isalpha(c)) {
                     //Identifikátor nebo klíčové slovo
                     state = ID_S;
@@ -479,7 +480,8 @@ token_T *getToken()
                 if (isalnum(c) || c == '_') {
                     //Bude se jednat o identifikátor začínající podtržítkem
                     state = ID_S;
-                
+                    //StrAppend(&tkn->atr, '_'); //Do řetězce se přidá i to začáteční podtržítko, jelikož ještě nebylo přidáno
+                    
                 } else {
                     //jedná se o znak podtržítko
                     push_to_stream = true;
@@ -488,11 +490,9 @@ token_T *getToken()
                 break;
 /*=======================================STATE=======================================*/
             case STRING_S:
-                add_char_to_tkn = true;
                 if (c == '"') {
                     //prázdný řetězec
                     state = EMPTY_STRING_S;
-                    add_char_to_tkn = false;
                 } else if (c == EOF) {
                     //Otevřený řetězec, za kterým následuje EOF
                     push_to_stream = true;
@@ -507,10 +507,8 @@ token_T *getToken()
             case SINGLE_LINE_STRING_S:
                 if (c == '"') {
                     id_token = STRING_CONST;
-                    //Nebude se přidávat uvozovka, jakožto konec řetězce, do tokenu
-                    add_char_to_tkn = false;
                 } else if (c == EOF) {
-                    //Neukončený řetězec
+                  //Neukončený řetězec
                     push_to_stream = true;
                     id_token = INVALID;
                 } else if (c == '\\') {
@@ -527,6 +525,7 @@ token_T *getToken()
                 //Toto je přechodový stav mezi víceřádkovým řetězcem a jednořádkovým řetězcem
                 if (c == '"') {
                     state = PRE_MULTI_LINE_STRING_S;
+                    
                 } else {
                     push_to_stream = true;
                     id_token = STRING_CONST;
@@ -534,7 +533,6 @@ token_T *getToken()
                 break;
 /*=======================================STATE=======================================*/
             case PRE_MULTI_LINE_STRING_S:
-                add_char_to_tkn = true;
                 //Tři uvozovky (víceřádkový řetězec) musí být na samostatném řádku
                 if (c == '\n') {
                     state = MULTI_LINE_STRING_S;
@@ -570,13 +568,11 @@ token_T *getToken()
             case MULTI_LINE_STRING_END_S:
                 //Řetězec může být ukončen
                 if (c == '"') {
-                    add_char_to_tkn = false;
                     quote_mark_num++;
                     //Abych nemusel přecházet do dalších dvou stavů, je zde pomocná proměnná, která počítá uvozovky
                     if (quote_mark_num == END_OF_MULTILINE_STRING) {
                         id_token = STRING_CONST;
                     }
-                    
                     state = MULTI_LINE_STRING_END_S;
                 } else if (c == EOF) {
                     //Neukončený řetězec
@@ -697,14 +693,9 @@ token_T *getToken()
         //Přidání znaku do atributu tokenu
         if (add_char_to_tkn) {
             if (id_token == EOF_TKN)
-                StrFillWith(&tkn->atr, "EOF");
-            else 
+                StrFillWith(&tkn->atr,"EOF");
+            else {
                 StrAppend(&tkn->atr, c);
-        } else if (add_char_to_tkn == false) {
-            if (state == MULTI_LINE_STRING_END_S && quote_mark_num < END_OF_MULTILINE_STRING && c != '"') {
-                for (unsigned i = 0; i < quote_mark_num; i++) {
-                    StrAppend(&tkn->atr, '"');
-                }
             }
         }
 

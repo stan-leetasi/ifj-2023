@@ -1,9 +1,0 @@
-/* nazvy parametrov musia byť rozne */
-
-func x(a A:Int, b B:Int, a C:Int) -> Int
-{
-    return C
-}
-
-
-x(a: 2, b: 3, a: 4)

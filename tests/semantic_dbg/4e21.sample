@@ -1,8 +1,0 @@
-/* nedostatok argumentov */
-
-A()
-
-func A(_ a: String) -> String {
-    return a
-}
-

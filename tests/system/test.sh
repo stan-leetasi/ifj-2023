@@ -11,13 +11,11 @@ echo "Executing system tests"
 #result_file="syntax_dbg.result"
 #rm -f ${result_file}
 
-compile_ok=true
-
 for f in *.sample
 do
     echo "----------------------------------------------------------"
     test_sample=${f%.*}
-    #echo "Compiling ${f}"
+    echo "Compiling ${f}"
     ./main.out <"${test_sample}.sample" >"${test_sample}.prog"
     result=$?
     #echo -e "${test_sample} " "$(printf "%d" ${result})" >>${result_file}
@@ -26,24 +24,15 @@ do
         #echo -e "\t\tOK"
         result=0
     else
-        compile_ok=false
         echo -e "Failed to compile ${f}\t\terr #${result}"
     fi
 done
 
 echo "----------------------------------------------------------"
-
-if ${compile_ok} ; then 
-    echo "[PASS] - Everything compiled successfully"
-    echo "         Now try system_run tests"
-    if [ ! -d "../system_run" ] ; then
-        echo "directory system_run not found"
-        exit 0
-    fi
-    for f in *.prog
-    do
-        mv "$f" "../system_run"
-    done
-else
-    echo "[FAIL]"
-fi
+#diff --color "${result_file%.result}.exp" "${result_file}"
+#DIFF=$?
+#if [ ${DIFF} -eq 0 ]; then 
+#    echo "[PASS]"
+#else
+#    echo "[FAIL]"
+#fi

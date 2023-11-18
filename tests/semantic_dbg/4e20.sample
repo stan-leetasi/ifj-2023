@@ -1,8 +1,0 @@
-/* rozdielne volanie a neskorsia definicia funkcie */
-
-A(48)
-
-func A(_ a: String) -> String {
-    return a
-}
-

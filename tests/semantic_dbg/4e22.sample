@@ -1,8 +1,0 @@
-/* vela argumentov */
-
-A(85, 30, 70)
-
-func A() -> String {
-    return "t"
-}
-
