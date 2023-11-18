@@ -102,5 +102,13 @@ void DLLstr_DeleteAfter(DLLstr_T* list);
 void DLLstr_DeleteBefore(DLLstr_T* list);
 void DLLstr_Dispose(DLLstr_T* list);
 
+/**
+ * Môže zmeniť aktivitu zoznamu.
+ * 
+ * @brief Vypíše obsah zoznamu na stdout. Za každou položkou sa vytlačí znak nového riadku.
+ * @param list Zoznam
+*/
+void DLLstr_printContent(DLLstr_T *list);
+
 #endif // ifndef _DLL_H_
 /* Koniec súboru dll.h */

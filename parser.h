@@ -30,11 +30,11 @@
   * @brief Vykoná zadanú operáciu a v prípade návratovej hodnotej rôznej od nuly (COMPILATION_OK),
   *        použije ju ako návratovú hodnotu aktuálnej funkcie.
  */
-#define TRY_OR_EXIT(operation)            \
-do {                                      \
-  int error_code = (operation);           \
-  if (error_code != 0) return error_code; \
-} while (0)
+#define TRY_OR_EXIT(operation)              \
+    do {                                    \
+    int error_code = (operation);           \
+    if (error_code != 0) return error_code; \
+    } while (0)
 
  /**
   * @brief Aktuálny načítaný token
@@ -89,6 +89,11 @@ int parse();
  * @return 0 ak je všetko v poriadku, inak číslo chyby
 */
 int checkIfAllFnDef();
+
+/**
+ * @brief Vypíše na stdout vygenerovaný IFJcode23.
+*/
+void printOutCompiledCode();
 
 /**
  * @brief Uvoľní všetky hlavné zdroje využívané prekladačom (parsera)

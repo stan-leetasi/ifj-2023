@@ -16,7 +16,10 @@ int main()
         TRY_OR_EXIT(parse());
         TRY_OR_EXIT(nextToken());
     }
+    
     TRY_OR_EXIT(checkIfAllFnDef());
+    
+    printOutCompiledCode();
 
     destroyParser();
 

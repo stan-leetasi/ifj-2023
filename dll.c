@@ -6,6 +6,7 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "dll.h"
 
  /**
@@ -267,6 +268,18 @@ void DLLstr_Dispose(DLLstr_T* list) {
 	list->first = NULL;
 	list->active = NULL;
 	list->last = NULL;
+}
+
+void DLLstr_printContent(DLLstr_T *list) {
+	str_T text;
+	StrInit(&text);
+	DLLstr_First(list);
+	while (DLLstr_IsActive(list))
+	{
+		DLLstr_GetValue(list, &text);
+		printf("%s\n", StrRead(&text));
+		DLLstr_Next(list);
+	}
 }
 
 /* Koniec súboru dll.c */

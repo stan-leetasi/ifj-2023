@@ -41,6 +41,11 @@ static str_T first_loop_label;
 */
 static DLLstr_T variables_declared_inside_loop;
 
+/**
+ * @brief Bola volaná vstavaná funkcia "substring".
+*/
+static bool bifn_substring_called = false;
+
 /* ----------- PRIVATE FUNKCIE ----------- */
 
 #define PERFORM_RISKY_OP(operation)         \
@@ -290,6 +295,8 @@ int parseTerm(char* term_type) {
 int parseFnArg(str_T* par_name, char* term_type, char* bif_name) {
     // <PAR_IN>        ->  id : term
     // <PAR_IN>        ->  term
+    str_T arg_codename; // Tvar argumentu v cieľovom kóde
+    StrInit(&arg_codename);
     StrFillWith(par_name, StrRead(&(tkn->atr)));
     switch (tkn->type)
     {
@@ -329,6 +336,7 @@ int parseFnArg(str_T* par_name, char* term_type, char* bif_name) {
     case INT_CONST: // <PAR_IN> ->  term , kde term je konštanta
         StrFillWith(par_name, "_");
         *term_type = SYM_TYPE_INT;
+        
         break;
     case DOUBLE_CONST:
         StrFillWith(par_name, "_");
@@ -346,6 +354,8 @@ int parseFnArg(str_T* par_name, char* term_type, char* bif_name) {
         logErrSyntax(tkn, "parameter identifier or term");
         return SYN_ERR;
     }
+
+    StrDestroy(&arg_codename);
 
     return COMPILATION_OK;
 }
@@ -551,6 +561,13 @@ int parseFnCall(char* result_type) {
     // spracovanie argumentov funkcie
     TRY_OR_EXIT(parseFnCallArgs(fn->init, called_before, fn->sig, built_in_fn ? fn->id : NULL));
 
+    if(strcmp(fn->id, "substring") == 0) {
+        bifn_substring_called = true;
+    }
+    if(!built_in_fn || strcmp(fn->id, "substring") == 0) {
+        genCode("CALL", fn->id, NULL, NULL);
+    }
+
     *result_type = fn->sig->ret_type;
 
     return COMPILATION_OK;
@@ -563,9 +580,10 @@ int parseFnCall(char* result_type) {
  *
  * @brief Pravidlo pre spracovanie priradenia
  * @param result_type Dátový typ výsledku
+ * @param result_codename Identifikátor premennej v cieľovom kóde kam sa má uložiť výsledok
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseAssignment(char* result_type) {
+int parseAssignment(char* result_type, char *result_codename) {
     TRY_OR_EXIT(nextToken());
     token_T* first_tkn;
     switch (tkn->type) // treba rozlíšiť volanie funkcie a výraz
@@ -591,6 +609,7 @@ int parseAssignment(char* result_type) {
             saveToken();
             tkn = first_tkn;
             TRY_OR_EXIT(parseFnCall(result_type));
+            genCode("POPFRAME", NULL, NULL, NULL); // zbavenie sa lokálneho rámca funkcie
         }
         else {
             saveToken();
@@ -602,6 +621,8 @@ int parseAssignment(char* result_type) {
         logErrSyntax(tkn, "assignment or function call");
         return SYN_ERR;
     }
+
+    genCode("POPS", result_codename, NULL, NULL); // priradenie výsledku do premennej
 
     return COMPILATION_OK;
 }
@@ -641,6 +662,15 @@ int parseVariableDecl() {
     variable->sig = NULL;
     variable->type = SYM_TYPE_UNKNOWN;
 
+    // Generovanie cieľového kódu
+    genUniqVar(parser_inside_fn_def ? "LF" : "GF", variable->id, &(variable->codename));
+    if (parser_inside_loop) { // deklarácia premennej musí byť pred najvrchnejším cyklom
+        DLLstr_InsertLast(&variables_declared_inside_loop, StrRead(&(variable->codename)));
+    }
+    else {
+        genCode("DEFVAR", StrRead(&(variable->codename)), NULL, NULL);
+    }
+
     // ďalej musí nasledovať dátový typ alebo priradenie
     TRY_OR_EXIT(nextToken());
     switch (tkn->type)
@@ -654,7 +684,7 @@ int parseVariableDecl() {
         if (tkn->type == ASSIGN) {
             // <INIT_VAL>  ->  = <ASSIGN>
             char assign_type = SYM_TYPE_UNKNOWN;
-            TRY_OR_EXIT(parseAssignment(&assign_type));
+            TRY_OR_EXIT(parseAssignment(&assign_type, StrRead(&(variable->codename))));
             variable->init = true;
 
             // kontrola výsledného typu výrazu s deklarovaným dátovým typom
@@ -680,7 +710,7 @@ int parseVariableDecl() {
         }
         break;
     case ASSIGN: // <DEF_VAR> ->  = <ASSIGN>
-        TRY_OR_EXIT(parseAssignment(&(variable->type)));
+        TRY_OR_EXIT(parseAssignment(&(variable->type), StrRead(&(variable->codename))));
         variable->init = true;
 
         if (variable->type == SYM_TYPE_VOID) { // priradenie hodnoty z void funkcie
@@ -697,13 +727,6 @@ int parseVariableDecl() {
         return SYN_ERR;
         break;
     }
-
-    //TRY_OR_EXIT(genUniqVar("GF", variable->id, &(variable->codename)));
-    if (parser_inside_loop) {
-        // DLLstr_InsertLast(&variables_declared_inside_loop, variable->codename);
-    }
-    // TRY_OR_EXIT(genCode("DEFVAR", StrRead(&(variable->codename)), NULL, NULL));
-    // pops TRY_OR_EXIT()
 
     // vloženie záznamu o premennej do TS
     if (!SymTabInsertLocal(&symt, variable)) {
@@ -996,10 +1019,14 @@ int parseFunction() {
         par->init = true;
         par->let = true;
         par->type = StrRead(&(fn->sig->par_types))[i];
-        // TODO par->codename
+        StrFillWith(&(par->codename), "LF@");
+        StrCatString(&(par->codename), par->id);
+        StrAppend(&(par->codename), '%');
         DLLstr_Next(&(fn->sig->par_ids));
     }
     StrDestroy(&par_id);
+
+    genFnDefBegin(StrRead(&fn_name), &(fn->sig->par_ids));
 
     // Spracovanie tela funkcie
     if (!SymTabAddLocalBlock(&symt)) return COMPILER_ERROR;
@@ -1018,6 +1045,7 @@ int parseFunction() {
 
     fn->init = true; // funkcia je odteraz definovaná
     parser_inside_fn_def = code_inside_fn_def;
+    StrFillWith(&fn_name, "");
     return COMPILATION_OK;
 }
 
@@ -1076,6 +1104,8 @@ int parseReturn() {
 
     SymTabModifyLocalReturn(&symt, true); // zapísať informáciu o prítomnosti return v aktuálnom bloku
 
+    genCode("RETURN", NULL, NULL, NULL);
+
     return COMPILATION_OK;
 }
 
@@ -1091,6 +1121,16 @@ int parseIf() {
     // <STAT>  ->  if <COND> { <PROG> } else { <PROG> }
     TRY_OR_EXIT(nextToken());
     TSData_T* let_variable = NULL; // informácie o premennej v podmienke "let <premenná>"
+    str_T cond_false;       // náveštie kam sa má skočiť, keď podmienka je false
+    str_T skip_cond_false;  // náveštie kam sa skočí z if{} časti, aby sa preskočila časť else{}
+    StrInit(&cond_false);
+    StrInit(&skip_cond_false);
+
+    genUniqLabel(StrRead(&fn_name), "if", &cond_false);
+    StrFillWith(&skip_cond_false, StrRead(&(cond_false)));
+    StrAppend(&cond_false, '!');
+    StrAppend(&skip_cond_false, '*');
+
     switch (tkn->type) // rozlíšenie obyčajnej podmienky v tvare výrazu alebo test premennej na nil "let <premenná>"
     {
     case LET:
@@ -1130,11 +1170,12 @@ int parseIf() {
         let_variable->init = variable->init;
         let_variable->let = variable->let;
         let_variable->sig = NULL;
-        let_variable->type = convertNilTypeToNonNil(variable->type); // ??? treba test či môže obsahovať nil hodnotu if ()
+        let_variable->type = convertNilTypeToNonNil(variable->type);
         StrFillWith(&(let_variable->codename), StrRead(&(variable->codename)));
 
         if (!SymTabInsertLocal(&symt, let_variable)) return COMPILER_ERROR;
-        // TODO
+
+        genCode("JUMPIFEQ", StrRead(&cond_false), StrRead(&(variable->codename)), "nil@nil");
         break;
     case ID:    // v podminke je obyčajný výraz
     case BRT_RND_L:
@@ -1149,6 +1190,9 @@ int parseIf() {
             logErrSemantic(tkn, "condition must return a bool");
             return SEM_ERR_TYPE;
         }
+        // na vrchole zásobníka je bool@true alebo bool@false
+        genCode("PUSHS", "bool@false", NULL, NULL);
+        genCode("JUMPIFEQS", StrRead(&cond_false), NULL, NULL);
         break;
     default:
         logErrSyntax(tkn, "let or an expression");
@@ -1161,11 +1205,15 @@ int parseIf() {
     TRY_OR_EXIT(parseStatBlock(&if_had_return)); // spracovanie príkazov keď podmienka je true
     if (let_variable != NULL) SymTabRemoveLocalBlock(&symt);
 
+    genCode("JUMP", StrRead(&skip_cond_false), NULL, NULL);
+
     TRY_OR_EXIT(nextToken());
     if (tkn->type != ELSE) {
         logErrSyntax(tkn, "else");
         return SYN_ERR;
     }
+
+    genCode("LABEL", StrRead(&cond_false), NULL, NULL);
 
     TRY_OR_EXIT(nextToken());
     bool else_had_return;
@@ -1175,6 +1223,11 @@ int parseIf() {
         // pokiaľ sa v oboch častiach if aj else nachádzal return, potom bude return určite zastihnutý
         SymTabModifyLocalReturn(&symt, true);
     }
+
+    genCode("LABEL", StrRead(&skip_cond_false), NULL, NULL);
+
+    StrDestroy(&cond_false);
+    StrDestroy(&skip_cond_false);
 
     return COMPILATION_OK;
 }
@@ -1189,11 +1242,22 @@ int parseIf() {
 */
 int parseWhile() {
     // <STAT>      ->  while exp { <PROG> }
+    str_T loop_start;   // náveštie začiatku cyklu (spolu s podmienkou)
+    str_T loop_end;     // náveštie za koniec cyklu (sem sa skočí keď podmienka nie je splnená)
+    StrInit(&loop_start);
+    StrInit(&loop_end);
+
     bool loop_inside_loop = parser_inside_loop; // cyklus v cykle
     if (!loop_inside_loop) {
-        StrFillWith(&first_loop_label, "WHILE"); // !!! TODO
+        StrFillWith(&first_loop_label, StrRead(&loop_start));
     }
     parser_inside_loop = true;
+
+
+    genUniqLabel(StrRead(&fn_name), "while", &loop_start);
+    StrFillWith(&loop_end, StrRead(&(loop_start)));
+    StrAppend(&loop_end, '!');
+    genCode("LABEL", StrRead(&loop_start), NULL, NULL);
 
     TRY_OR_EXIT(nextToken());
     switch (tkn->type) // syntaktická kontrola, či sa v podmienke nachádza výraz
@@ -1217,16 +1281,25 @@ int parseWhile() {
         logErrSemantic(tkn, "condition must return a bool");
         return SEM_ERR_TYPE;
     }
+    genCode("PUSHS", "bool@false", NULL, NULL);
+    genCode("JUMPIFEQS", StrRead(&loop_end), NULL, NULL);
 
     TRY_OR_EXIT(nextToken());
     TRY_OR_EXIT(parseStatBlock(NULL));
 
+    genCode("JUMP", StrRead(&loop_start), NULL, NULL);
+    genCode("LABEL", StrRead(&loop_end), NULL, NULL);
+
     parser_inside_loop = loop_inside_loop;
     if (!parser_inside_loop) { // najvrchnejší cyklus bol opustený
         // inštrukcie pre definície premenných vo vnútri cyklu musia byť vložené pred samotným cyklom
+        genDefVarsBeforeLoop(StrRead(&first_loop_label), &variables_declared_inside_loop);
         DLLstr_Dispose(&variables_declared_inside_loop);
-        // gen code
     }
+
+    StrDestroy(&loop_start);
+    StrDestroy(&loop_end);
+
     return COMPILATION_OK;
 }
 
@@ -1319,6 +1392,8 @@ int parse() {
             saveToken();
             tkn = first_tkn;
             TRY_OR_EXIT(parseFnCall(&result_type));
+            genCode("POPFRAME", NULL, NULL, NULL);
+            if(result_type != SYM_TYPE_VOID) genCode("CLEARS", NULL, NULL, NULL); // ??? zmeniť na POPS ?
         }
         else if (tkn->type == ASSIGN) {
             // <STAT>   ->  id = <ASSIGN>
@@ -1331,7 +1406,7 @@ int parse() {
                 logErrSemantic(first_tkn, "%s is unmodifiable and was already initialised", StrRead(&(first_tkn->atr)));
                 return SEM_ERR_OTHER;
             }
-            TRY_OR_EXIT(parseAssignment(&result_type));
+            TRY_OR_EXIT(parseAssignment(&result_type, StrRead(&(variable->codename))));
             if (!isCompatibleAssign(variable->type, result_type)) {
                 logErrSemantic(first_tkn, "incompatible data types");
                 return SEM_ERR_TYPE;
@@ -1388,6 +1463,19 @@ int checkIfAllFnDef() {
         DLLstr_Next(&check_def_fns);
     }
     return COMPILATION_OK;
+}
+
+void printOutCompiledCode() {
+    printf(".IFJcode23\n"); // povinná hlavička
+    printf("JUMP !main\n");
+
+    if(bifn_substring_called) genSubstring();
+
+    DLLstr_printContent(&code_fn);
+
+    printf("LABEL !main\n");
+    DLLstr_printContent(&code_main);
+    printf("EXIT int@0\n");
 }
 
 void destroyParser() {
