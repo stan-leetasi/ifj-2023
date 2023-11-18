@@ -1,7 +1,7 @@
 /** Projekt IFJ2023
  * @file generator.c
  * @brief Generátor cieľového kódu
- * @author 
+ * @author Boris Hatala (xhatal02) František Holáň (xholan13@stud.fit.vut.cz)
  * @date 11.11.2023
  */
 
@@ -13,7 +13,7 @@ DLLstr_T code_main;
 
 void fnParamIdentificator(char *identificator, str_T *id);
 
-int genUniqVar(char *scope, char *sub, str_T *id) {
+void genUniqVar(char *scope, char *sub, str_T *id) {
     static int count = 0;
     count++;
 
@@ -21,7 +21,7 @@ int genUniqVar(char *scope, char *sub, str_T *id) {
     sprintf(numStr, "%d", count);
 
     if(numStr == NULL || scope == NULL || sub == NULL)
-        return COMPILER_ERROR;
+        exit(COMPILER_ERROR);
 
     StrCatString(id, scope);
     StrAppend(id,'@');
@@ -29,10 +29,9 @@ int genUniqVar(char *scope, char *sub, str_T *id) {
     StrAppend(id,'$');
     StrCatString(id,numStr);
 
-    return COMPILATION_OK;
 }
 
-int genUniqLabel(char *fn, char *sub, str_T *label){
+void genUniqLabel(char *fn, char *sub, str_T *label){
     static int count = 0;
     count++;
 
@@ -40,17 +39,15 @@ int genUniqLabel(char *fn, char *sub, str_T *label){
     sprintf(numStr, "%d", count);
 
     if(numStr == NULL || fn == NULL || sub == NULL)
-        return COMPILER_ERROR;
+        exit(COMPILER_ERROR);
 
     StrCatString(label, fn);
     StrAppend(label, '&');
     StrCatString(label, sub);
     StrCatString(label, numStr);
-
-    return COMPILATION_OK;
 }
 
-int genConstVal(int const_type, char *value, str_T *cval) {
+void genConstVal(int const_type, char *value, str_T *cval) {
     switch (const_type) {
         case 8:
             StrCatString(cval, "int@");
@@ -80,18 +77,16 @@ int genConstVal(int const_type, char *value, str_T *cval) {
             }
             break;
         default:
-            return COMPILER_ERROR;
+            exit(COMPILER_ERROR);
     }
-
-    return COMPILATION_OK;
 }
 
-int genCode(char *instruction, char *op1, char *op2, char *op3) {
+void genCode(char *instruction, char *op1, char *op2, char *op3) {
     if (instruction == NULL)
-        return COMPILER_ERROR;
+        exit (COMPILER_ERROR);
 
     str_T *code = malloc(sizeof(str_T));
-    if(code == NULL) return COMPILER_ERROR;
+    if(code == NULL) exit(COMPILER_ERROR);
     StrInit(code);
 
     StrFillWith(code, instruction);
@@ -117,14 +112,13 @@ int genCode(char *instruction, char *op1, char *op2, char *op3) {
         insert = DLLstr_InsertLast(&code_fn, StrRead(code));
     else
         insert = DLLstr_InsertLast(&code_main, StrRead(code));
-    if (!insert) return COMPILER_ERROR;
+    if (!insert) exit(COMPILER_ERROR);
 
     StrDestroy(code);
     free(code);
-    return COMPILATION_OK;
 }
 
-int genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
+void genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
     str_T var;
     StrInit(&var);
 
@@ -139,11 +133,9 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
 
     genCode("LABEL", label, NULL, NULL);
     StrDestroy(&var);
-
-    return COMPILATION_OK;
 }
 
-int genFnDefBegin(char *fn, DLLstr_T *params) {
+void genFnDefBegin(char *fn, DLLstr_T *params) {
     //zde bude zapsán celý identifikator parametru
     str_T idpar;
     //zde budou uloženy parametry funkce
@@ -167,10 +159,9 @@ int genFnDefBegin(char *fn, DLLstr_T *params) {
 
     StrDestroy(&idpar);
     StrDestroy(&fnpar);
-    return COMPILATION_OK;
 }
 
-int genFnCall(char *fn, DLLstr_T *args) {
+void genFnCall(char *fn, DLLstr_T *args) {
     //zde budou uloženy argumenty funkce fn
     str_T arg;
     StrInit(&arg);
@@ -187,10 +178,9 @@ int genFnCall(char *fn, DLLstr_T *args) {
    
     //Uvolnění řetězců
     StrDestroy(&arg);
-    return COMPILATION_OK;
 }
 
-int genWrite(DLLstr_T *args) {
+void genWrite(DLLstr_T *args) {
     //zde budou uloženy argumenty funkce write
     str_T arg;
     StrInit(&arg);
@@ -205,7 +195,7 @@ int genWrite(DLLstr_T *args) {
     }
 }
 
-int genSubstring() {
+void genSubstring() {
     bool previous_parser_in_fn_def_value = parser_inside_fn_def;
     //Nastavení této proměnné true, aby se kód vygenerovaný genCode ukládal do code_fn
     parser_inside_fn_def = true;
@@ -282,7 +272,6 @@ int genSubstring() {
 
     genCode("RETURN", NULL, NULL, NULL);
     parser_inside_fn_def = previous_parser_in_fn_def_value;
-    return COMPILATION_OK;
 }
 
 /**

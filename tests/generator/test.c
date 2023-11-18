@@ -20,66 +20,60 @@ int main()
     str_T s;
     StrInit(&s);
 
-    int test = genUniqVar("GF", "x", &s);
+    genUniqVar("GF", "x", &s);
     TEST(strcmp(StrRead(&s), "GF@x$1") == 0);
 
     StrDestroy(&s);
     StrInit(&s);
 
-    test = genUniqVar("GF", "x", &s);
+    genUniqVar("GF", "x", &s);
     TEST(strcmp(StrRead(&s), "GF@x$2") == 0);
 
     StrDestroy(&s);
     StrInit(&s);
 
-    test = genUniqLabel("pow", "while", &s);
+    genUniqLabel("pow", "while", &s);
     TEST(strcmp(StrRead(&s), "pow&while1") == 0);
 
     StrDestroy(&s);
     StrInit(&s);
 
-    test = genUniqLabel("fib", "while", &s);
+    genUniqLabel("fib", "while", &s);
     TEST(strcmp(StrRead(&s), "fib&while2") == 0);
 
     StrDestroy(&s);
     StrInit(&s);
 
-    test = genConstVal(8, "123", &s);
+    genConstVal(8, "123", &s);
     TEST(strcmp(StrRead(&s), "int@123") == 0);
 
     StrDestroy(&s);
     StrInit(&s);
 
-    test = genConstVal(9, "3.14", &s);
+    genConstVal(9, "3.14", &s);
     TEST(strcmp(StrRead(&s), "float@0x1.91eb851eb851fp+1") == 0);
 
     StrDestroy(&s);
     StrInit(&s);
 
-    test = genConstVal(18, "", &s);
+    genConstVal(18, "", &s);
     TEST(strcmp(StrRead(&s), "nil@nil") == 0);
 
     StrDestroy(&s);
     StrInit(&s);
 
-    test = genConstVal(10, "a b", &s);
+    genConstVal(10, "a b", &s);
     TEST(strcmp(StrRead(&s), "string@a\\032b") == 0);
 
     StrDestroy(&s);
     StrInit(&s);
 
-    test = genConstVal(-50, "true", &s);
+    genConstVal(-50, "true", &s);
     TEST(strcmp(StrRead(&s), "bool@true") == 0);
 
     StrDestroy(&s);
-    
-    StrInit(&s);
 
-    test = genConstVal(2, "true", &s);
-    TEST(test == COMPILER_ERROR);
-    StrDestroy(&s);
-
-    test = genCode("ADD", "GF@x", "GF@y", "LF@z");
+    genCode("ADD", "GF@x", "GF@y", "LF@z");
     if(parser_inside_fn_def) {
         TEST(strcmp(code_fn.last->string, "ADD GF@x GF@y LF@z") == 0);
     }
@@ -87,7 +81,7 @@ int main()
         TEST(strcmp(code_main.last->string, "ADD GF@x GF@y LF@z") == 0);
     }
 
-    test = genCode("PUSHFRAME", NULL, NULL, NULL);
+    genCode("PUSHFRAME", NULL, NULL, NULL);
     if(parser_inside_fn_def) {
         TEST(strcmp(code_fn.last->string, "PUSHFRAME") == 0);
     }
@@ -95,7 +89,7 @@ int main()
         TEST(strcmp(code_main.last->string, "PUSHFRAME") == 0);
     }
 
-    test = genCode("DEFVAR", NULL, "GF@x", NULL);
+    genCode("DEFVAR", NULL, "GF@x", NULL);
     if(parser_inside_fn_def) {
         TEST(strcmp(code_fn.last->string, "DEFVAR GF@x") == 0);
     }
@@ -113,7 +107,7 @@ int main()
     DLLstr_InsertLast(variables, "LF@x$1");
     DLLstr_InsertLast(variables, "LF@y$2");
 
-    test = genDefVarsBeforeLoop("&while25", variables);
+    genDefVarsBeforeLoop("&while25", variables);
 
     if(parser_inside_fn_def) {
         TEST(strcmp(code_fn.last->prev->string, "DEFVAR LF@y$2") == 0);
@@ -134,7 +128,7 @@ int main()
 
     parser_inside_fn_def = true;
 
-    test = genFnDefBegin("main", variables2);
+    genFnDefBegin("main", variables2);
 
     TEST(strcmp(code_fn.last->prev->prev->prev->prev->prev->prev->string, "LABEL main") == 0);
     TEST(strcmp(code_fn.last->prev->prev->prev->prev->prev->string, "CREATEFRAME") == 0);
@@ -152,7 +146,7 @@ int main()
     DLLstr_InsertLast(variables3, "int@6");
     DLLstr_InsertLast(variables3, "LF@x$1");
 
-    test = genFnCall("sum", variables3);
+    genFnCall("sum", variables3);
 
     if(parser_inside_fn_def) {
         TEST(strcmp(code_fn.last->prev->prev->string, "PUSH LF@x$1") == 0);

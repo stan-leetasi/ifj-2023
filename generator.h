@@ -41,9 +41,9 @@ extern DLLstr_T code_main;
  * @param sub Podreťazec identifikátora.
  * @param id Výsledný unikátny identifikátor. V prípade neúspechu nedefinované.
  *           Dátovú štruktúru treba inicializovať.
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
+ * @return V prípade neuspechu exit(COMPILER_ERROR).
 */
-int genUniqVar(char *scope, char *sub, str_T *id);
+void genUniqVar(char *scope, char *sub, str_T *id);
 
 /**
  * Vygenerované náveštie bude v tvare "<fn>&<sub><cislo>", kde 
@@ -62,9 +62,9 @@ int genUniqVar(char *scope, char *sub, str_T *id);
  * @param sub Podreťazec unikátneho náveštia.
  * @param label Výsledný unikátny názov náveštia. V prípade neúspechu nedefinované.
  *              Dátovú štruktúru treba inicializovať.
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
+ * @return V prípade neúspechu exit(COMPILER_ERROR).
 */
-int genUniqLabel(char *fn, char *sub, str_T *label);
+void genUniqLabel(char *fn, char *sub, str_T *label);
 
 /**
  * V prípade reťazca treba reťazec prispoôsobiť požiadavkam cieľového kódu pomocou funkcie decode.
@@ -81,9 +81,9 @@ int genUniqLabel(char *fn, char *sub, str_T *label);
  * @param value Hodnota konštanty.
  * @param cval Výsledná konštanta v cieľovom kóde.
  *              Dátovú štruktúru treba inicializovať.
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
+ * @return V prípade neúspechu exit(COMPILER_ERROR).
 */
-int genConstVal(int const_type, char *value, str_T *cval);
+void genConstVal(int const_type, char *value, str_T *cval);
 
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn pokiaľ parser_inside_fn_def==true
@@ -98,9 +98,9 @@ int genConstVal(int const_type, char *value, str_T *cval);
  * @param op1 Prvý operand. Ak sa rovná NULL, je ignorovaný.
  * @param op2 Druhý operand. Ak sa rovná NULL, je ignorovaný.
  * @param op3 Tretí operand. Ak sa rovná NULL, je ignorovaný.
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
+ * @return V prípade neuspechu exit(COMPILER_ERROR).
 */
-int genCode(char *instruction, char *op1, char *op2, char *op3);
+void genCode(char *instruction, char *op1, char *op2, char *op3);
 
 /**
  * Funkcia pracuje so zoznamom code_fn pokiaľ parser_inside_fn_def==true
@@ -122,9 +122,9 @@ int genCode(char *instruction, char *op1, char *op2, char *op3);
  * @brief Vygeneruje kód pre deklaráciu premenných pred zadaný cyklus.
  * @param label Názov náveštia cyklu.
  * @param variables Zoznam identifikátorov premenných, ktoré treba definovať pred cyklom.
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
+ * @return V prípade neuspechu exit(COMPILER_ERROR).
 */
-int genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
+void genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
 
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn.
@@ -151,9 +151,9 @@ int genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
  * @brief Vygeneruje kód začiatku definície funkcie, resp. príprava nového rámca a argumentov.
  * @param fn Názov funkcie
  * @param params Identifikátory parametrov funkcie
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
+ * @return V prípade neuspechu exit(COMPILER_ERROR).
 */
-int genFnDefBegin(char *fn, DLLstr_T *params);
+void genFnDefBegin(char *fn, DLLstr_T *params);
 
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn pokiaľ parser_inside_fn_def==true
@@ -174,9 +174,10 @@ int genFnDefBegin(char *fn, DLLstr_T *params);
  * @brief Vygeneruje kód volania funkcie.
  * @param fn Názov funkcie
  * @param args Predávané argumenty
- * @return V prípade úspechu COMPILATION_OK, inak COMPILER_ERROR.
+    return COMPILATION_OK;
+ * @return V prípade neuspechu exit(COMPILER_ERROR).
 */
-int genFnCall(char *fn, DLLstr_T *args);
+void genFnCall(char *fn, DLLstr_T *args);
 
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn pokiaľ parser_inside_fn_def==true
@@ -196,7 +197,7 @@ int genFnCall(char *fn, DLLstr_T *args);
  * @param args Předané argumenty
  * @return V případě úspěchu COMPILATION_OK, v opačném případě COMPILER_ERROR
  */
-int genWrite(DLLstr_T *args);
+void genWrite(DLLstr_T *args);
 
 /**
  * Vygenerovaný kód bude vložený na koniec zoznamu code_fn.
@@ -257,9 +258,9 @@ int genWrite(DLLstr_T *args);
  * @brief Vygeneruje kód potřebný pro provedení build-in funkce substring
  * 
  * @param ans Předpokládá se nějaké externí proměnná (z pohledu této funkce), kam bude uložen výsledek
- * @return V případě úspěchu COMPILATION_OK, v opačném případě COMPILER_ERROR
+ * @return V případě neúspěchu exit(COMPILER_ERROR)
  */
-int genSubstring();
+void genSubstring();
 
 #endif // ifndef _GENERATOR_H_
 /* Koniec súboru generator.h */
