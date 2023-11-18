@@ -8,10 +8,10 @@ for f in *.prog
 do
     total=$((total + 1))
     test_sample=${f%.*}
-    ./ic23int "$f" <"${test_sample}.stdin" >"${test_sample}.result"
+    ./ic23int "${f}" <"${test_sample}.stdin" >"${test_sample}.result"
     result=$?
     if [ ${result} -eq 0 ]; then 
-        diff "${test_sample}.exp" "${test_sample}.result"
+        diff "${test_sample}.stdout" "${test_sample}.result"
         result=$?
         if [ ${result} -eq 0 ]; then
             passed=$((passed + 1))
