@@ -132,14 +132,8 @@ int stack_push_token(stack_t *stack, token_T *token){
     else // Operand je konštanta
     {
         StrInit(&cval); // Inicializácia konštantnej hodnoty
-        if(genConstVal(token->type, StrRead(&(tkn->atr)), &cval) == COMPILER_ERROR) // Chyba pri generácii hodnoty
-        {
-            free(parsed_token); // Uvoľnenie pamäte parsed_token
-            StrDestroy(&id); // Deštrukcia id
-            StrDestroy(&cval); // Deštrukcia cval
-            return COMPILER_ERROR; // Vrátenie chybového kódu
-        }
-
+        //genConstVal(token->type, StrRead(&(tkn->atr)), &cval); // Vygenerovanie cval pre konštantu
+           
         parsed_token->codename = cval; // Identifikátor v cieľovom kóde (v prípade konštanty prázdny reťazec?)
         parsed_token->st_type = '0'; // Typ premennej (konštanta nemá typ premennej)
         parsed_token->init = true; // Konštanta "je inicializovaná"
