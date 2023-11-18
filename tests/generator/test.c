@@ -110,12 +110,12 @@ int main()
     genDefVarsBeforeLoop("&while25", variables);
 
     if(parser_inside_fn_def) {
-        TEST(strcmp(code_fn.last->prev->string, "DEFVAR LF@y$2") == 0);
-        TEST(strcmp(code_fn.last->prev->prev->string, "DEFVAR LF@x$1") == 0);
+        TEST(strcmp(code_fn.last->string, "DEFVAR LF@y$2") == 0);
+        TEST(strcmp(code_fn.last->prev->string, "DEFVAR LF@x$1") == 0);
     }
     else {
-        TEST(strcmp(code_main.last->prev->string, "DEFVAR LF@y$2") == 0);
-        TEST(strcmp(code_main.last->prev->prev->string, "DEFVAR LF@x$1") == 0);
+        TEST(strcmp(code_main.last->string, "DEFVAR LF@y$2") == 0);
+        TEST(strcmp(code_main.last->prev->string, "DEFVAR LF@x$1") == 0);
     }
 
     DLLstr_Dispose(variables);

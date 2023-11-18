@@ -112,7 +112,7 @@ void genCode(char *instruction, char *op1, char *op2, char *op3);
  *      ...
  *      DEFVAR LF@x$1
  *      DEFVAR LF@y$2
- *      LABEL &while25
+ *      LABEL &while25 # nie je už generované funkciou genDefVarsBeforeLoop
  *      ...
  * 
  * @brief Vygeneruje kód pre deklaráciu premenných pred zadaný cyklus.

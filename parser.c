@@ -623,11 +623,16 @@ int parseFnCall(char* result_type) {
     TRY_OR_EXIT(parseFnCallArgs(fn->init, called_before, fn->sig, built_in_fn ? fn->id : NULL, &args_codenames));
 
     if(strcmp(fn->id, "substring") == 0) {
+        // bude potrebné vložiť kód funkcie substring
         bifn_substring_called = true;
     }
+
+    // Generovanie cieľového kódu
     if(!built_in_fn || strcmp(fn->id, "substring") == 0) {
+        // generovanie vloženia argumentov na zásobník a volania funkcie
         genFnCall(fn->id, &args_codenames);
     }
+    // špeciálne prípady generovania kódu pri týchto vstavaných funkciách
     else if(strcmp(fn->id, "readString") == 0) {
         genCode("READ", "GF@!tmp1", "string", NULL);
         genCode("PUSHS", "GF@!tmp1", NULL, NULL);
@@ -685,7 +690,6 @@ int parseAssignment(char* result_type, char *result_codename) {
             bool popframe = shouldPopFrame(StrRead(&(tkn->atr)));
             TRY_OR_EXIT(parseFnCall(result_type));
             if(popframe) genCode("POPFRAME", NULL, NULL, NULL);
-            if(*result_type != SYM_TYPE_VOID) genCode("POPS", "GF@!tmp1", NULL, NULL);
         }
         else {
             saveToken();
@@ -1470,7 +1474,7 @@ int parse() {
             bool popframe = shouldPopFrame(StrRead(&(tkn->atr)));
             TRY_OR_EXIT(parseFnCall(&result_type));
             if(popframe) genCode("POPFRAME", NULL, NULL, NULL);
-            if(result_type != SYM_TYPE_VOID) genCode("POPS", "GF@!tmp1", NULL, NULL);
+            genCode("CLEARS", NULL, NULL, NULL); // volaná funkcia môže zanechať návratovú hodnotu na zásobníku
         }
         else if (tkn->type == ASSIGN) {
             // <STAT>   ->  id = <ASSIGN>
