@@ -9,6 +9,8 @@
 #include "exp.h"
 #include "strR.h"
 #include "symtable.h"
+#include "generator.h"
+
 
 
 /* Poznamky::
@@ -53,7 +55,7 @@ typedef struct stack
 */
 bool Stack_Init( stack_t *stack ) {
 
-    stack->array = malloc(sizeof(ptoken_T*)*16); // Alokácia pamäte pre pole
+    stack->array = calloc(16, sizeof(ptoken_T*)); // Alokácia pamäte pre pole
 	if(stack->array == NULL){ // Alokácia pamäte zlyhala
         return false;
 	}
@@ -67,7 +69,7 @@ bool Stack_Init( stack_t *stack ) {
  * @brief Vracia prvok z vrcholu zásobníka
 */
 ptoken_T *stack_top(stack_t *stack){
-    return(stack->array[stack->size]); // Vrátenie hodnoty z vrcholu zásobníka
+    return(stack->array[stack->size - 1]); // Vrátenie hodnoty z vrcholu zásobníka
 }
 
 /**
@@ -83,6 +85,7 @@ int stack_push_ptoken(stack_t *stack, ptoken_T *token){
     }
 
     stack->array[stack->size] = token; // Vloženie tokenu na zásobník
+    stack->size = stack->size + 1; // Zväčšenie počtu prvkov v zásobníku
     return 0; // Úspešné vloženie premennej na zásobník
 }
 
@@ -92,10 +95,18 @@ int stack_push_ptoken(stack_t *stack, ptoken_T *token){
 */
 int stack_push_token(stack_t *stack, token_T *token){
     
-    TSData_T *symtabData = SymTabLookup(&symt, StrRead(&(token->atr))); // Získanie dát o premennej z tabuľky symbolov
+    TSData_T *symtabData; // Premenná pre uloženie dát z tabuľky symbolov
 
-    if(symtabData == NULL || symtabData->init == false){ // Premenná nebola deklarovaná alebo inicializovaná
-        return SEM_ERR_UNDEF; // Chybový stav
+    if(token->type == ID) // Ak je token identifikátor, musíme ho vyhľadať v tabuľke symbolov
+    {
+        symtabData = SymTabLookup(&symt, StrRead(&(token->atr))); // Získanie dát o premennej z tabuľky symbolov
+
+        if(symtabData == NULL){ // Premenná nebola deklarovaná alebo inicializovaná
+            return SEM_ERR_UNDEF; // Chybový stav
+        }
+        if(symtabData->init == false){ // Premenná nebola inicializovaná
+            return SEM_ERR_UNDEF; // Chybový stav
+        }
     }
 
     ptoken_T *parsed_token = malloc(sizeof(ptoken_T)); // Nový parsed token
@@ -103,22 +114,38 @@ int stack_push_token(stack_t *stack, token_T *token){
         return COMPILER_ERROR;
     }
     
-    str_T id, codename;  // Reťazce pre identifikátor a id v cieľovom kóde
-    StrInit(&id);
-    StrInit(&codename);
+    str_T id, codename, cval;  // Reťazce pre identifikátor, id a konštantnú hodnotu v cieľovom kóde
+    StrInit(&id); // Inicializácia id
     StrFillWith(&id, token->atr.data); // Vloženie názvu premennej do id
 
     parsed_token->id = id; // Id parsed tokenu
     parsed_token->type = token->type; // Typ tokenu
-    parsed_token->st_type = symtabData->type; // Typ premennej v Tabuľke symbolov
-    parsed_token->init = symtabData->init; // Informácia o inicializácii premennej
-    parsed_token->codename = symtabData->codename; // Identifikátor v cieľovom kóde
-    
-    if(stack_push_ptoken(stack, parsed_token) == COMPILER_ERROR){ // Vloženie parsed tokenu na zásobník
-        return COMPILER_ERROR; // Zlyhal realloc pamäte v stack_push_ptoken
-    }
 
-    return 0; // Úspešné vloženie tokenu na zásobník
+    if(token->type == ID) // Operand je premenná
+    {
+        parsed_token->st_type = symtabData->type; // Typ premennej v Tabuľke symbolov
+        parsed_token->init = symtabData->init; // Informácia o inicializácii premennej
+        StrInit(&codename); // Inicializácia codename
+        StrFillWith(&codename, StrRead(&(symtabData->codename))); // Vloženie názvu premennej do id
+        parsed_token->codename = codename; // Identifikátor v cieľovom kóde
+    }
+    else // Operand je konštanta
+    {
+        StrInit(&cval); // Inicializácia konštantnej hodnoty
+        if(genConstVal(token->type, StrRead(&(tkn->atr)), &cval) == COMPILER_ERROR) // Chyba pri generácii hodnoty
+        {
+            free(parsed_token); // Uvoľnenie pamäte parsed_token
+            StrDestroy(&id); // Deštrukcia id
+            StrDestroy(&cval); // Deštrukcia cval
+            return COMPILER_ERROR; // Vrátenie chybového kódu
+        }
+
+        parsed_token->codename = cval; // Identifikátor v cieľovom kóde (v prípade konštanty prázdny reťazec?)
+        parsed_token->st_type = '0'; // Typ premennej (konštanta nemá typ premennej)
+        parsed_token->init = true; // Konštanta "je inicializovaná"
+    }
+    
+    return stack_push_ptoken(stack, parsed_token); // Vloženie parsed tokenu na zásobník a vrátenie return value
 }
 
 /**
@@ -191,7 +218,7 @@ bool valid_token_type(int type){
 /**
  * @brief Overuje, či je token operand.
  * @param type
- * @returnss true ak je operand, inak false
+ * @returns true ak je operand, inak false
 **/
 bool is_operand(int type){
     if(type == ID || type == INT_CONST || type == DOUBLE_CONST ||
@@ -286,8 +313,22 @@ bool priority_cmp(int type, int top){
 **/
 int infix2postfix(stack_t *stack, stack_t *postfixExpr, token_T *infix_token){
     
+
     int status = 0; // Pomocná premenná pre uloženie návratového kódu funkcií
 
+    if(infix_token == NULL) // Koniec výrazu => všetky prvky zo zásobníka vkladáme do postfixexpression
+	{	
+		while(stack->size > 0) // Pokiaľ sa nevyprázdni celý zásobník
+		{
+			status = stack_push_ptoken(postfixExpr, stack_top(stack)); // Vloženie prvku z vrcholu zásobníka do postfixExpression
+            if(status != 0){ // Push neprebehol úspešne
+                    return status; // Vrátenie chybového kódu
+            }
+            stack_pop(stack); // Odstránenie prvku zo zásobníku
+		}
+
+		return 0; // Úspešné prevedenie operácie
+	}
     if(infix_token->type == BRT_RND_L || infix_token->type == EXCL) // Ľavá zátvorka alebo "!"
 	{
 		return stack_push_token(stack, infix_token); // Vkladáme na zásobník
@@ -316,19 +357,7 @@ int infix2postfix(stack_t *stack, stack_t *postfixExpr, token_T *infix_token){
 	    }
 		return 0; // Úspešné prevedenie operácie
 	}
-	if(!valid_token_type(infix_token->type))
-	{	
-		while(stack->size > 0) // Pokiaľ sa nevyprázdni celý zásobník
-		{
-			status = stack_push_ptoken(postfixExpr, stack_top(stack)); // Vloženie prvku z vrcholu zásobníka do postfixExpression
-            if(status != 0){ // Push neprebehol úspešne
-                    return status; // Vrátenie chybového kódu
-            }
-            stack_pop(stack); // Odstránenie prvku zo zásobníku
-		}
-
-		return 0; // Úspešné prevedenie operácie
-	}
+	
 	if(is_binary_operator(infix_token->type))
 	{
 		while (true) // Opakovanie odstraňovania operátorov zo zásobníka až dokým nebude možné vložiť znak c na zásobník
@@ -356,7 +385,7 @@ int infix2postfix(stack_t *stack, stack_t *postfixExpr, token_T *infix_token){
 
 	else // Žiadna predošlá podmienka nebola splnená => znak musí byť operand
 	{
-		return stack_push_token(stack, infix_token); // Vloženie operandu na zásobník, koniec funkcie
+		return stack_push_token(postfixExpr, infix_token); // Vloženie operandu do postfixového výrazu, koniec funkcie
 	}
 
 
@@ -377,10 +406,11 @@ int parseExpression(char* result_type) {
     int prevTokenType = NO_PREV; // Pomocná premenná pre uloženie typu tokenu pred momentálne spracovaným
     int bracketCount = 0; // Premenná na overenie korektnosti zátvoriek "()" vo výraze
     int status = 0; // Premenná na overenie priebehu volania funkcie
-    
+    printf("Infix: ");
     // Syntaktická analýza
     while(true) // Pokým sa nespracuje celý výraz
     {
+
         if(!valid_token_type(tkn->type)) // Ak token nemôže patriť do výrazu 
         {
             if(tkn->type == 0) // Token je typu INVALID
@@ -404,7 +434,7 @@ int parseExpression(char* result_type) {
                     break; // Finálny výraz nie je valídny
                 }
                 
-                if(infix2postfix(&stack, &postfixExpr, tkn) == COMPILER_ERROR){ // Signalizuje ukončenie postfix výrazu
+                if(infix2postfix(&stack, &postfixExpr, NULL) == COMPILER_ERROR){ // Signalizuje ukončenie postfix výrazu
                     return COMPILER_ERROR; // Nastala chyba pri malloc/realloc
                 }
                 saveToken(); // Vloženie tokenu späť do input streamu
@@ -434,7 +464,7 @@ int parseExpression(char* result_type) {
                     }
                     else
                     {
-                        if(infix2postfix(&stack, &postfixExpr, tkn) == COMPILER_ERROR){ // Signalizuje ukončenie postfix výrazu
+                        if(infix2postfix(&stack, &postfixExpr, NULL) == COMPILER_ERROR){ // Signalizuje ukončenie postfix výrazu
                             return COMPILER_ERROR; // Nastala chyba pri malloc/realloc
                         }
                         saveToken(); // Vloženie tokenu späť do input streamu
@@ -474,6 +504,7 @@ int parseExpression(char* result_type) {
             }
 
         }
+        
 
         
         status = infix2postfix(&stack, &postfixExpr, tkn); // Pridanie tokenu do postfix výrazu
@@ -483,6 +514,8 @@ int parseExpression(char* result_type) {
             return status; // Vrátenie chybového kódu            
         }
 
+        printf("%s ",tkn->atr.data);
+        
         prevTokenType = tkn->type; // Uloženie typu predošlého tokenu
         status = nextToken(); // Požiadanie o ďalší token z výrazu
         if(status != 0){ // nextToken vrátil chybu
@@ -496,11 +529,16 @@ int parseExpression(char* result_type) {
         endParse(&stack, &postfixExpr); // Upratanie pred skončením funkcie
         return SYN_ERR; // Vrátenie chybového stavu
     }
-
-
-
     
-    
+
+
+    printf("\nPostfix: ");
+    int i=0;
+    while(i<postfixExpr.size){
+        printf("%s",postfixExpr.array[i]->id.data);
+        i++;
+    }
+    printf("\n");
     
     return COMPILATION_OK;
 }

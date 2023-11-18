@@ -40,6 +40,7 @@ int main() {
     char expected_type = getchar(); // na prvom riadku sample-u je očakávaný typ výsledku výrazu
 
     initializeParser();
+    init_used_variables();
     TRY_OR_EXIT(nextToken());
 
     char result_type = SYM_TYPE_VOID;
