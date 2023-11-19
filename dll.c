@@ -2,7 +2,7 @@
  * @file dll.c
  * @brief Double linked list, dvojsmerný zoznam na generované inštrukcie
  * @author Michal Krulich (xkruli03)
- * @date 18.11.2023
+ * @date 19.11.2023
  */
 
 #include <stdlib.h>
@@ -10,6 +10,8 @@
 #include "dll.h"
 
 #define PROGRAM_FAILURE 99
+
+#define SHOW_DLL_ERROR() fprintf(stderr, "[COMPILER ERROR] DLL: memory allocation failure.\n")
 
  /**
   * @brief Makro pre alokáciu novej kópie reťazca do dst
@@ -21,7 +23,10 @@
 #define TRY_DEEPCOPY_STRING(dest, src) 						\
 	do { 													\
 		(dest) = malloc(sizeof(char) * (strlen(src) + 1)); 	\
-		if ((dest) == NULL) exit(PROGRAM_FAILURE); 			\
+		if ((dest) == NULL) { 								\
+			SHOW_DLL_ERROR();								\
+			exit(PROGRAM_FAILURE); 							\
+		} 													\
 		strcpy((dest), (src)); 								\
 	} while (0) 
 
@@ -88,6 +93,7 @@ bool DLLstr_GetValue(DLLstr_T* list, str_T* string) {
 void DLLstr_InsertFirst(DLLstr_T* list, char* s) {
 	DLLstr_el_ptr element = malloc(sizeof(struct DLLstr_element));
 	if (element == NULL) { // chyba alokácie pamäte
+		SHOW_DLL_ERROR();
 		exit(PROGRAM_FAILURE);
 	}
 	TRY_DEEPCOPY_STRING(element->string, s);
@@ -107,6 +113,7 @@ void DLLstr_InsertFirst(DLLstr_T* list, char* s) {
 void DLLstr_InsertLast(DLLstr_T* list, char* s) {
 	DLLstr_el_ptr element = malloc(sizeof(struct DLLstr_element));
 	if (element == NULL) { // chyba alokácie pamäte
+		SHOW_DLL_ERROR();
 		exit(PROGRAM_FAILURE);
 	}
 	TRY_DEEPCOPY_STRING(element->string, s);
@@ -130,6 +137,7 @@ void DLLstr_InsertAfter(DLLstr_T* list, char* s) {
 	}
 	DLLstr_el_ptr element = malloc(sizeof(struct DLLstr_element)); // nový vkladaný prvok
 	if (element == NULL) {
+		SHOW_DLL_ERROR();
 		exit(PROGRAM_FAILURE);
 	}
 	TRY_DEEPCOPY_STRING(element->string, s);
@@ -154,6 +162,7 @@ void DLLstr_InsertBefore(DLLstr_T* list, char* s) {
 	}
 	DLLstr_el_ptr element = malloc(sizeof(struct DLLstr_element)); // nový vkladaný prvok
 	if (element == NULL) {
+		SHOW_DLL_ERROR();
 		exit(PROGRAM_FAILURE);
 	}
 	TRY_DEEPCOPY_STRING(element->string, s);
@@ -268,7 +277,7 @@ void DLLstr_Dispose(DLLstr_T* list) {
 	list->last = NULL;
 }
 
-void DLLstr_printContent(DLLstr_T *list) {
+void DLLstr_printContent(DLLstr_T* list) {
 	str_T text;
 	StrInit(&text);
 	DLLstr_First(list);
