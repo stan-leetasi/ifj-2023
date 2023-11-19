@@ -2,7 +2,7 @@
  * @file parser.h
  * @brief Syntaktický a sémantický anayzátor
  * @author Michal Krulich (xkruli03)
- * @date 11.10.2023
+ * @date 17.11.2023
  */
 
 #ifndef _PARSER_H_
@@ -27,15 +27,14 @@
 #define COMPILER_ERROR  99 ///< Chyba prekladača
 
  /**
-  * @brief Vykoná zadanú operáciu a v prípade návratovej hodnotej rôznej od nuly, použije ju
-  *        ako návratovej hodnotu aktuálnej funkcie.
+  * @brief Vykoná zadanú operáciu a v prípade návratovej hodnotej rôznej od nuly (COMPILATION_OK),
+  *        použije ju ako návratovú hodnotu aktuálnej funkcie.
  */
-#define TRY_OR_EXIT(operation) \
-do \
-{ \
-  int error_code = (operation); \
-  if (error_code != 0) return error_code;  \
-} while (0)
+#define TRY_OR_EXIT(operation)              \
+    do {                                    \
+    int error_code = (operation);           \
+    if (error_code != 0) return error_code; \
+    } while (0)
 
  /**
   * @brief Aktuálny načítaný token
@@ -48,30 +47,15 @@ extern token_T* tkn;
 extern SymTab_T symt;
 
 /**
- * @brief Indikuje, či sa parser nachádza vo vnútri cykla.
-*/
-extern bool parser_inside_loop;
-
-/**
- * @brief Meno náveštia na najvrchnejší cyklus
-*/
-extern str_T first_loop_label;
-
-/**
- * @brief Zoznam premenných,, ktoré musia byť dekalrované pred prvým nespracovaným cyklom
-*/
-extern DLLstr_T variables_declared_inside_loop;
-
-/**
  * @brief Indikuje, či sa aktuálne spracúva kód vo vnútri funkcie.
  * @details Podľa toho sa generovaný kód ukladá buď do code_fn alebo code_main.
 */
 extern bool parser_inside_fn_def;
 
 /**
- * @brief Názov funkcie, ktorej definícia je práve spracovávaná
+ * @brief Zistí kompatibilitu priradenia dvoch typov
 */
-extern str_T fn_name;
+bool isCompatibleAssign(char dest, char src);
 
 /**
  * @brief Uvoľní aktuálne načítaný token v globálnej premennej tkn a nahradí ho novým zo scannera
@@ -91,11 +75,30 @@ void saveToken();
 bool initializeParser();
 
 /**
+ * Stav tkn:
+ *  - pred volaním: načítaný token
+ *  - po volaní:    rôzny
+ *
  * @brief Hlavná časť parsera, funkcia spracúva jeden <STAT>
- * @details Očakáva, že v globálnej premennej tkn je už načítaný token
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parse();
+
+/**
+ * @brief Skontroluje, či boli definované všetky volané funkcie
+ * @return 0 ak je všetko v poriadku, inak číslo chyby
+*/
+int checkIfAllFnDef();
+
+/**
+ * @brief Vypíše na stdout vygenerovaný IFJcode23.
+*/
+void printOutCompiledCode();
+
+/**
+ * @brief Uvoľní všetky hlavné zdroje využívané prekladačom (parsera)
+*/
+void destroyParser();
 
 #endif // ifndef _PARSER_H_
 /* Koniec súboru parser.h */

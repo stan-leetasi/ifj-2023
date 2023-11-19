@@ -5,7 +5,7 @@ func funkcia(_ num : Int? ) -> Int? {
 }
 
 var _Double : Double
-_Double = 88b.0e2       // nespravna hodnota cisla
+_Double = 88.b0e2       // nespravna hodnota cisla
 
 var a : Double = 25.0
 var b : Int? = funkcia(6)

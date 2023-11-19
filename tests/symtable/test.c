@@ -22,9 +22,7 @@ void test() {
     TEST(table->global == table->local);
     TEST(table->global->used == 0);
 
-    TSData_T *element = malloc(sizeof(TSData_T));
-    element->id = malloc(strlen(keys[0]) + 1);
-    strcpy(element->id, keys[0]);
+    TSData_T *element = SymTabCreateElement(keys[0]);
     TEST(SymTabLookup(table, "lol") == NULL);
     TEST(SymTabInsertGlobal(table, element));
     TEST(table->global->used == 1);
@@ -33,9 +31,7 @@ void test() {
 
     SymTabAddLocalBlock(table);
     TEST(table->global->next == table->local);
-    element = malloc(sizeof(TSData_T));
-    element->id = malloc(strlen(keys[1]) + 1);
-    strcpy(element->id, keys[1]);
+    element = SymTabCreateElement(keys[1]);
     TEST(SymTabInsertLocal(table, element));
 
     TEST(SymTabLookupLocal(table, keys[0]) == NULL);
@@ -48,6 +44,8 @@ void test() {
 
     SymTabRemoveLocalBlock(table);
     SymTabDestroy(table);
+    
+    free(table);
 }
 
 int main()

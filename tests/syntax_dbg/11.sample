@@ -1,4 +1,4 @@
-hello("some text")
+hello(text: "some text")
 
 func my_func () -> Int
 { return 123}
@@ -19,7 +19,7 @@ func _nil_fn() -> Double?
 
 let d = _nil_fn()
 
-if let d { hello("not niL") }
-else { hello(  "is NIL"
+if let d { hello(text: "not niL") }
+else {hello( text :    "is NIL"
   ) }
   

@@ -4,7 +4,7 @@ hello("some text")
 func my_func () -> Int 
 { return 123 // zatvorka }
 
-func hello(text t : String) {
+func hello(_ t : String) {
 
 }
 

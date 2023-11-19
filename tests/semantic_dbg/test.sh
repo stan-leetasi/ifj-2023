@@ -3,9 +3,11 @@
 # v semantic_dbg.exp sú uvedené očakávané return kódy prekladača
 
 # rozdelenie samplov:
-# (bez prefixu) *.sample ... sémanticky správne
+# 0e*.sample ... sémanticky správne
 # #e*.sample ... sémanticky nesprávne, kde # značí číslo chyby
+# testy s číslami 20-49 sú programy, kde sú volané funkcie predtým ako sú definované
 # testy s cislami 50+ su pre vyrazy
+# testy s cislami 70+ su pre built-in funkcie
 
 make || exit 1
 
