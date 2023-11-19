@@ -36,14 +36,16 @@ echo "----------------------------------------------------------"
 if ${compile_ok} ; then 
     echo "[PASS] - Everything compiled successfully"
     echo "         Now try system_run tests"
-    if [ ! -d "../system_run" ] ; then
-        echo "directory system_run not found"
-        exit 0
-    fi
-    for f in *.prog
-    do
-        mv "$f" "../system_run"
-    done
+
 else
     echo "[FAIL]"
 fi
+
+if [ ! -d "../system_run" ] ; then
+    echo "directory system_run not found"
+    exit 0
+fi
+for f in *.prog
+do
+    mv "$f" "../system_run"
+done
