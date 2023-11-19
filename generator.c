@@ -119,18 +119,46 @@ void genCode(char *instruction, char *op1, char *op2, char *op3) {
 }
 
 void genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
+    //Získání hodnoty z něterého seznamu
     str_T var;
+    //Zde bude uložená instrukce
+    str_T instruction;
+
+    StrInit(&instruction);
     StrInit(&var);
 
     DLLstr_First(variables);
-    while(DLLstr_IsActive(variables)) {
-        DLLstr_GetValue(variables, &var);
+    DLLstr_Last(&code_fn);
 
-        genCode("DEFVAR",StrRead(&var), NULL, NULL);
+    //Vyhledání labelu v dll code_fn
+    while (DLLstr_IsActive(&code_fn)) {
 
-        DLLstr_Next(variables);
+        DLLstr_GetValue(&code_fn, &var);
+
+        //Label byl vyhledán
+        if (strcmp(StrRead(&var), label) == 0) {
+            
+            //Před label v dll code_fn se vloží instrukce dle popisu funkce
+            while(DLLstr_IsActive(variables)) {
+                
+                DLLstr_GetValue(variables, &var);
+
+                //Vytvoření a vložení instrukce
+                StrFillWith(&instruction, "DEFVAR ");
+                StrCatString(&instruction, StrRead(&var));
+    
+                DLLstr_InsertBefore(&code_fn, StrRead(&instruction));
+
+                DLLstr_Next(variables);
+            }
+
+            break;
+        }
+
+        DLLstr_Previous(&code_fn);
     }
 
+    StrDestroy(&instruction);
     StrDestroy(&var);
 }
 

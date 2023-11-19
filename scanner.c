@@ -497,6 +497,9 @@ token_T *getToken()
                     //Otevřený řetězec, za kterým následuje EOF
                     push_to_stream = true;
                     id_token = INVALID;
+                } else if (c == '\\') {
+                    is_multi_line_string = false;
+                    state = ESCAPE_SEKV_S;
                 } else {
                     //jednoduchý řetězec
                     state = SINGLE_LINE_STRING_S;
@@ -702,7 +705,7 @@ token_T *getToken()
                 StrAppend(&tkn->atr, c);
         } else if (add_char_to_tkn == false) {
             if (state == MULTI_LINE_STRING_END_S && quote_mark_num < END_OF_MULTILINE_STRING && c != '"') {
-                for (unsigned i = 0; i < quote_mark_num; i++) {
+                for (int i = 0; i < quote_mark_num; i++) {
                     StrAppend(&tkn->atr, '"');
                 }
             }
