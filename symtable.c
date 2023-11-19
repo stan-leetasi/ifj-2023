@@ -2,9 +2,9 @@
  * @file symtable.c
  * @brief Tabuľka symbolov
  * @author Boris Hatala
- * @date 30.10.2023
+ * @date 19.11.2023
  * 
- * @todo Uvoľnenie celej tabuľky, refaktorizácia kódu (private metódy pre TSBlock_T)
+ * @todo exit(99), chybové hlášky, komentáre
  */
 
 #include "symtable.h"
@@ -145,8 +145,6 @@ void SymTabDestroy(SymTab_T *st) {
 
     st->global = NULL;
     st->local = NULL;
-
-    //free(st);
 }
 
 TSData_T *SymTabLookup(SymTab_T *st, char *key) {
@@ -221,20 +219,16 @@ void SymTabModifyLocalReturn(SymTab_T *st, bool value) {
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {
 
     size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
-
-    if(block->array[h1] != NULL) {
-        if(strcmp(block->array[h1]->id, key) == 0)
-            return block->array[h1];
-    }
-
     size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-    for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
+    for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
         size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
         if (block->array[index] == NULL) {
             return NULL;
         }
-        if (block->array[index] != NULL && strcmp(block->array[index]->id, key) == 0) {
-            return block->array[index];
+        else {
+            if (strcmp(block->array[index]->id, key) == 0) {
+                return block->array[index];
+            }
         }
     }
 
@@ -248,22 +242,14 @@ bool SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
     }
 
     size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
-    
-    if(block->array[h1] == NULL) {
-        block->array[h1] = elem;
-        block->used++;  
-        return true;
-    }
-    else {
-        size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-        for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++)
-        {
-            size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
-            if (block->array[index] == NULL) {
-                block->array[index] = elem;
-                block->used++;  
-                return true;
-            }
+    size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
+    for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++)
+    {
+        size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
+        if (block->array[index] == NULL) {
+            block->array[index] = elem;
+            block->used++;  
+            return true;
         }
     }
     return false;
