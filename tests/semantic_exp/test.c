@@ -50,7 +50,7 @@ int main() {
         fprintf(stderr, "test.c: tkn must remain NULL after parseExpression\n");
         return 50;
     }
-
+    tkn = getToken();
     destroyParser();
 
     // X na začiatku sample znamená, že test neskúša návratový typ výrazu

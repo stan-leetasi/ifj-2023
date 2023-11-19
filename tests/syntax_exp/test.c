@@ -47,6 +47,7 @@ int main() {
     }
 
     destroyParser();
+    tkn = getToken();
 
     return ret_code;
 }
