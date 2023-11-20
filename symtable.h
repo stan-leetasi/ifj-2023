@@ -93,13 +93,13 @@ void SymTabDestroyElement(TSData_T *elem);
  * @brief Inicializuje tabuľku symbolov a vloží do nej jeden globálny rámec
  * @return true v prípade úspechu, inak false
 */
-bool SymTabInit(SymTab_T *st);
+void SymTabInit(SymTab_T *st);
 
 /**
  * @brief Vytvorí a pridá do tabuľky symbolov nový dielčí lokálny rámec/blok
  * @return true v prípade úspechu, inak false
 */
-bool SymTabAddLocalBlock(SymTab_T *st);
+void SymTabAddLocalBlock(SymTab_T *st);
 
 /**
  * @brief Uvoľní všetok obsah alokovaný v poslednom lokálnom bloku tabuľky a odstráni tento blok z tabuľky.
@@ -141,7 +141,7 @@ TSData_T *SymTabLookupLocal(SymTab_T *st, char *key);
  * @param elem vkladaný prvok
  * @return true v prípade úspechu, inak false
 */
-bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem);
+void SymTabInsertGlobal(SymTab_T *st, TSData_T *elem);
 
 /**
  * @brief Vloží do posledného lokálneho bloku tabuľky symbolov nový prvok.
@@ -149,7 +149,7 @@ bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem);
  * @param elem vkladaný prvok
  * @return true v prípade úspechu, inak false
 */
-bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem);
+void SymTabInsertLocal(SymTab_T *st, TSData_T *elem);
 
 /**
  * @brief Informácia o tom či v aktuálnom lokálnom bloku sa nachádzal príkaz return
@@ -164,7 +164,7 @@ void SymTabModifyLocalReturn(SymTab_T *st, bool value);
 
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key);
 
-bool SymTabBlockInsert(TSBlock_T *block, TSData_T *elem);
+void SymTabBlockInsert(TSBlock_T *block, TSData_T *elem);
 
 #endif // ifndef _SYMTABLE_H_
 /* Koniec súboru symtable.h */
