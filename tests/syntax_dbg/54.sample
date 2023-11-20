@@ -8,13 +8,14 @@ if (5.0 == 8.0) {} else {}
 
 var a = 20
 var b = 70
+var d = 8.5
 
 if (a >= b) {} else {}
-if (a <= 20.0) {} else {}
+if (a <= 20) {} else {}
 
-while (a != 20) {}
+while (d != 20) {}
 
-if (a*b)>250.0 {} else {}
+if (a*b)>250 {} else {}
 
 var one = "one"
 var two = "two"

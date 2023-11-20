@@ -538,7 +538,7 @@ token_T *getToken()
                 //Tři uvozovky (víceřádkový řetězec) musí být na samostatném řádku
                 if (c == '\n') {
                     state = MULTI_LINE_STRING_S;
-                    
+                    add_char_to_tkn = false;
                 } else if (isblank(c)) {
                     //Bílé znaky se ignorují
                     //Nebudou se do řetězce přidávat
@@ -549,9 +549,11 @@ token_T *getToken()
                 break;
 /*=======================================STATE=======================================*/
             case MULTI_LINE_STRING_S:
+                add_char_to_tkn = true;
                 //Víceřádkový řetězec
                 if (c == '\n') {
                     //Potenciální možnost ukončení řetězce
+                    add_char_to_tkn = false;
                     state = MULTI_LINE_STRING_END_S;
                 } else if (c == EOF) {
                     push_to_stream = true;
@@ -568,6 +570,7 @@ token_T *getToken()
                 break;
 /*=======================================STATE=======================================*/
             case MULTI_LINE_STRING_END_S:
+            add_char_to_tkn = true;
                 //Řetězec může být ukončen
                 if (c == '"') {
                     add_char_to_tkn = false;
@@ -582,16 +585,24 @@ token_T *getToken()
                     //Neukončený řetězec
                     id_token = INVALID;
                 } else if (c == '\n') {
+                    add_char_to_tkn = false;
                     //Přeskakují se mezery
                     state = MULTI_LINE_STRING_END_S;
                 } else if (c == '\\') {
-                    //Přeskakují se mezery
+                    //escape sekvence
                     state = ESCAPE_SEKV_S;
                 } else {
                     quote_mark_num = 0;
                     state = MULTI_LINE_STRING_S;
                 }
-                
+
+                if (c != '"' && quote_mark_num < END_OF_MULTILINE_STRING) {
+                    StrAppend(&tkn->atr, '\n');
+                    for (int i = 0; i < quote_mark_num; i++) {
+                        StrAppend(&tkn->atr, '"');
+                    }
+                    quote_mark_num = 0;
+                }
                 break;
 /*=======================================STATE=======================================*/
             case ESCAPE_SEKV_S:
@@ -702,7 +713,7 @@ token_T *getToken()
                 StrAppend(&tkn->atr, c);
         } else if (add_char_to_tkn == false) {
             if (state == MULTI_LINE_STRING_END_S && quote_mark_num < END_OF_MULTILINE_STRING && c != '"') {
-                for (unsigned i = 0; i < quote_mark_num; i++) {
+                for (int i = 0; i < quote_mark_num; i++) {
                     StrAppend(&tkn->atr, '"');
                 }
             }

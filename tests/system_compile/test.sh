@@ -13,12 +13,11 @@ echo "Executing system tests"
 
 compile_ok=true
 
-echo "----------------------------------------------------------"
-for f in *.sample
+for f in *.swift
 do
     test_sample=${f%.*}
     #echo "Compiling ${f}"
-    ./main.out <"${test_sample}.sample" >"${test_sample}.prog"
+    ./main.out <"${test_sample}.swift" >"${test_sample}.prog"
     result=$?
     if [ ${result} -eq 0 ]; then 
         #echo -e "\t\tOK"
