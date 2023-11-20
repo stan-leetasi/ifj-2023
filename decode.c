@@ -160,6 +160,8 @@ str_T strEncode(char * string) {
         i++;
     }
 
+    StrDestroy(&unicode_number);
+
     return decoded_string;
 }
 /* Koniec súboru decode.c */
