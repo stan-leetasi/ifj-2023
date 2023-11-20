@@ -36,6 +36,8 @@ void init_used_variables() {
 
 int main() {
     initializeParser();
+    init_used_variables();
+
     TRY_OR_EXIT(nextToken());
 
     char result_type;

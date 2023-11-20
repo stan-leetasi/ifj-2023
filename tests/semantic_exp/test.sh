@@ -20,7 +20,7 @@ do
     echo "----------------------------------------------------------"
     test_sample=${f%.*}
     echo "Parsing ${f}"
-    ./test.out <"${test_sample}.sample" >>"EXPOUT.txt"
+    ./test.out <"${test_sample}.sample" >>"EXPOUT.result"
     result=$?
     echo -e "${test_sample}" "$(printf "%d" ${result})" >>${result_file}
     echo -n "Code ${f} is: "
