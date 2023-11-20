@@ -71,12 +71,13 @@ void SymTabDestroyElement(TSData_T *elem) {
     }
 }
 
-bool SymTabInit(SymTab_T *st) {
+void SymTabInit(SymTab_T *st) {
 
     st -> global = malloc(sizeof (TSBlock_T) + sizeof(TSData_T*) * SYMTABLE_MAX_SIZE);
 
     if(st -> global == NULL) {
-        return false;
+        fprintf(stderr, "SymTabInit() - memory allocation error\n");
+        exit(99);
     }
 
     st -> global -> used = 0;
@@ -90,19 +91,19 @@ bool SymTabInit(SymTab_T *st) {
     }
 
     st -> local = st -> global;
-
-    return true;
 }
 
-bool SymTabAddLocalBlock(SymTab_T *st) {
+void SymTabAddLocalBlock(SymTab_T *st) {
     if (st == NULL) {
-        return false;
+        fprintf(stderr, "SymTabAddLocalBlock() - symbol table not initialized\n");
+        exit(99);
     }
     
     TSBlock_T *newBlock = malloc(sizeof (TSBlock_T) + sizeof(TSData_T*) * SYMTABLE_MAX_SIZE);
 
     if(newBlock == NULL) { 
-        return false;
+        fprintf(stderr, "SymTabAddLocalBlock() - new block memory allocation error\n");
+        exit(99);
     }
 
     newBlock -> used = 0;
@@ -120,8 +121,6 @@ bool SymTabAddLocalBlock(SymTab_T *st) {
     newBlock -> has_return = false;
 
     st -> local = newBlock;
-
-    return true;
 }
 
 void SymTabRemoveLocalBlock(SymTab_T *st) {
@@ -189,22 +188,24 @@ TSData_T *SymTabLookupLocal(SymTab_T *st, char *key) {
     return SymTabBlockLookUp(st->local, key);
 }
 
-bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
+void SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
 
     if(st -> global == NULL) {
-        return false;
+        fprintf(stderr, "SymTabInsertGlobal() - global table is empty\n");
+        exit(99);
     }
 
-    return SymTabBlockInsert(st->global, elem);
+    SymTabBlockInsert(st->global, elem);
 }
 
-bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
+void SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
 
     if(st -> local == NULL) {
-            return false;
+            fprintf(stderr, "SymTabInsertLocal() - local table is empty\n");
+            exit(99);
         }
 
-    return SymTabBlockInsert(st->local, elem);
+    SymTabBlockInsert(st->local, elem);
 }
 
 bool SymTabCheckLocalReturn(SymTab_T *st) {
@@ -214,7 +215,6 @@ bool SymTabCheckLocalReturn(SymTab_T *st) {
 void SymTabModifyLocalReturn(SymTab_T *st, bool value) {
     st->local->has_return = value;
 }
-
 
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {
 
@@ -231,14 +231,15 @@ TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {
             }
         }
     }
-
+    
     return NULL;
 }
 
-bool SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
+void SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
 
     if(block->used + 1 == SYMTABLE_MAX_SIZE) {
-        return false;
+        fprintf(stderr, "SymTabBlockInsert() - symbol table is full\n");
+        exit(99);
     }
 
     size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
@@ -248,10 +249,8 @@ bool SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
         size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
         if (block->array[index] == NULL) {
             block->array[index] = elem;
-            block->used++;  
-            return true;
+            block->used++;
         }
     }
-    return false;
 }
 /* Koniec súboru symtable.c */
