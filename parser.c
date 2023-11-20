@@ -593,10 +593,7 @@ int parseFnCall(char* result_type) {
         fn->sig->ret_type = SYM_TYPE_UNKNOWN;
         fn->let = false;
         fn->init = false;
-        if (!SymTabInsertGlobal(&symt, fn)) {
-            SymTabDestroyElement(fn);
-            return COMPILER_ERROR;
-        }
+        SymTabInsertGlobal(&symt, fn);
 
         // poznačiť názov funkcie do zoznamu nedefinovaných funkcií, pre kontrolu na koniec
         if (!DLLstr_InsertLast(&check_def_fns, fn->id))
@@ -809,11 +806,7 @@ int parseVariableDecl() {
     }
 
     // vloženie záznamu o premennej do TS
-    if (!SymTabInsertLocal(&symt, variable)) {
-        SymTabDestroyElement(variable);
-        logErrCompilerMemAlloc();
-        return COMPILER_ERROR;
-    }
+    SymTabInsertLocal(&symt, variable);
 
     return COMPILATION_OK;
 }
@@ -837,7 +830,7 @@ int parseStatBlock(bool* had_return) {
     }
 
     // vytvorenie nového lokálneho bloku v TS
-    if (!SymTabAddLocalBlock(&symt)) return COMPILER_ERROR;
+    SymTabAddLocalBlock(&symt);
 
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_CUR_R)
@@ -1029,10 +1022,7 @@ int parseFunction() {
         // vytvorenie záznamu o funkcii do TS
         fn = SymTabCreateElement(StrRead(&(tkn->atr)));
         if (fn == NULL) return COMPILER_ERROR;
-        if (!SymTabInsertGlobal(&symt, fn)) {
-            SymTabDestroyElement(fn);
-            return COMPILER_ERROR;
-        }
+        SymTabInsertGlobal(&symt, fn);
         StrFillWith(&(fn->codename), StrRead(&(tkn->atr)));
         fn->type = SYM_TYPE_FUNC;
         fn->sig = SymTabCreateFuncSig();
@@ -1084,7 +1074,7 @@ int parseFunction() {
 
     // Príprava parametrov pre telo funkcie
     // parametre budú vo vlastnom lokálnom bloku TS
-    if (!SymTabAddLocalBlock(&symt)) return COMPILER_ERROR;
+    SymTabAddLocalBlock(&symt);
     DLLstr_First(&(fn->sig->par_ids));
     str_T par_id;
     StrInit(&par_id);
@@ -1095,7 +1085,7 @@ int parseFunction() {
             logErrCompilerMemAlloc();
             return COMPILER_ERROR;
         }
-        PERFORM_RISKY_OP(SymTabInsertLocal(&symt, par));
+        SymTabInsertLocal(&symt, par);
         par->init = true;
         par->let = true;
         par->type = StrRead(&(fn->sig->par_types))[i];
@@ -1109,7 +1099,7 @@ int parseFunction() {
     genFnDefBegin(StrRead(&fn_name), &(fn->sig->par_ids));
 
     // Spracovanie tela funkcie
-    if (!SymTabAddLocalBlock(&symt)) return COMPILER_ERROR;
+    SymTabAddLocalBlock(&symt);
     while (tkn->type != BRT_CUR_R) {
         TRY_OR_EXIT(parse());
         TRY_OR_EXIT(nextToken());
@@ -1239,9 +1229,7 @@ int parseIf() {
         }
 
         // premenná musí byť v samostatnom bloku, kde bude jej typ zmenený na typ nezahrňujúci nil
-        if (!SymTabAddLocalBlock(&symt)) {
-            return COMPILER_ERROR;
-        }
+        SymTabAddLocalBlock(&symt);
         let_variable = SymTabCreateElement(StrRead(&(tkn->atr)));
         if (let_variable == NULL)
         {
@@ -1253,7 +1241,7 @@ int parseIf() {
         let_variable->type = convertNilTypeToNonNil(variable->type);
         StrFillWith(&(let_variable->codename), StrRead(&(variable->codename)));
 
-        if (!SymTabInsertLocal(&symt, let_variable)) return COMPILER_ERROR;
+        SymTabInsertLocal(&symt, let_variable);
 
         genCode("JUMPIFEQ", StrRead(&cond_false), StrRead(&(variable->codename)), "nil@nil");
         break;
@@ -1436,7 +1424,7 @@ void saveToken() {
 }
 
 bool initializeParser() {
-    if (!SymTabInit(&symt)) return false;
+    SymTabInit(&symt);
 
     loadBuiltInFunctionSignatures();
 

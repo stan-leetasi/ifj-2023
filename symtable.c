@@ -33,23 +33,29 @@ unsigned long hashTwo(const char *str)
 
 func_sig_T *SymTabCreateFuncSig() {
     func_sig_T *f = malloc(sizeof(func_sig_T));
-    if (f != NULL) {
-        f->ret_type = SYM_TYPE_UNKNOWN;
-        StrInit(&(f->par_types));
-        DLLstr_Init(&(f->par_names));
-        DLLstr_Init(&(f->par_ids));
+    if (f == NULL) {
+        fprintf(stderr, "SymTabCreateFuncSig() - memory allocation error\n");
+        exit(99);
     }
+    f->ret_type = SYM_TYPE_UNKNOWN;
+    StrInit(&(f->par_types));
+    DLLstr_Init(&(f->par_names));
+    DLLstr_Init(&(f->par_ids));
     return f;
 }
 
 TSData_T *SymTabCreateElement(char *key)
 {
     TSData_T *elem = malloc(sizeof(TSData_T));
-    if(elem == NULL) return NULL;
+    if(elem == NULL) {
+        fprintf(stderr, "SymTabCreateElement() - memory allocation error\n");
+        exit(99);
+    }
     elem->id = malloc(sizeof(char)*(strlen(key)+1));
     if(elem->id == NULL) {
         free(elem);
-        return NULL;
+        fprintf(stderr, "SymTabCreateElement() - memory allocation error\n");
+        exit(99);
     }
     elem->type = SYM_TYPE_UNKNOWN;
     strcpy(elem->id, key);
@@ -250,6 +256,7 @@ void SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
         if (block->array[index] == NULL) {
             block->array[index] = elem;
             block->used++;
+            return;
         }
     }
 }
