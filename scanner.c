@@ -499,6 +499,10 @@ token_T *getToken()
                     id_token = INVALID;
                 } else {
                     //jednoduchý řetězec
+                    if (c == '\\') {
+                        //Aby se správně zpracovala escape sekvence
+                        push_to_stream = true;
+                    }
                     state = SINGLE_LINE_STRING_S;
                 }
                 
