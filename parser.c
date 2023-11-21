@@ -1312,17 +1312,16 @@ int parseWhile() {
     StrInit(&loop_start);
     StrInit(&loop_end);
 
+    genUniqLabel(StrRead(&fn_name), "while", &loop_start);
+    StrFillWith(&loop_end, StrRead(&(loop_start)));
+    StrAppend(&loop_end, '!');
+    genCode("LABEL", StrRead(&loop_start), NULL, NULL);
+
     bool loop_inside_loop = parser_inside_loop; // cyklus v cykle
     if (!loop_inside_loop) {
         StrFillWith(&first_loop_label, StrRead(&loop_start));
     }
     parser_inside_loop = true;
-
-
-    genUniqLabel(StrRead(&fn_name), "while", &loop_start);
-    StrFillWith(&loop_end, StrRead(&(loop_start)));
-    StrAppend(&loop_end, '!');
-    genCode("LABEL", StrRead(&loop_start), NULL, NULL);
 
     TRY_OR_EXIT(nextToken());
     switch (tkn->type) // syntaktická kontrola, či sa v podmienke nachádza výraz
