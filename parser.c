@@ -1102,6 +1102,10 @@ int parseFunction() {
         logErrSemanticFn(fn->id, "it is possible to exit function without return value");
         return SEM_ERR_FUNC;
     }
+    if(!SymTabCheckLocalReturn(&symt)) {
+        // aj void-funkcia musí mať na konci inštrukciu RETURN, pre vrátenie riadenie programu
+        genCode("RETURN", NULL, NULL, NULL);
+    }
     SymTabRemoveLocalBlock(&symt);
 
     SymTabRemoveLocalBlock(&symt); // odstránenie lokálneho bloku s parametrami
