@@ -39,3 +39,22 @@ if [ ${DIFF} -eq 0 ]; then
 else
     echo "[FAIL]"
 fi
+
+echo -e "\nValgrind leak-check running, this may take a while"
+valgrind_ok=true
+for f in 0e*.sample
+do
+    test_sample=${f%.*}
+    valgrind --error-exitcode=1 --leak-check=yes --errors-for-leak-kinds=all --exit-on-first-error=yes ./test.out <"${test_sample}.sample" >"/dev/null" 2>"/dev/null"
+    result=$?
+    if [ ${result} -eq 1 ]; then 
+        echo -e "VALGRIND found errors with \t\t${f}"
+        valgrind_ok=false
+    else 
+        echo -n "."
+    fi
+done
+
+if ${valgrind_ok} ; then
+    echo "[VALGRIND PASS]"
+fi
