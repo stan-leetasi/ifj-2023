@@ -206,7 +206,7 @@ void genFnCall(char *fn, DLLstr_T *args) {
     //Průchod přes všechny argumenty funkce
     while (DLLstr_IsActive(args)) {
         DLLstr_GetValue(args, &arg);
-        genCode("PUSH", StrRead(&arg), NULL, NULL);
+        genCode("PUSHS", StrRead(&arg), NULL, NULL);
         DLLstr_Previous(args);
     }
     //Vložení na zásobník CALL instrukce
