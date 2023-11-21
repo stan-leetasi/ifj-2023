@@ -650,9 +650,11 @@ int parseFnCall(char* result_type) {
  * @brief Pravidlo pre spracovanie priradenia
  * @param result_type Dátový typ výsledku
  * @param result_codename Identifikátor premennej v cieľovom kóde kam sa má uložiť výsledok
+ * @param target_type Dátový typ premennej, ktorej je hodnota priraďovaná. Slúži len pre potreby implicitnej konverzie literálu Int na Double
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseAssignment(char* result_type, char *result_codename) {
+int parseAssignment(char* result_type, char *result_codename, char target_type) {
+    bool possible_implicit_int_conversion = false;
     TRY_OR_EXIT(nextToken());
     token_T* first_tkn;
     switch (tkn->type) // treba rozlíšiť volanie funkcie a výraz
@@ -663,7 +665,7 @@ int parseAssignment(char* result_type, char *result_codename) {
     case STRING_CONST:
     case NIL:
         // <ASSIGN> ->  exp
-        TRY_OR_EXIT(parseExpression(result_type));
+        TRY_OR_EXIT(parseExpression(result_type, &possible_implicit_int_conversion));
         break;
     case ID:
         /*  Identifikátor môže byť názov premennej vo výraze alebo názov funkcie.
@@ -684,12 +686,20 @@ int parseAssignment(char* result_type, char *result_codename) {
         else {
             saveToken();
             tkn = first_tkn;
-            TRY_OR_EXIT(parseExpression(result_type));
+            TRY_OR_EXIT(parseExpression(result_type, &possible_implicit_int_conversion));
         }
         break;
     default:
         logErrSyntax(tkn, "assignment or function call");
         return SYN_ERR;
+    }
+
+    if(possible_implicit_int_conversion && *result_type == SYM_TYPE_INT && 
+        (target_type == SYM_TYPE_DOUBLE || target_type == SYM_TYPE_DOUBLE_NIL)) {
+        // vo výraze sú celočíselné literály a výsledok má byť priradený do dátového typu Double(?)
+        // musí byť vykonaná implicitná konverzia
+        genCode("INT2FLOATS", NULL, NULL, NULL);
+        *result_type = SYM_TYPE_DOUBLE;
     }
 
     genCode("POPS", result_codename, NULL, NULL); // priradenie výsledku do premennej
@@ -754,7 +764,7 @@ int parseVariableDecl() {
         if (tkn->type == ASSIGN) {
             // <INIT_VAL>  ->  = <ASSIGN>
             char assign_type = SYM_TYPE_UNKNOWN;
-            TRY_OR_EXIT(parseAssignment(&assign_type, StrRead(&(variable->codename))));
+            TRY_OR_EXIT(parseAssignment(&assign_type, StrRead(&(variable->codename)), variable->type));
             variable->init = true;
 
             // kontrola výsledného typu výrazu s deklarovaným dátovým typom
@@ -780,7 +790,7 @@ int parseVariableDecl() {
         }
         break;
     case ASSIGN: // <DEF_VAR> ->  = <ASSIGN>
-        TRY_OR_EXIT(parseAssignment(&(variable->type), StrRead(&(variable->codename))));
+        TRY_OR_EXIT(parseAssignment(&(variable->type), StrRead(&(variable->codename)), SYM_TYPE_UNKNOWN));
         variable->init = true;
 
         if (variable->type == SYM_TYPE_VOID) { // priradenie hodnoty z void funkcie
@@ -1130,6 +1140,8 @@ int parseReturn() {
         return SEM_ERR_OTHER;
     }
 
+    bool possible_implicit_int_conversion = false;
+
     TRY_OR_EXIT(nextToken());
     char result_type = SYM_TYPE_UNKNOWN;
     switch (tkn->type)
@@ -1141,7 +1153,7 @@ int parseReturn() {
     case NIL:
     case BRT_RND_L:
         // spracovanie výrazu a zistenie typu návratovej hodnoty v return
-        TRY_OR_EXIT(parseExpression(&result_type));
+        TRY_OR_EXIT(parseExpression(&result_type, &possible_implicit_int_conversion));
         break;
     default:
         // void return
@@ -1150,7 +1162,8 @@ int parseReturn() {
         break;
     }
 
-    TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&fn_name)); // získanie informácii o predpise aktuálnej funkcie
+    // získanie informácii o predpise aktuálnej funkcie
+    TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&fn_name));
 
     if (fn->sig->ret_type == SYM_TYPE_VOID) { // vo vnútri void funkcie
         if (result_type != SYM_TYPE_VOID) { // void funkcia nesmie vraciať hodnotu
@@ -1163,7 +1176,14 @@ int parseReturn() {
             logErrSemanticFn(fn->id, "void return in non-void function");
             return SEM_ERR_RETURN;
         }
-        else if (!isCompatibleAssign(fn->sig->ret_type, result_type)) { // návratový typ nesedí s predpisom funkcie
+        if(possible_implicit_int_conversion && result_type == SYM_TYPE_INT && 
+            (fn->sig->ret_type == SYM_TYPE_DOUBLE || fn->sig->ret_type == SYM_TYPE_DOUBLE_NIL)) {
+            // vo výraze sú celočíselné literály a výsledok má byť priradený do dátového typu Double(?)
+            // musí byť vykonaná implicitná konverzia
+            genCode("INT2FLOATS", NULL, NULL, NULL);
+            result_type = SYM_TYPE_DOUBLE;
+        }
+        if (!isCompatibleAssign(fn->sig->ret_type, result_type)) { // návratový typ nesedí s predpisom funkcie
             logErrSemanticFn(fn->id, "different return type");
             return SEM_ERR_FUNC;
         }
@@ -1250,7 +1270,8 @@ int parseIf() {
     case NIL:
         // <COND> ->  exp
         char exp_type = SYM_TYPE_UNKNOWN; // ???
-        TRY_OR_EXIT(parseExpression(&exp_type));
+        bool possible_implicit_int_conversion = false; // nie je využívané v if
+        TRY_OR_EXIT(parseExpression(&exp_type, &possible_implicit_int_conversion));
         if (exp_type != SYM_TYPE_BOOL && exp_type != SYM_TYPE_UNKNOWN) {
             logErrSemantic(tkn, "condition must return a bool");
             return SEM_ERR_TYPE;
@@ -1340,7 +1361,8 @@ int parseWhile() {
     }
 
     char exp_type = SYM_TYPE_UNKNOWN; // ???
-    TRY_OR_EXIT(parseExpression(&exp_type));
+    bool possible_implicit_int_conversion = false; // nie je využívané vo while
+    TRY_OR_EXIT(parseExpression(&exp_type, &possible_implicit_int_conversion));
     if (exp_type != SYM_TYPE_BOOL && exp_type != SYM_TYPE_UNKNOWN) {
         logErrSemantic(tkn, "condition must return a bool");
         return SEM_ERR_TYPE;
@@ -1471,7 +1493,7 @@ int parse() {
                 logErrSemantic(first_tkn, "%s is unmodifiable and was already initialised", StrRead(&(first_tkn->atr)));
                 return SEM_ERR_OTHER;
             }
-            TRY_OR_EXIT(parseAssignment(&result_type, StrRead(&(variable->codename))));
+            TRY_OR_EXIT(parseAssignment(&result_type, StrRead(&(variable->codename)), variable->type));
             if (!isCompatibleAssign(variable->type, result_type)) {
                 logErrSemantic(first_tkn, "incompatible data types");
                 return SEM_ERR_TYPE;
