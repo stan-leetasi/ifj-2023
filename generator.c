@@ -167,6 +167,7 @@ void genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
         DLLstr_Previous(list);
     }
 
+    StrDestroy(&label_instruction);
     StrDestroy(&instruction);
     StrDestroy(&var);
 }
@@ -308,6 +309,14 @@ void genSubstring() {
 
     genCode("RETURN", NULL, NULL, NULL);
     parser_inside_fn_def = previous_parser_in_fn_def_value;
+
+    /* dealokácia pomocných str_T */
+    for (int i = 0; i < num_of_local_vars; i++) {
+        StrDestroy(&uniq_vars[i]);
+    }
+    for (int i = 0; i < num_of_lables; i++) {
+        StrDestroy(&uniq_lables[i]);
+    }
 }
 
 /**

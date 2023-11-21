@@ -154,6 +154,7 @@ void loadSingleBIFnSig(char* name, size_t count_par, char ret_type,
     fn->type = SYM_TYPE_FUNC;
     StrFillWith(&(fn->codename), name);
     fn->init = true;
+    fn->let = false;
     fn->sig = SymTabCreateFuncSig();
     fn->sig->ret_type = ret_type;
     for (size_t i = 0; i < count_par; i++) {
@@ -225,6 +226,7 @@ bool biFnGenInstruction(char *bif_name, char *arg_codename) {
         genCode("STRI2INT", "GF@!tmp1", arg_codename, "int@0");
         genCode("LABEL", StrRead(&label_empty_string), NULL, NULL);
         genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+        StrDestroy(&label_empty_string);
         return true;
     }
     else if (strcmp(bif_name, "chr") == 0) {
@@ -596,9 +598,7 @@ int parseFnCall(char* result_type) {
         DLLstr_InsertLast(&check_def_fns, fn->id);
     }
     else {
-        if (fn->init) {
-            built_in_fn = isBuiltInFunction(fn->id);
-        }
+        built_in_fn = isBuiltInFunction(fn->id);
     }
 
     TRY_OR_EXIT(nextToken());
@@ -1035,6 +1035,7 @@ int parseFunction() {
         }
         // v ostatných prípadoch záznam o funkcii existuje preto, lebo bola už volaná 
     }
+    fn->init = true; // funkcia je odteraz definovaná
 
     StrFillWith(&fn_name, fn->id); // zápis názvu aktuálne definovanej funkcie do globálnej premennej
 
@@ -1110,7 +1111,6 @@ int parseFunction() {
 
     SymTabRemoveLocalBlock(&symt); // odstránenie lokálneho bloku s parametrami
 
-    fn->init = true; // funkcia je odteraz definovaná
     parser_inside_fn_def = code_inside_fn_def;
     StrFillWith(&fn_name, "");
     return COMPILATION_OK;
