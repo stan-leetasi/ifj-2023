@@ -26,9 +26,10 @@
  *
  * @brief Precedenčná syntaktická analýza výrazov
  * @param result_type Dátový typ výsledku výrazu
+ * @param literal Indikuje, či je výraz literál, aby mohol byť v prípade potreby implicitne konvertovaný na double
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseExpression(char* result_type);
+int parseExpression(char* result_type, bool *literal);
 
 #endif // ifndef _EXP_H_
 /* Koniec súboru exp.h */

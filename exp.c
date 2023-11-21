@@ -12,31 +12,28 @@
 #include "generator.h"
 
 
-
-/* Poznamky::
-
-Syntaktická analýza: Check typov, zátvoriek, operátory, operandy, binárne unárne operátory
-Sémantická analýza: Kompatibilita typov, scope analýza?, 
-
-
-*/
-
 /** Počas syntaktickej analýzy symbolizuje že ešte nebol spracovaný žiadny token*/
 #define NO_PREV -1
 
 /******************************************************************************************
 * Štruktúry
 *****************************************************************************************/
-
+/**
+ * @brief Štruktúra pre uloženie informácií o tokene
+*/
 typedef struct parsed_token
 {
     int type;       ///< typ tokenu
     char st_type;   ///< typ premennej/funkcia, používa hodnoty SYM_TYPE_XXX
     str_T id;       ///< názov identifikátoru, zároveň kľúč v tabuľke
     str_T codename; ///< identifikátor v cieľovom kóde
-    bool init;      ///< true znamená, že je premenná inicializovaná alebo funkcia definovaná
+    int ln;         ///< riadok tokenu
+    int col;        ///< pozícia prvého charakteru tokenu v riadku
 } ptoken_T;
 
+/**
+ * @brief Štruktúra zásobníka pre dátový typ ptoken_T
+*/
 typedef struct stack
 {
     int size; // Počet prvkov v zásobníku
@@ -51,7 +48,7 @@ typedef struct stack
 *****************************************************************************************/
 
 /**
- * 
+ * @brief Inicializuje zásobník, alokuje pamäť pre 16 prvkov
 */
 bool stack_init( stack_t *stack ) {
 
@@ -125,7 +122,8 @@ int stack_push_token(stack_t *stack, token_T *token){
 
     parsed_token->id = id; // Id parsed tokenu
     parsed_token->type = token->type; // Typ tokenu
-    parsed_token->init = true; // Token je inicializovaný
+    parsed_token->ln = token->ln; // Riadok tokenu
+    parsed_token->col = token->col; // Pozícia v riadku tokenu
 
     if(token->type == ID) // Operand je premenná
     {
@@ -164,7 +162,7 @@ int stack_push_token(stack_t *stack, token_T *token){
         parsed_token->st_type = '0'; // Typ premennej (operátor nemá typ premennej)
         parsed_token->codename = codename; // Prázdný inicializovaný StrR
     }
-    //printf("2. parsed_token %s, type = %c\n", StrRead(&parsed_token->id), parsed_token->st_type);
+    
     return stack_push_ptoken(stack, parsed_token); // Vloženie parsed tokenu na zásobník a vrátenie return value
 }
 
@@ -195,30 +193,16 @@ void stack_pop_destroy(stack_t *stack){
 }
 
 /**
- * @brief Vyprázdni zásobník
+ * @brief Vyprázdni zásobník a uvoľní alokovanú pamäť každého prvku a zásobníku
 */
+
 void stack_clear(stack_t *stack){
     if(stack->array != NULL){ // Prevencia proti double free
         
         while(stack->size > 0) // Kým sa nevymažú všetky položky
         {
-            stack_pop(stack); // Odstránenie prvku zo zásobníka a vymazanie
-        }
-    }
-    stack->size = 0; // Veľkosť = 0
-}
-
-/**
- * @brief Vyprázdni zásobník a uvoľní alokovanú pamäť každého prvku
-*/
-
-void stack_clear_free(stack_t *stack){
-    if(stack->array != NULL){ // Prevencia proti double free
-        
-        while(stack->size > 0) // Kým sa nevymažú všetky položky
-        {
-            free(stack_top(stack));
-            stack_pop(stack); // Odstránenie prvku zo zásobníka a vymazanie
+            free(stack_top(stack)); // Odstránenie alokovanej pamäti prvku
+            stack_pop(stack); // Odstránenie prvku zo zásobníka
         }
     }
     free(stack->array);
@@ -226,14 +210,13 @@ void stack_clear_free(stack_t *stack){
 }
 
 /**
- * @brief Vyprázdni zásobník a uvoľní všetku alokovanú pamäť
+ * @brief Vyprázdni zásobník a uvoľní alokovanú pamäť prvku, jeho podštruktúr a zásobníku
 */
 void stack_dispose(stack_t *stack){
     if(stack->array != NULL){ // Prevencia proti double free
         
         while(stack->size > 0) // Kým sa nevymažú všetky položky
         {
-            //printf("Dispose current size: %i\n",stack->size);
             stack_pop_destroy(stack); // Odstránenie prvku zo zásobníka a vymazanie
         }
         free(stack->array); // Uvoľnenie alokovanej pamäti zoznamu
@@ -250,8 +233,7 @@ void stack_dispose(stack_t *stack){
  * @brief Overuje, či token nie je jeden z typov ktoré sa nemôžu vo výraze vyskytovať.
  * @details Volaná pri každom tokene. Ak je false pri tokene na rovnakom riadku ako výraz => výraz nie je valídny. 
  * Inak indikuje koniec výrazu.
- * @returnss true ak môže token byť súčasťou výrazu, inak false
- * 
+ * @returns true ak token môže byť súčasťou výrazu, inak false
 **/
 bool valid_token_type(int type){
     if (type == INVALID || type == INT_TYPE || type == DOUBLE_TYPE || type == ELSE ||
@@ -326,7 +308,7 @@ bool is_logical_operator(int operator){
 }
 
 /**
- * @brief Zistí, či sú dátové typy operandov kompatibilné pre logické operácie
+ * @brief Overuje, či sú dátové typy operandov kompatibilné pre logické operácie
  * @returns true ak sú kompatibilné, inak false
 **/
 bool are_compatible_l(ptoken_T *op1, ptoken_T *op2){
@@ -362,7 +344,7 @@ bool are_compatible_l(ptoken_T *op1, ptoken_T *op2){
 }
 
 /**
- * @brief Zistí, či sú dátové typy operandov kompatibilné pre "??"
+ * @brief Overuje, či sú dátové typy operandov kompatibilné pre "??"
  * @returns true ak sú kompatibilné, inak false
 **/
 bool are_compatible_n(ptoken_T *op1, ptoken_T *op2){
@@ -380,7 +362,7 @@ bool are_compatible_n(ptoken_T *op1, ptoken_T *op2){
     return false;
 }
 /**
- * @brief Zistí, či je dátový typy operandu nil alebo môže byť nil
+ * @brief Overuje, či je dátový typy operandu nil alebo môže byť nil
  * @returns true ak je nil alebo môže byť nil, false ak nie
 **/
 bool is_nil_type(ptoken_T *op){
@@ -390,7 +372,6 @@ bool is_nil_type(ptoken_T *op){
 
 /**
  * @brief Porovná prioritu operátorov
- * @details 
  * @returns true ak má type väčšiu prioritu ako top, inak false
 **/
 bool priority_cmp(int type, int top){
@@ -437,7 +418,7 @@ bool priority_cmp(int type, int top){
 
 
 /**
- * @brief Funkcia zavolaná pred ukončením parseExpression
+ * @brief Funkcia zavolaná pred ukončením parseExpression počas syntaktickej analýzy
  * @details Uvoľní alokovanú pamäť pomocných premenných a zásobníku
 **/
 void endParse_syn(stack_t *stack, stack_t *postfixExpr){
@@ -445,11 +426,11 @@ void endParse_syn(stack_t *stack, stack_t *postfixExpr){
     stack_dispose(postfixExpr);
 }
 /**
- * @brief Funkcia zavolaná pred ukončením parseExpression
+ * @brief Funkcia zavolaná pred ukončením parseExpression počas sémantickej analýzy
  * @details Uvoľní alokovanú pamäť pomocných premenných a zásobníku
 **/
 void endParse_sem(stack_t *stack, stack_t *postfixExpr){
-    stack_clear_free(stack);
+    stack_clear(stack);
     stack_dispose(postfixExpr);
 }
 
@@ -536,24 +517,25 @@ int infix2postfix(stack_t *stack, stack_t *postfixExpr, token_T *infix_token){
     return 0;
 }
 
+/**
+ * @brief Prekopíruje dáta tokenu do zadanej premennej
+**/
 void copy_data(ptoken_T *source, ptoken_T *destination){
 
-    destination->init = source->init;
     destination->st_type = source->st_type;
     destination->type = source->type;
-    destination->codename = source->codename; // Vloženie reťazca
-    destination->id = source->id; // Vloženie reťazca
+    destination->codename = source->codename; 
+    destination->id = source->id; 
+    destination->ln = source->ln;
+    destination->col = source->col;
 }
-
-
-
 
 
 /******************************************************************************************
  *Hlavná funkcia
 *****************************************************************************************/
 
-int parseExpression(char* result_type) {
+int parseExpression(char* result_type, bool *literal) {
 
     stack_t stack; // Zásobník pre konverziu výrazu na postfixovú formu
     stack_t postfixExpr; // Zásobník pre uloženie postfixového výrazu
@@ -563,11 +545,11 @@ int parseExpression(char* result_type) {
     int prevTokenType = NO_PREV; // Pomocná premenná pre uloženie typu tokenu pred momentálne spracovaným
     int bracketCount = 0; // Premenná na overenie korektnosti zátvoriek "()" vo výraze
     int status = 0; // Premenná na overenie priebehu volania funkcie
-    //printf("Infix: ");
+
+
 //==============================Syntaktická analýza============================
     while(true) // Pokým sa nespracuje celý výraz
     {
-
         if(!valid_token_type(tkn->type)) // Ak token nemôže patriť do výrazu 
         {
             if(tkn->type == 0) // Token je typu INVALID
@@ -661,17 +643,13 @@ int parseExpression(char* result_type) {
             }
 
         }
-        
 
-        //printf("Token %s\n", StrRead(&tkn->atr));
         status = infix2postfix(&stack, &postfixExpr, tkn); // Pridanie tokenu do postfix výrazu
         if(status != 0) // Pridanie tokenu do postfix výrazu nebolo úspešné
         {
             endParse_syn(&stack, &postfixExpr); // Upratenie pred ukončením
             return status; // Vrátenie chybového kódu            
         }
-
-        //printf("%s ",tkn->atr.data);
         
         prevTokenType = tkn->type; // Uloženie typu predošlého tokenu
         status = nextToken(); // Požiadanie o ďalší token z výrazu
@@ -687,14 +665,6 @@ int parseExpression(char* result_type) {
         return SYN_ERR; // Vrátenie chybového stavu
     }
 
-    //printf("\nPostfix: ");
-    //int i=0;
-    //while(i<postfixExpr.size){
-    //    printf("%s ",postfixExpr.array[i]->id.data);
-    //    i++;
-    //}
-    //printf("\n");
-
 //==============================Sémantická analýza============================
     ptoken_T *var_a, *var_b; // Pomocné premenné pre sémantickú analýzu
 
@@ -702,10 +672,9 @@ int parseExpression(char* result_type) {
     {
         if(is_operand(postfixExpr.array[index]->type)) // Operand
         {
-            //printf("Token %s je operand s typom %c\n", StrRead(&postfixExpr.array[index]->id),postfixExpr.array[index]->st_type );
             ptoken_T *new_token = malloc(sizeof(ptoken_T)); // Vytvorenie nového tokenu kvôli zachovaniu hodnôt v pôvodnom
             copy_data(postfixExpr.array[index], new_token); // Skopírovanie hodnôt z pôvodného tokenu
-            //printf("Novy token id:%s, type:%c\n", StrRead(&new_token->id),new_token->type);
+
             if(stack_push_ptoken(&stack, new_token) == COMPILER_ERROR) // Operand sa vloží na zásobník
             {
                 endParse_sem(&stack, &postfixExpr); // Upratanie pred skončením funkcie
@@ -716,7 +685,6 @@ int parseExpression(char* result_type) {
         }
         if(is_binary_operator(postfixExpr.array[index]->type)) // Binárny operátor
         {
-            //printf("Token %s je bin operator\n", StrRead(&postfixExpr.array[index]->id) );
             var_b = stack_top(&stack);
             stack_pop(&stack);
             var_a = stack_top(&stack);
@@ -725,17 +693,16 @@ int parseExpression(char* result_type) {
 
             if(is_arithmetic_operator(postfixExpr.array[index]->type)) // Aritmetický operátor
             {
-                //printf("Token %s je aritmeticky operator\n", StrRead(&postfixExpr.array[index]->id) );
                 if(var_a->st_type == 'I' || var_a->st_type == 'D' || var_a->st_type == 'S' || 
                 var_a->st_type == 'N' || var_b->st_type == 'I' || var_b->st_type == 'D' || 
                 var_b->st_type == 'S' || var_b->st_type == 'N')
                 { // Jeden z operandov je nil alebo hodnota ktorá môže obsahovať nil
-                    //printf("Jeden z operandov je nil hodnota\n");
                     free(var_a); // Vymazanie tokenu
                     free(var_b); // Vymazanie tokenu
                     endParse_sem(&stack, &postfixExpr); // Upratanie pred skončením funkcie
                     return SEM_ERR_TYPE;
                 }
+
                 if(var_a->st_type == 's' || var_a->type == STRING_CONST) // Prvý operand je reťazec
                 {
                     if(postfixExpr.array[index]->type == OP_PLUS) // Operátor je "+"
@@ -751,7 +718,7 @@ int parseExpression(char* result_type) {
 
                             genCode("POPS","GF@!tmp1", NULL, NULL); // Popnutie reťazca do pomocnej premennej
                             genCode("POPS","GF@!tmp2", NULL, NULL); // Popnutie reťazca do pomocnej premennej
-                            genCode("CONCAT", "GF@!tmp3", NULL, NULL); // Konkatenácia reťazcov
+                            genCode("CONCAT", "GF@!tmp3", "GF@!tmp1", "GF@!tmp2"); // Konkatenácia reťazcov
                             genCode("PUSHS", "GF@!tmp3", NULL, NULL); // Pushnutie konkatenovaného reťazca na stack
 
                             continue; // Posúvame sa na ďalší znak v postfix výraze
@@ -786,18 +753,17 @@ int parseExpression(char* result_type) {
                         genCode("SUBS",NULL, NULL, NULL); // Odčítanie hodnôt na vrchole zásobníka
                         break;
                     case OP_DIV:
-                        genCode("MULS",NULL, NULL, NULL); // Podiel hodnôt na vrchole zásobníka
+                        genCode("DIVS",NULL, NULL, NULL); // Podiel hodnôt na vrchole zásobníka
                         break;
                     case OP_MUL:
-                        genCode("DIVS",NULL, NULL, NULL); // Vynásobenie hodnôt na vrchole zásobníka
+                        genCode("MULS",NULL, NULL, NULL); // Vynásobenie hodnôt na vrchole zásobníka
                         break;
                     }
 
                     continue; // Posúvame sa na ďalší znak v postfix výraze
                 }
-                if((var_a->st_type == 'd' || var_a->type == DOUBLE_CONST) && (var_b->st_type == 'd' || var_b->type == DOUBLE_CONST)){ // 2 Doubly
-                    
-                    //printf("2 double\n");
+                if((var_a->st_type == 'd' || var_a->type == DOUBLE_CONST) && (var_b->st_type == 'd' || var_b->type == DOUBLE_CONST))
+                { // 2 Double
                     var_a->st_type = 'd'; // Výsledok operácie je typu double
                     if(stack_push_ptoken(&stack, var_a) != 0){ // Vloženie tokenu na zásobník
                         endParse_sem(&stack, &postfixExpr); // Upratanie pred skončením funkcie
@@ -813,10 +779,10 @@ int parseExpression(char* result_type) {
                         genCode("SUBS",NULL, NULL, NULL); // Odčítanie hodnôt na vrchole zásobníka
                         break;
                     case OP_DIV:
-                        genCode("MULS",NULL, NULL, NULL); // Podiel hodnôt na vrchole zásobníka
+                        genCode("DIVS",NULL, NULL, NULL); // Podiel hodnôt na vrchole zásobníka
                         break;
                     case OP_MUL:
-                        genCode("DIVS",NULL, NULL, NULL); //  Vynásobenie hodnôt na vrchole zásobníka
+                        genCode("MULS",NULL, NULL, NULL); //  Vynásobenie hodnôt na vrchole zásobníka
                         break;
                     }
                     continue; // Posúvame sa na ďalší znak v postfix výraze
@@ -849,10 +815,10 @@ int parseExpression(char* result_type) {
                         genCode("SUB","GF@!tmp1", "GF@!tmp3", "GF@!tmp2"); // Odčítanie hodnôt
                         break;
                     case OP_DIV:
-                        genCode("MUL","GF@!tmp1", "GF@!tmp3", "GF@!tmp2"); // Podiel hodnôt
+                        genCode("DIV","GF@!tmp1", "GF@!tmp3", "GF@!tmp2"); // Podiel hodnôt
                         break;
                     case OP_MUL:
-                        genCode("DIV","GF@!tmp1", "GF@!tmp3", "GF@!tmp2"); // Vynásobenie hodnôt
+                        genCode("MUL","GF@!tmp1", "GF@!tmp3", "GF@!tmp2"); // Vynásobenie hodnôt
                         break;
                     }
                     genCode("PUSHS", "GF@!tmp1", NULL, NULL); // Pushnutie výsledku na stack
@@ -870,8 +836,6 @@ int parseExpression(char* result_type) {
 
             if(is_logical_operator(postfixExpr.array[index]->type)) // Logický operátor
             {
-                //printf("Token %s je logicky operator\n", StrRead(&postfixExpr.array[index]->id) );
-                
                 if(are_compatible_l(var_a, var_b)) // Overenie, či sú dátové typy kompatibilné pre logickú operáciu
                 {
                     if(var_a->st_type == 'b' && var_b->st_type == 'b' &&
@@ -902,14 +866,14 @@ int parseExpression(char* result_type) {
                         genCode("GTS",NULL, NULL, NULL); // A > B
                         break;
                     case LT:
-                        genCode("DIV",NULL, NULL, NULL); // A<B
+                        genCode("LTS",NULL, NULL, NULL); // A<B
                         break;
                     case LTEQ:
-                        genCode("GT",NULL, NULL, NULL); // A > B
+                        genCode("GTS",NULL, NULL, NULL); // A > B
                         genCode("NOTS",NULL, NULL, NULL); // A <= B
                         break;
                     case GTEQ:
-                        genCode("LT",NULL, NULL, NULL); // A < B
+                        genCode("LTS",NULL, NULL, NULL); // A < B
                         genCode("NOTS",NULL, NULL, NULL); // A >= B
                         break;
                     }
@@ -927,7 +891,6 @@ int parseExpression(char* result_type) {
             {
                 if(is_nil_type(var_b)) // Druhý operand je nil alebo nil typ
                 {
-                    //printf("Druhý operand je nil alebo nil typ\n");
                     free(var_a); // Vymazanie tokenu
                     free(var_b); // Vymazanie tokenu
                     endParse_sem(&stack, &postfixExpr); // Upratanie pred skončením funkcie
@@ -935,23 +898,20 @@ int parseExpression(char* result_type) {
                 }
                 if(var_a->st_type == 'N')// Prvý operand je nil
                 {
-                    //printf("Prvý operand je nil\n");
                     if(stack_push_ptoken(&stack, var_b) != 0){ // Pushnutie druhého tokenu na stack
                         endParse_sem(&stack, &postfixExpr); // Upratanie pred skončením funkcie
                         return COMPILER_ERROR;
                     }
                     free(var_a); // Vymazanie prvého tokenu
-                    genCode("POPS","GF@!tmp1", NULL, NULL); // Odstránenie nil zo zásobníka
-                    genCode("POPS","GF@!tmp2", NULL, NULL); // Popnutie non-nil premennej do pomocnej premennej
+                    genCode("POPS","GF@!tmp1", NULL, NULL); // Popnutie non-nil premennej do pomocnej premennej
+                    genCode("POPS","GF@!tmp2", NULL, NULL); // Odstránenie nil zo zásobníka
                     genCode("PUSHS","GF@!tmp1", NULL, NULL); // Vrátenie non-nil premennej späť na zásobník
                     continue; // Posúvame sa na ďalší token
                 }
                 if(are_compatible_n(var_a, var_b)) // Ak majú tokeny kompatibilný dátový typ
                 {
-                    //printf("tokeny kompatibilný dátový typ\n");
                     if(!is_nil_type(var_a)) // Prvý operand nikdy nebude nil => je výsledok výrazu
                     {
-                        //printf("Prvý operand nikdy nebude nil\n");
                         if(stack_push_ptoken(&stack, var_a) != 0){ // Pushnutie druhého tokenu na stack
                         endParse_sem(&stack, &postfixExpr); // Upratanie pred skončením funkcie
                         return COMPILER_ERROR;
@@ -962,7 +922,6 @@ int parseExpression(char* result_type) {
                     }
                     else // Prvý operand môže byť nil
                     {
-                        //printf("Prvý operand môže byť nil\n");
                         if(stack_push_ptoken(&stack, var_b) != 0){ // Pushnutie druhého tokenu na stack
                         endParse_sem(&stack, &postfixExpr); // Upratanie pred skončením funkcie
                         return COMPILER_ERROR;
@@ -989,17 +948,12 @@ int parseExpression(char* result_type) {
                         StrDestroy(&label2);
                         continue;
                     }
-
-
                 }
-                
             }
         }
         
         if(postfixExpr.array[index]->type == EXCL) // Výkričník
         {
-            //printf("Token %s je vykricnik\n", StrRead(&postfixExpr.array[index]->id) );
-            //printf("Token %s ma typ %c\n", StrRead(&stack_top(&stack)->id), stack_top(&stack)->st_type);
             if(stack_top(&stack)->st_type == 'I'){ // typ Int? 
                 stack_top(&stack)->st_type = 'i'; // pretypovanie na Int
             }
@@ -1015,7 +969,6 @@ int parseExpression(char* result_type) {
                 endParse_sem(&stack, &postfixExpr); // Upratanie pred skončením funkcie
                 return SEM_ERR_OTHER;
             }
-            //printf("Token %s ma novy typ %c\n", StrRead(&stack_top(&stack)->id), stack_top(&stack)->st_type);
             // Pre konštanty operátor "!" nemá efekt
         }
     }
@@ -1029,10 +982,6 @@ int parseExpression(char* result_type) {
         endParse_sem(&stack, &postfixExpr); // Upratanie pred skončením funkcie
         return SEM_ERR_OTHER;
     }
-    
-
-
-    
     
     return COMPILATION_OK;
 }
