@@ -9,8 +9,9 @@ do
     total=$((total + 1))
     test_sample=${f%.*}
     echo -n "${f}: "
-    ./ic23int "${f}" <"${test_sample}.stdin" >"${test_sample}.result"
+    timeout 2 ./ic23int "${f}" <"${test_sample}.stdin" >"${test_sample}.result"
     result=$?
+
     if [ ${result} -eq 0 ]; then 
         diff "${test_sample}.stdout" "${test_sample}.result"
         result=$?
@@ -21,7 +22,11 @@ do
             echo -e "Different output"
         fi
     else
-        echo -e "Interpreter returned \t\terr #${result}"
+        if [ ${result} -eq 124 ]; then
+            echo -e "Stuck in a loop"
+        else 
+            echo -e "Interpreter returned \t\terr #${result}"
+        fi
     fi
 done
 
