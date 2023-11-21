@@ -716,8 +716,8 @@ int parseExpression(char* result_type, bool *literal) {
                                 return COMPILER_ERROR;
                             }
 
-                            genCode("POPS","GF@!tmp1", NULL, NULL); // Popnutie reťazca do pomocnej premennej
                             genCode("POPS","GF@!tmp2", NULL, NULL); // Popnutie reťazca do pomocnej premennej
+                            genCode("POPS","GF@!tmp1", NULL, NULL); // Popnutie reťazca do pomocnej premennej
                             genCode("CONCAT", "GF@!tmp3", "GF@!tmp1", "GF@!tmp2"); // Konkatenácia reťazcov
                             genCode("PUSHS", "GF@!tmp3", NULL, NULL); // Pushnutie konkatenovaného reťazca na stack
 
