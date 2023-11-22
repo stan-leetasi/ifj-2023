@@ -511,6 +511,7 @@ token_T *getToken()
                 break;
 /*=======================================STATE=======================================*/
             case SINGLE_LINE_STRING_S:
+                add_char_to_tkn = true;
                 if (c == '"') {
                     id_token = STRING_CONST;
                     //Nebude se přidávat uvozovka, jakožto konec řetězce, do tokenu
