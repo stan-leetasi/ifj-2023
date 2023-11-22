@@ -368,9 +368,7 @@ bool are_compatible_l(ptoken_T *op1, ptoken_T *op2){
     if(op1->type == NIL || op1->st_type == 'S'){ // String NIL
         return (op2->type == NIL || op2->st_type == 'S');
     }
-    if(op1->st_type == 'b'){ // Bool
-        return (op2->st_type == 'b');
-    }
+    
     return false;
 }
 
