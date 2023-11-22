@@ -2,7 +2,7 @@
  * @file parser.c
  * @brief Syntaktický a sémantický anayzátor
  * @author Michal Krulich (xkruli03)
- * @date 18.11.2023
+ * @date 22.11.2023
  */
 
 #include "parser.h"
@@ -922,6 +922,9 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
             }
             DLLstr_InsertLast(&(sig->par_ids), StrRead(&(tkn->atr)));
         }
+        else if(tkn->type == UNDERSCORE) {
+            DLLstr_InsertLast(&(sig->par_ids), "_");
+        }
         else {
             logErrSyntax(tkn, "parameter identifier");
             return SYN_ERR;
@@ -1084,6 +1087,10 @@ int parseFunction() {
     StrInit(&par_id);
     for (size_t i = 0; StrRead(&(fn->sig->par_types))[i] != '\0'; i++) {
         DLLstr_GetValue(&(fn->sig->par_ids), &par_id);
+        if(strcmp(StrRead(&par_id), "_") == 0 ) { // parametre s identifikátorom '_' sa nepoužívajú vo vnútri funkcie
+            DLLstr_Next(&(fn->sig->par_ids));
+            continue;
+        }
         TSData_T* par = SymTabCreateElement(StrRead(&par_id));
         if (par == NULL) {
             logErrCompilerMemAlloc();
@@ -1554,9 +1561,9 @@ int checkIfAllFnDef() {
 
 void printOutCompiledCode() {
     printf(".IFJcode23\n"); // povinná hlavička
-    printf("DEFVAR GF@!tmp1\n");
-    printf("DEFVAR GF@!tmp2\n");
-    printf("DEFVAR GF@!tmp3\n");
+    printf("DEFVAR %s\n", VAR_TMP1);
+    printf("DEFVAR %s\n", VAR_TMP2);
+    printf("DEFVAR %s\n", VAR_TMP3);
     printf("JUMP !main\n");
 
     if(bifn_substring_called) genSubstring();

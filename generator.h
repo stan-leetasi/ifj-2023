@@ -2,7 +2,7 @@
  * @file generator.h
  * @brief Generátor cieľového kódu
  * @author Michal Krulich (xkruli03)
- * @date 11.11.2023
+ * @date 22.11.2023
  */
 
 #ifndef _GENERATOR_H_
@@ -165,6 +165,7 @@ void genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
  *                      zapíše do nich hodnoty zo zásobníka (na vrchole je prvý argument).
  * 
  * Identifikátory parametrov vyzerajú nasledovne "LF@<id>%".
+ * Ak je identifikátor podtržítko '_' => vygeneruje sa len POPS GF@!tmp1
  * 
  * Príklad:
  *      genFnDefBegin("sum", {"a", "b"}),

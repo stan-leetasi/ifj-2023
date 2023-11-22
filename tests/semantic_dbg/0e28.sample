@@ -1,0 +1,8 @@
+/* identifikator parametru je _  - sekcia 4.2*/
+
+var d : Double? = abc(m : 82, n: "t", nil)
+
+func abc(m M: Int, n _:String?, _ _ : Int?) -> Double {
+    return 5
+}
+

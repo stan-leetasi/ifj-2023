@@ -3,7 +3,7 @@
 write("Ahoj\n\"Sve'te \\\u{0022}", "\n")  // 042 oktalove = 34 decimalne = 22 hexadecimalne = znak uvozovek
 
 var s1 : String? = 
-  """
+ """
    Toto 
    je 
 
