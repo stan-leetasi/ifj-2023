@@ -4,6 +4,6 @@ var max = length(string)
 while index < max {
     var substring = substring(of: string, startingAt: index, endingBefore: max)
     var test = substring ?? "Invalid substring"
-    write("Substring: ", substring)
+    write("Substring: ", test)
     index = index + 1
 }

@@ -1,8 +1,4 @@
-func getUsername() -> String? {
-    let isLoggedIn = false
+let isLoggedIn = true
+var username = isLoggedIn ? "Boris" : nil
 
-    return isLoggedIn ? "Boris" : nil
-}
-
-let username = getUsername() ?? "Michael"
-write("Welcome, \(username)!")
+write("Welcome, ", username)

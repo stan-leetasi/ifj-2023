@@ -1,4 +1,4 @@
 var optionalNumber: Int? = nil
 
 let result = optionalNumber ?? 0
-write("Result: \(result)")
+write("Result: ", result)
