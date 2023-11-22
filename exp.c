@@ -242,13 +242,13 @@ void int2double(ptoken_T *var_a, ptoken_T *var_b){
         genCode("POPS","GF@!tmp2", NULL, NULL); // Popnutie double premennej
         genCode("POPS","GF@!tmp1", NULL, NULL); // Popnutie int premennej
         genCode("INT2FLOAT", "GF@!tmp3", "GF@!tmp1", NULL); // Konverzia int na double
-        genCode("PUSHS", "GF@!tmp1", NULL, NULL); // Pushnutie konvertovanej premennej späť na zásobník
+        genCode("PUSHS", "GF@!tmp3", NULL, NULL); // Pushnutie konvertovanej premennej späť na zásobník
         genCode("PUSHS", "GF@!tmp2", NULL, NULL); // Pushnutie double premennej späť na zásobník
     }
     if(var_b->type == INT_CONST){ // Int konštanta je na vrchole zásobníku
         genCode("POPS","GF@!tmp1", NULL, NULL); // Popnutie int premennej
         genCode("INT2FLOAT", "GF@!tmp3", "GF@!tmp1", NULL); // Konverzia int na double
-        genCode("PUSHS", "GF@!tmp1", NULL, NULL); // Pushnutie konvertovanej premennej späť na zásobník
+        genCode("PUSHS", "GF@!tmp3", NULL, NULL); // Pushnutie konvertovanej premennej späť na zásobník
     }
 }
 
