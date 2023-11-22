@@ -1,4 +1,15 @@
-let isLoggedIn = true
-var username = isLoggedIn ? "Boris" : nil
+var username = "Boris"
+var username2 = "Elsa"
 
-write("Welcome, ", username)
+var len = length(username)
+var len2 = length(username2)
+
+if ( len > len2 ) {
+    username = "Elsa"
+}
+else {
+    username = "Boris"
+
+}
+
+write("Welcome, ", username, "!")

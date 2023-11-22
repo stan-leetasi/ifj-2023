@@ -1,5 +1,4 @@
-var optionalString: String? // declaration without initialization
+var optionalString: String? = "Hello"
 
 let greeting = optionalString ?? "Hello, World!"
 write(greeting)
-
