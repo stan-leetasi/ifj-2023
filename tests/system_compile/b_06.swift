@@ -1,8 +1,7 @@
-let stringExample = "Swift ifj 2023!"
+var stringExample : String = "Swift ifj 2023!"
 
-let stringLength = length(stringExample)
-write("String Length: ", stringLength)
+// let stringLength = length(stringExample)
+// write("String Length: ", stringLength, "\n")
 
-let subString = substring(of: stringExample, startingAt: 0, endingBefore: 5)
-var test = subString ?? "Invalid substring"
-write("Substring: ", test)
+var string = substring(of:stringExample,startingAt:0,endingBefore:5)
+write(string)
