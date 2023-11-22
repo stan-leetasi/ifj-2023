@@ -134,7 +134,7 @@ str_T strEncode(char * string) {
                 //Zpracování unicode sekvence
                 if (c == '{') {
                     state = UNICODE_S;
-                } else if (isdigit(c)) {
+                } else if (isdigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')) { // hexa 0-9 + a-f
                     StrAppend(&unicode_number, c);
                     state = UNICODE_S;
                 } else if (c == '}') {
