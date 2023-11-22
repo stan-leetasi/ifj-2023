@@ -197,22 +197,22 @@ void loadBuiltInFunctionSignatures() {
 */
 bool biFnGenInstruction(char *bif_name, char *arg_codename) {
     if (strcmp(bif_name, "write") == 0) {
-        genCode("WRITE", arg_codename, NULL, NULL);
+        genCode(INS_WRITE, arg_codename, NULL, NULL);
         return true;
     }
     else if (strcmp(bif_name, "Int2Double") == 0) {
-        genCode("PUSHS", arg_codename, NULL, NULL);
-        genCode("INT2FLOATS", NULL, NULL, NULL);
+        genCode(INS_PUSHS, arg_codename, NULL, NULL);
+        genCode(INS_INT2FLOATS, NULL, NULL, NULL);
         return true;
     }
     else if (strcmp(bif_name, "Double2Int") == 0) {
-        genCode("PUSHS", arg_codename, NULL, NULL);
-        genCode("FLOAT2INTS", NULL, NULL, NULL);
+        genCode(INS_PUSHS, arg_codename, NULL, NULL);
+        genCode(INS_FLOAT2INTS, NULL, NULL, NULL);
         return true;
     }
     else if (strcmp(bif_name, "length") == 0) {
-        genCode("STRLEN", "GF@!tmp1", arg_codename, NULL);
-        genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+        genCode(INS_STRLEN, VAR_TMP1, arg_codename, NULL);
+        genCode(INS_PUSHS, VAR_TMP1, NULL, NULL);
         return true;
     }
     else if (strcmp(bif_name, "ord") == 0) {
@@ -220,17 +220,17 @@ bool biFnGenInstruction(char *bif_name, char *arg_codename) {
         StrInit(&label_empty_string);
         genUniqLabel(StrRead(&fn_name), "ord", &label_empty_string);
 
-        genCode("MOVE", "GF@!tmp1", "int@0", NULL);
-        genCode("STRLEN", "GF@!tmp2", arg_codename, NULL);
-        genCode("JUMPIFEQ", StrRead(&label_empty_string), "GF@!tmp2", "int@0");
-        genCode("STRI2INT", "GF@!tmp1", arg_codename, "int@0");
-        genCode("LABEL", StrRead(&label_empty_string), NULL, NULL);
-        genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+        genCode(INS_MOVE, VAR_TMP1, "int@0", NULL);
+        genCode(INS_STRLEN, VAR_TMP2, arg_codename, NULL);
+        genCode("JUMPIFEQ", StrRead(&label_empty_string), VAR_TMP2, "int@0");
+        genCode("STRI2INT", VAR_TMP1, arg_codename, "int@0");
+        genCode(INS_LABEL, StrRead(&label_empty_string), NULL, NULL);
+        genCode(INS_PUSHS, VAR_TMP1, NULL, NULL);
         StrDestroy(&label_empty_string);
         return true;
     }
     else if (strcmp(bif_name, "chr") == 0) {
-        genCode("PUSHS", arg_codename, NULL, NULL);
+        genCode(INS_PUSHS, arg_codename, NULL, NULL);
         genCode("INT2CHARS", NULL, NULL, NULL);
         return true;
     }
@@ -624,16 +624,16 @@ int parseFnCall(char* result_type) {
     }
     // špeciálne prípady generovania kódu pri týchto vstavaných funkciách
     else if(strcmp(fn->id, "readString") == 0) {
-        genCode("READ", "GF@!tmp1", "string", NULL);
-        genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+        genCode(INS_READ, VAR_TMP1, "string", NULL);
+        genCode(INS_PUSHS, VAR_TMP1, NULL, NULL);
     }
     else if(strcmp(fn->id, "readInt") == 0) {
-        genCode("READ", "GF@!tmp1", "int", NULL);
-        genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+        genCode(INS_READ, VAR_TMP1, "int", NULL);
+        genCode(INS_PUSHS, VAR_TMP1, NULL, NULL);
     }
     else if(strcmp(fn->id, "readDouble") == 0) {
-        genCode("READ", "GF@!tmp1", "float", NULL);
-        genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+        genCode(INS_READ, VAR_TMP1, "float", NULL);
+        genCode(INS_PUSHS, VAR_TMP1, NULL, NULL);
     }
     DLLstr_Dispose(&args_codenames);
 
@@ -681,7 +681,7 @@ int parseAssignment(char* result_type, char *result_codename, char target_type) 
             tkn = first_tkn;
             bool popframe = shouldPopFrame(StrRead(&(tkn->atr)));
             TRY_OR_EXIT(parseFnCall(result_type));
-            if(popframe) genCode("POPFRAME", NULL, NULL, NULL);
+            if(popframe) genCode(INS_POPFRAME, NULL, NULL, NULL);
         }
         else {
             saveToken();
@@ -698,11 +698,11 @@ int parseAssignment(char* result_type, char *result_codename, char target_type) 
         (target_type == SYM_TYPE_DOUBLE || target_type == SYM_TYPE_DOUBLE_NIL)) {
         // vo výraze sú celočíselné literály a výsledok má byť priradený do dátového typu Double(?)
         // musí byť vykonaná implicitná konverzia
-        genCode("INT2FLOATS", NULL, NULL, NULL);
+        genCode(INS_INT2FLOATS, NULL, NULL, NULL);
         *result_type = SYM_TYPE_DOUBLE;
     }
 
-    genCode("POPS", result_codename, NULL, NULL); // priradenie výsledku do premennej
+    genCode(INS_POPS, result_codename, NULL, NULL); // priradenie výsledku do premennej
 
     return COMPILATION_OK;
 }
@@ -748,7 +748,7 @@ int parseVariableDecl() {
         DLLstr_InsertLast(&variables_declared_inside_loop, StrRead(&(variable->codename)));
     }
     else {
-        genCode("DEFVAR", StrRead(&(variable->codename)), NULL, NULL);
+        genCode(INS_DEFVAR, StrRead(&(variable->codename)), NULL, NULL);
     }
 
     // ďalej musí nasledovať dátový typ alebo priradenie
@@ -1115,7 +1115,7 @@ int parseFunction() {
     }
     if(!SymTabCheckLocalReturn(&symt)) {
         // aj void-funkcia musí mať na konci inštrukciu RETURN, pre vrátenie riadenie programu
-        genCode("RETURN", NULL, NULL, NULL);
+        genCode(INS_RETURN, NULL, NULL, NULL);
     }
     SymTabRemoveLocalBlock(&symt);
 
@@ -1180,7 +1180,7 @@ int parseReturn() {
             (fn->sig->ret_type == SYM_TYPE_DOUBLE || fn->sig->ret_type == SYM_TYPE_DOUBLE_NIL)) {
             // vo výraze sú celočíselné literály a výsledok má byť priradený do dátového typu Double(?)
             // musí byť vykonaná implicitná konverzia
-            genCode("INT2FLOATS", NULL, NULL, NULL);
+            genCode(INS_INT2FLOATS, NULL, NULL, NULL);
             result_type = SYM_TYPE_DOUBLE;
         }
         if (!isCompatibleAssign(fn->sig->ret_type, result_type)) { // návratový typ nesedí s predpisom funkcie
@@ -1191,7 +1191,7 @@ int parseReturn() {
 
     SymTabModifyLocalReturn(&symt, true); // zapísať informáciu o prítomnosti return v aktuálnom bloku
 
-    genCode("RETURN", NULL, NULL, NULL);
+    genCode(INS_RETURN, NULL, NULL, NULL);
 
     return COMPILATION_OK;
 }
@@ -1277,8 +1277,8 @@ int parseIf() {
             return SEM_ERR_TYPE;
         }
         // na vrchole zásobníka je bool@true alebo bool@false
-        genCode("PUSHS", "bool@false", NULL, NULL);
-        genCode("JUMPIFEQS", StrRead(&cond_false), NULL, NULL);
+        genCode(INS_PUSHS, "bool@false", NULL, NULL);
+        genCode(INS_JUMPIFEQS, StrRead(&cond_false), NULL, NULL);
         break;
     default:
         logErrSyntax(tkn, "let or an expression");
@@ -1291,7 +1291,7 @@ int parseIf() {
     TRY_OR_EXIT(parseStatBlock(&if_had_return)); // spracovanie príkazov keď podmienka je true
     if (let_variable != NULL) SymTabRemoveLocalBlock(&symt);
 
-    genCode("JUMP", StrRead(&skip_cond_false), NULL, NULL);
+    genCode(INS_JUMP, StrRead(&skip_cond_false), NULL, NULL);
 
     TRY_OR_EXIT(nextToken());
     if (tkn->type != ELSE) {
@@ -1299,7 +1299,7 @@ int parseIf() {
         return SYN_ERR;
     }
 
-    genCode("LABEL", StrRead(&cond_false), NULL, NULL);
+    genCode(INS_LABEL, StrRead(&cond_false), NULL, NULL);
 
     TRY_OR_EXIT(nextToken());
     bool else_had_return;
@@ -1310,7 +1310,7 @@ int parseIf() {
         SymTabModifyLocalReturn(&symt, true);
     }
 
-    genCode("LABEL", StrRead(&skip_cond_false), NULL, NULL);
+    genCode(INS_LABEL, StrRead(&skip_cond_false), NULL, NULL);
 
     StrDestroy(&cond_false);
     StrDestroy(&skip_cond_false);
@@ -1336,7 +1336,7 @@ int parseWhile() {
     genUniqLabel(StrRead(&fn_name), "while", &loop_start);
     StrFillWith(&loop_end, StrRead(&(loop_start)));
     StrAppend(&loop_end, '!');
-    genCode("LABEL", StrRead(&loop_start), NULL, NULL);
+    genCode(INS_LABEL, StrRead(&loop_start), NULL, NULL);
 
     bool loop_inside_loop = parser_inside_loop; // cyklus v cykle
     if (!loop_inside_loop) {
@@ -1367,14 +1367,14 @@ int parseWhile() {
         logErrSemantic(tkn, "condition must return a bool");
         return SEM_ERR_TYPE;
     }
-    genCode("PUSHS", "bool@false", NULL, NULL);
-    genCode("JUMPIFEQS", StrRead(&loop_end), NULL, NULL);
+    genCode(INS_PUSHS, "bool@false", NULL, NULL);
+    genCode(INS_JUMPIFEQS, StrRead(&loop_end), NULL, NULL);
 
     TRY_OR_EXIT(nextToken());
     TRY_OR_EXIT(parseStatBlock(NULL));
 
-    genCode("JUMP", StrRead(&loop_start), NULL, NULL);
-    genCode("LABEL", StrRead(&loop_end), NULL, NULL);
+    genCode(INS_JUMP, StrRead(&loop_start), NULL, NULL);
+    genCode(INS_LABEL, StrRead(&loop_end), NULL, NULL);
 
     parser_inside_loop = loop_inside_loop;
     if (!parser_inside_loop) { // najvrchnejší cyklus bol opustený
@@ -1479,8 +1479,8 @@ int parse() {
             tkn = first_tkn;
             bool popframe = shouldPopFrame(StrRead(&(tkn->atr)));
             TRY_OR_EXIT(parseFnCall(&result_type));
-            if(popframe) genCode("POPFRAME", NULL, NULL, NULL);
-            genCode("CLEARS", NULL, NULL, NULL); // volaná funkcia môže zanechať návratovú hodnotu na zásobníku
+            if(popframe) genCode(INS_POPFRAME, NULL, NULL, NULL);
+            genCode(INS_CLEARS, NULL, NULL, NULL); // volaná funkcia môže zanechať návratovú hodnotu na zásobníku
         }
         else if (tkn->type == ASSIGN) {
             // <STAT>   ->  id = <ASSIGN>
