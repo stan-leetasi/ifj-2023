@@ -8,3 +8,5 @@
 .vscode
 # IFJcode23
 *.prog
+# Zip files
+*.zip
