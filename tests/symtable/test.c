@@ -16,23 +16,23 @@ char* keys[] = {"global", "local", "daco143", "kluc", "$XYZ"};
 
 void test() {
     SymTab_T *table = malloc(sizeof(SymTab_T));
-    if (!SymTabInit(table)) return;
+    SymTabInit(table);
     TEST(table != NULL);
     TEST(table->global != NULL);
     TEST(table->global == table->local);
     TEST(table->global->used == 0);
-
+    
     TSData_T *element = SymTabCreateElement(keys[0]);
     TEST(SymTabLookup(table, "lol") == NULL);
-    TEST(SymTabInsertGlobal(table, element));
+    SymTabInsertGlobal(table, element);
     TEST(table->global->used == 1);
     TEST((element = SymTabLookup(table, keys[0])) != NULL);
     TEST(strcmp(element->id, keys[0]) == 0);
-
+    
     SymTabAddLocalBlock(table);
     TEST(table->global->next == table->local);
     element = SymTabCreateElement(keys[1]);
-    TEST(SymTabInsertLocal(table, element));
+    SymTabInsertLocal(table, element);
 
     TEST(SymTabLookupLocal(table, keys[0]) == NULL);
     TEST((element = SymTabLookupGlobal(table, keys[0])) != NULL);

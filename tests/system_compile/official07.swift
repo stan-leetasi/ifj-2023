@@ -1,6 +1,7 @@
 var y : Int = 10  // global variable in main body
 
-func foo(x x : Int) {  // void function (no return value)
+// povodne: func foo(x x : Int)
+func foo(X x : Int) {  // void function (no return value)
   let y = "hello" + "\n"  // local variable, scope for entire function
   if (y == "hello\n") {
     let y = 42 // new local variable, scope only in this block
@@ -15,7 +16,7 @@ func foo(x x : Int) {  // void function (no return value)
     i = i + 1   // local variable of the whole function is used 
     incrGlobal()
     write(i)
-    write("Insert non-empty input for quiting, otherwise next iteration.\n");
+    write("Insert non-empty input for quiting, otherwise next iteration.\n")
     let x = readString()  // formal parameter behave in the function body as local variable, but cannot be modified, we can redefine it/hide it
     if let x {
       let inp = length(x)
@@ -27,7 +28,7 @@ func foo(x x : Int) {  // void function (no return value)
 
 func incrGlobal() { y = y + 1 }
 
-foo(x: 7)
+foo(X: 7)
 write(y)  // prints global y
 
 // whitespaces and comment possible since now end-mark here

@@ -106,13 +106,10 @@ void genCode(char *instruction, char *op1, char *op2, char *op3) {
         StrCatString(code, op3);
     }
 
-    bool insert;
-
     if(parser_inside_fn_def == true)
-        insert = DLLstr_InsertLast(&code_fn, StrRead(code));
+        DLLstr_InsertLast(&code_fn, StrRead(code));
     else
-        insert = DLLstr_InsertLast(&code_main, StrRead(code));
-    if (!insert) exit(COMPILER_ERROR);
+        DLLstr_InsertLast(&code_main, StrRead(code));
 
     StrDestroy(code);
     free(code);
@@ -123,20 +120,32 @@ void genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
     str_T var;
     //Zde bude uložená instrukce
     str_T instruction;
+    str_T label_instruction;
+    DLLstr_T *list;
+
+    if (parser_inside_fn_def) {
+        list = &code_fn;
+    } else {
+        list = &code_main;
+    }
+
+    StrInit(&label_instruction);
+    StrFillWith(&label_instruction, "LABEL ");
+    StrCatString(&label_instruction, label);
 
     StrInit(&instruction);
     StrInit(&var);
 
     DLLstr_First(variables);
-    DLLstr_Last(&code_fn);
+    DLLstr_Last(list);
 
     //Vyhledání labelu v dll code_fn
-    while (DLLstr_IsActive(&code_fn)) {
+    while (DLLstr_IsActive(list)) {
 
-        DLLstr_GetValue(&code_fn, &var);
+        DLLstr_GetValue(list, &var);
 
         //Label byl vyhledán
-        if (strcmp(StrRead(&var), label) == 0) {
+        if (strcmp(StrRead(&var), StrRead(&label_instruction)) == 0) {
             
             //Před label v dll code_fn se vloží instrukce dle popisu funkce
             while(DLLstr_IsActive(variables)) {
@@ -147,7 +156,7 @@ void genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
                 StrFillWith(&instruction, "DEFVAR ");
                 StrCatString(&instruction, StrRead(&var));
     
-                DLLstr_InsertBefore(&code_fn, StrRead(&instruction));
+                DLLstr_InsertBefore(list, StrRead(&instruction));
 
                 DLLstr_Next(variables);
             }
@@ -155,9 +164,10 @@ void genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
             break;
         }
 
-        DLLstr_Previous(&code_fn);
+        DLLstr_Previous(list);
     }
 
+    StrDestroy(&label_instruction);
     StrDestroy(&instruction);
     StrDestroy(&var);
 }
@@ -197,7 +207,7 @@ void genFnCall(char *fn, DLLstr_T *args) {
     //Průchod přes všechny argumenty funkce
     while (DLLstr_IsActive(args)) {
         DLLstr_GetValue(args, &arg);
-        genCode("PUSH", StrRead(&arg), NULL, NULL);
+        genCode("PUSHS", StrRead(&arg), NULL, NULL);
         DLLstr_Previous(args);
     }
     //Vložení na zásobník CALL instrukce
@@ -299,6 +309,14 @@ void genSubstring() {
 
     genCode("RETURN", NULL, NULL, NULL);
     parser_inside_fn_def = previous_parser_in_fn_def_value;
+
+    /* dealokácia pomocných str_T */
+    for (int i = 0; i < num_of_local_vars; i++) {
+        StrDestroy(&uniq_vars[i]);
+    }
+    for (int i = 0; i < num_of_lables; i++) {
+        StrDestroy(&uniq_lables[i]);
+    }
 }
 
 /**

@@ -45,3 +45,26 @@ for f in *.prog
 do
     mv "$f" "../system_run"
 done
+
+echo -e "\nValgrind leak-check running, this may take a while (checks only programs that compile successfully)"
+valgrind_ok=true
+for f in *.swift
+do
+    test_sample=${f%.*}
+    ./main.out <"${test_sample}.swift" >"/dev/null" 2>"/dev/null"
+    result=$?
+    if [ ${result} -eq 0 ]; then 
+        valgrind --error-exitcode=1 --leak-check=yes --errors-for-leak-kinds=all --exit-on-first-error=yes ./main.out <"${test_sample}.swift" >"/dev/null" 2>"/dev/null"
+        result=$?
+        if [ ${result} -eq 1 ]; then 
+            echo -e "\nVALGRIND found errors with \t\t${f}"
+            valgrind_ok=false
+        else 
+            echo -n "."
+        fi
+    fi
+done
+
+if ${valgrind_ok} ; then
+    echo "[VALGRIND PASS]"
+fi

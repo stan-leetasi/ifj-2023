@@ -23,7 +23,6 @@ enum codes {
     BACKSLASH, 
     NEW_LINE, 
     HASHTAG,
-    QUOTE,
     CARRIAGE_RETURN,
     TAB,
 };
@@ -95,12 +94,15 @@ str_T strEncode(char * string) {
                         //Hashtag
                         strAdd(&decoded_string, string_codes[HASHTAG]);
                         break;
+                    case '\n':
+                        //Byl přečteny novy radek (pro multiline retezce)
+                        strAdd(&decoded_string, string_codes[NEW_LINE]);
+                        break;
                     default:
                         //Cokoli jineho
                         StrAppend(&decoded_string, c);
                         break;
                 }
-
                 break;
             case BACKSLASH_S:
                 state = INIT_S;
@@ -157,6 +159,8 @@ str_T strEncode(char * string) {
         //Přechod na další znak v řetězci
         i++;
     }
+
+    StrDestroy(&unicode_number);
 
     return decoded_string;
 }

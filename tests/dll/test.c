@@ -33,14 +33,14 @@ void test() {
     TEST(list->last == NULL);
     TEST(!DLLstr_IsActive(list));
 
-    TEST(DLLstr_InsertLast(list, "second"));
+    DLLstr_InsertLast(list, "second");
     TEST_LIST_STR_T(list, "second", DLLstr_GetLast);
 
-    TEST(DLLstr_InsertFirst(list, "first"));
+    DLLstr_InsertFirst(list, "first");
     DLLstr_First(list);
     TEST_LIST_STR_T(list, "first", DLLstr_GetValue);
 
-    TEST(DLLstr_InsertAfter(list, "new second"));
+    DLLstr_InsertAfter(list, "new second");
     
     TEST_LIST_STR_T(list, "first", DLLstr_GetValue);
     DLLstr_Next(list);
@@ -49,7 +49,7 @@ void test() {
     DLLstr_Previous(list);
     TEST_LIST_STR_T(list, "first", DLLstr_GetValue);
     
-    TEST(DLLstr_InsertBefore(list, "ZERO"));
+    DLLstr_InsertBefore(list, "ZERO");
     DLLstr_Previous(list);
     TEST_LIST_STR_T(list, "ZERO", DLLstr_GetValue);
     TEST_LIST_STR_T(list, "ZERO", DLLstr_GetFirst);

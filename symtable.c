@@ -2,9 +2,9 @@
  * @file symtable.c
  * @brief Tabuľka symbolov
  * @author Boris Hatala
- * @date 30.10.2023
+ * @date 19.11.2023
  * 
- * @todo Uvoľnenie celej tabuľky, refaktorizácia kódu (private metódy pre TSBlock_T)
+ * @todo exit(99), chybové hlášky, komentáre
  */
 
 #include "symtable.h"
@@ -33,23 +33,29 @@ unsigned long hashTwo(const char *str)
 
 func_sig_T *SymTabCreateFuncSig() {
     func_sig_T *f = malloc(sizeof(func_sig_T));
-    if (f != NULL) {
-        f->ret_type = SYM_TYPE_UNKNOWN;
-        StrInit(&(f->par_types));
-        DLLstr_Init(&(f->par_names));
-        DLLstr_Init(&(f->par_ids));
+    if (f == NULL) {
+        fprintf(stderr, "SymTabCreateFuncSig() - memory allocation error\n");
+        exit(99);
     }
+    f->ret_type = SYM_TYPE_UNKNOWN;
+    StrInit(&(f->par_types));
+    DLLstr_Init(&(f->par_names));
+    DLLstr_Init(&(f->par_ids));
     return f;
 }
 
 TSData_T *SymTabCreateElement(char *key)
 {
     TSData_T *elem = malloc(sizeof(TSData_T));
-    if(elem == NULL) return NULL;
+    if(elem == NULL) {
+        fprintf(stderr, "SymTabCreateElement() - memory allocation error\n");
+        exit(99);
+    }
     elem->id = malloc(sizeof(char)*(strlen(key)+1));
     if(elem->id == NULL) {
         free(elem);
-        return NULL;
+        fprintf(stderr, "SymTabCreateElement() - memory allocation error\n");
+        exit(99);
     }
     elem->type = SYM_TYPE_UNKNOWN;
     strcpy(elem->id, key);
@@ -71,12 +77,13 @@ void SymTabDestroyElement(TSData_T *elem) {
     }
 }
 
-bool SymTabInit(SymTab_T *st) {
+void SymTabInit(SymTab_T *st) {
 
     st -> global = malloc(sizeof (TSBlock_T) + sizeof(TSData_T*) * SYMTABLE_MAX_SIZE);
 
     if(st -> global == NULL) {
-        return false;
+        fprintf(stderr, "SymTabInit() - memory allocation error\n");
+        exit(99);
     }
 
     st -> global -> used = 0;
@@ -90,19 +97,19 @@ bool SymTabInit(SymTab_T *st) {
     }
 
     st -> local = st -> global;
-
-    return true;
 }
 
-bool SymTabAddLocalBlock(SymTab_T *st) {
+void SymTabAddLocalBlock(SymTab_T *st) {
     if (st == NULL) {
-        return false;
+        fprintf(stderr, "SymTabAddLocalBlock() - symbol table not initialized\n");
+        exit(99);
     }
     
     TSBlock_T *newBlock = malloc(sizeof (TSBlock_T) + sizeof(TSData_T*) * SYMTABLE_MAX_SIZE);
 
     if(newBlock == NULL) { 
-        return false;
+        fprintf(stderr, "SymTabAddLocalBlock() - new block memory allocation error\n");
+        exit(99);
     }
 
     newBlock -> used = 0;
@@ -120,8 +127,6 @@ bool SymTabAddLocalBlock(SymTab_T *st) {
     newBlock -> has_return = false;
 
     st -> local = newBlock;
-
-    return true;
 }
 
 void SymTabRemoveLocalBlock(SymTab_T *st) {
@@ -145,8 +150,6 @@ void SymTabDestroy(SymTab_T *st) {
 
     st->global = NULL;
     st->local = NULL;
-
-    //free(st);
 }
 
 TSData_T *SymTabLookup(SymTab_T *st, char *key) {
@@ -191,22 +194,24 @@ TSData_T *SymTabLookupLocal(SymTab_T *st, char *key) {
     return SymTabBlockLookUp(st->local, key);
 }
 
-bool SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
+void SymTabInsertGlobal(SymTab_T *st, TSData_T *elem) {
 
     if(st -> global == NULL) {
-        return false;
+        fprintf(stderr, "SymTabInsertGlobal() - global table is empty\n");
+        exit(99);
     }
 
-    return SymTabBlockInsert(st->global, elem);
+    SymTabBlockInsert(st->global, elem);
 }
 
-bool SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
+void SymTabInsertLocal(SymTab_T *st, TSData_T *elem) {
 
     if(st -> local == NULL) {
-            return false;
+            fprintf(stderr, "SymTabInsertLocal() - local table is empty\n");
+            exit(99);
         }
 
-    return SymTabBlockInsert(st->local, elem);
+    SymTabBlockInsert(st->local, elem);
 }
 
 bool SymTabCheckLocalReturn(SymTab_T *st) {
@@ -217,55 +222,42 @@ void SymTabModifyLocalReturn(SymTab_T *st, bool value) {
     st->local->has_return = value;
 }
 
-
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {
 
     size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
-
-    if(block->array[h1] != NULL) {
-        if(strcmp(block->array[h1]->id, key) == 0)
-            return block->array[h1];
-    }
-
     size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-    for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++) {
+    for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
         size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
         if (block->array[index] == NULL) {
             return NULL;
         }
-        if (block->array[index] != NULL && strcmp(block->array[index]->id, key) == 0) {
-            return block->array[index];
-        }
-    }
-
-    return NULL;
-}
-
-bool SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
-
-    if(block->used + 1 == SYMTABLE_MAX_SIZE) {
-        return false;
-    }
-
-    size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
-    
-    if(block->array[h1] == NULL) {
-        block->array[h1] = elem;
-        block->used++;  
-        return true;
-    }
-    else {
-        size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
-        for (size_t i = 1; i < SYMTABLE_MAX_SIZE; i++)
-        {
-            size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
-            if (block->array[index] == NULL) {
-                block->array[index] = elem;
-                block->used++;  
-                return true;
+        else {
+            if (strcmp(block->array[index]->id, key) == 0) {
+                return block->array[index];
             }
         }
     }
-    return false;
+    
+    return NULL;
+}
+
+void SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
+
+    if(block->used + 1 == SYMTABLE_MAX_SIZE) {
+        fprintf(stderr, "SymTabBlockInsert() - symbol table is full\n");
+        exit(99);
+    }
+
+    size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
+    size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
+    for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++)
+    {
+        size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
+        if (block->array[index] == NULL) {
+            block->array[index] = elem;
+            block->used++;
+            return;
+        }
+    }
 }
 /* Koniec súboru symtable.c */

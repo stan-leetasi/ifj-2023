@@ -154,6 +154,7 @@ void loadSingleBIFnSig(char* name, size_t count_par, char ret_type,
     fn->type = SYM_TYPE_FUNC;
     StrFillWith(&(fn->codename), name);
     fn->init = true;
+    fn->let = false;
     fn->sig = SymTabCreateFuncSig();
     fn->sig->ret_type = ret_type;
     for (size_t i = 0; i < count_par; i++) {
@@ -225,6 +226,7 @@ bool biFnGenInstruction(char *bif_name, char *arg_codename) {
         genCode("STRI2INT", "GF@!tmp1", arg_codename, "int@0");
         genCode("LABEL", StrRead(&label_empty_string), NULL, NULL);
         genCode("PUSHS", "GF@!tmp1", NULL, NULL);
+        StrDestroy(&label_empty_string);
         return true;
     }
     else if (strcmp(bif_name, "chr") == 0) {
@@ -538,10 +540,7 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
             }
 
             // zápis názvu parametru
-            if (!DLLstr_InsertLast(&(sig->par_names), StrRead(&par_name))) {
-                logErrCompilerMemAlloc();
-                return COMPILER_ERROR;
-            }
+            DLLstr_InsertLast(&(sig->par_names), StrRead(&par_name));
         }
 
         TRY_OR_EXIT(nextToken());
@@ -593,22 +592,13 @@ int parseFnCall(char* result_type) {
         fn->sig->ret_type = SYM_TYPE_UNKNOWN;
         fn->let = false;
         fn->init = false;
-        if (!SymTabInsertGlobal(&symt, fn)) {
-            SymTabDestroyElement(fn);
-            return COMPILER_ERROR;
-        }
+        SymTabInsertGlobal(&symt, fn);
 
         // poznačiť názov funkcie do zoznamu nedefinovaných funkcií, pre kontrolu na koniec
-        if (!DLLstr_InsertLast(&check_def_fns, fn->id))
-        {
-            logErrCompilerMemAlloc();
-            return COMPILER_ERROR;
-        }
+        DLLstr_InsertLast(&check_def_fns, fn->id);
     }
     else {
-        if (fn->init) {
-            built_in_fn = isBuiltInFunction(fn->id);
-        }
+        built_in_fn = isBuiltInFunction(fn->id);
     }
 
     TRY_OR_EXIT(nextToken());
@@ -660,9 +650,11 @@ int parseFnCall(char* result_type) {
  * @brief Pravidlo pre spracovanie priradenia
  * @param result_type Dátový typ výsledku
  * @param result_codename Identifikátor premennej v cieľovom kóde kam sa má uložiť výsledok
+ * @param target_type Dátový typ premennej, ktorej je hodnota priraďovaná. Slúži len pre potreby implicitnej konverzie literálu Int na Double
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseAssignment(char* result_type, char *result_codename) {
+int parseAssignment(char* result_type, char *result_codename, char target_type) {
+    bool possible_implicit_int_conversion = false;
     TRY_OR_EXIT(nextToken());
     token_T* first_tkn;
     switch (tkn->type) // treba rozlíšiť volanie funkcie a výraz
@@ -673,7 +665,7 @@ int parseAssignment(char* result_type, char *result_codename) {
     case STRING_CONST:
     case NIL:
         // <ASSIGN> ->  exp
-        TRY_OR_EXIT(parseExpression(result_type));
+        TRY_OR_EXIT(parseExpression(result_type, &possible_implicit_int_conversion));
         break;
     case ID:
         /*  Identifikátor môže byť názov premennej vo výraze alebo názov funkcie.
@@ -694,12 +686,20 @@ int parseAssignment(char* result_type, char *result_codename) {
         else {
             saveToken();
             tkn = first_tkn;
-            TRY_OR_EXIT(parseExpression(result_type));
+            TRY_OR_EXIT(parseExpression(result_type, &possible_implicit_int_conversion));
         }
         break;
     default:
         logErrSyntax(tkn, "assignment or function call");
         return SYN_ERR;
+    }
+
+    if(possible_implicit_int_conversion && *result_type == SYM_TYPE_INT && 
+        (target_type == SYM_TYPE_DOUBLE || target_type == SYM_TYPE_DOUBLE_NIL)) {
+        // vo výraze sú celočíselné literály a výsledok má byť priradený do dátového typu Double(?)
+        // musí byť vykonaná implicitná konverzia
+        genCode("INT2FLOATS", NULL, NULL, NULL);
+        *result_type = SYM_TYPE_DOUBLE;
     }
 
     genCode("POPS", result_codename, NULL, NULL); // priradenie výsledku do premennej
@@ -764,7 +764,7 @@ int parseVariableDecl() {
         if (tkn->type == ASSIGN) {
             // <INIT_VAL>  ->  = <ASSIGN>
             char assign_type = SYM_TYPE_UNKNOWN;
-            TRY_OR_EXIT(parseAssignment(&assign_type, StrRead(&(variable->codename))));
+            TRY_OR_EXIT(parseAssignment(&assign_type, StrRead(&(variable->codename)), variable->type));
             variable->init = true;
 
             // kontrola výsledného typu výrazu s deklarovaným dátovým typom
@@ -790,7 +790,7 @@ int parseVariableDecl() {
         }
         break;
     case ASSIGN: // <DEF_VAR> ->  = <ASSIGN>
-        TRY_OR_EXIT(parseAssignment(&(variable->type), StrRead(&(variable->codename))));
+        TRY_OR_EXIT(parseAssignment(&(variable->type), StrRead(&(variable->codename)), SYM_TYPE_UNKNOWN));
         variable->init = true;
 
         if (variable->type == SYM_TYPE_VOID) { // priradenie hodnoty z void funkcie
@@ -809,11 +809,7 @@ int parseVariableDecl() {
     }
 
     // vloženie záznamu o premennej do TS
-    if (!SymTabInsertLocal(&symt, variable)) {
-        SymTabDestroyElement(variable);
-        logErrCompilerMemAlloc();
-        return COMPILER_ERROR;
-    }
+    SymTabInsertLocal(&symt, variable);
 
     return COMPILATION_OK;
 }
@@ -837,7 +833,7 @@ int parseStatBlock(bool* had_return) {
     }
 
     // vytvorenie nového lokálneho bloku v TS
-    if (!SymTabAddLocalBlock(&symt)) return COMPILER_ERROR;
+    SymTabAddLocalBlock(&symt);
 
     TRY_OR_EXIT(nextToken());
     while (tkn->type != BRT_CUR_R)
@@ -906,7 +902,7 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
                 }
             }
             else { // zápis názvu parametra do predpisu funkcie
-                PERFORM_RISKY_OP(DLLstr_InsertLast(&(sig->par_names), StrRead(&(tkn->atr))));
+                DLLstr_InsertLast(&(sig->par_names), StrRead(&(tkn->atr)));
             }
         }
         else {
@@ -924,7 +920,7 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
                 logErrSemantic(tkn, "parameter name and identifier must be different");
                 return SEM_ERR_OTHER;
             }
-            PERFORM_RISKY_OP(DLLstr_InsertLast(&(sig->par_ids), StrRead(&(tkn->atr))));
+            DLLstr_InsertLast(&(sig->par_ids), StrRead(&(tkn->atr)));
         }
         else {
             logErrSyntax(tkn, "parameter identifier");
@@ -1029,10 +1025,7 @@ int parseFunction() {
         // vytvorenie záznamu o funkcii do TS
         fn = SymTabCreateElement(StrRead(&(tkn->atr)));
         if (fn == NULL) return COMPILER_ERROR;
-        if (!SymTabInsertGlobal(&symt, fn)) {
-            SymTabDestroyElement(fn);
-            return COMPILER_ERROR;
-        }
+        SymTabInsertGlobal(&symt, fn);
         StrFillWith(&(fn->codename), StrRead(&(tkn->atr)));
         fn->type = SYM_TYPE_FUNC;
         fn->sig = SymTabCreateFuncSig();
@@ -1052,6 +1045,7 @@ int parseFunction() {
         }
         // v ostatných prípadoch záznam o funkcii existuje preto, lebo bola už volaná 
     }
+    fn->init = true; // funkcia je odteraz definovaná
 
     StrFillWith(&fn_name, fn->id); // zápis názvu aktuálne definovanej funkcie do globálnej premennej
 
@@ -1084,7 +1078,7 @@ int parseFunction() {
 
     // Príprava parametrov pre telo funkcie
     // parametre budú vo vlastnom lokálnom bloku TS
-    if (!SymTabAddLocalBlock(&symt)) return COMPILER_ERROR;
+    SymTabAddLocalBlock(&symt);
     DLLstr_First(&(fn->sig->par_ids));
     str_T par_id;
     StrInit(&par_id);
@@ -1095,7 +1089,7 @@ int parseFunction() {
             logErrCompilerMemAlloc();
             return COMPILER_ERROR;
         }
-        PERFORM_RISKY_OP(SymTabInsertLocal(&symt, par));
+        SymTabInsertLocal(&symt, par);
         par->init = true;
         par->let = true;
         par->type = StrRead(&(fn->sig->par_types))[i];
@@ -1109,7 +1103,7 @@ int parseFunction() {
     genFnDefBegin(StrRead(&fn_name), &(fn->sig->par_ids));
 
     // Spracovanie tela funkcie
-    if (!SymTabAddLocalBlock(&symt)) return COMPILER_ERROR;
+    SymTabAddLocalBlock(&symt);
     while (tkn->type != BRT_CUR_R) {
         TRY_OR_EXIT(parse());
         TRY_OR_EXIT(nextToken());
@@ -1119,11 +1113,14 @@ int parseFunction() {
         logErrSemanticFn(fn->id, "it is possible to exit function without return value");
         return SEM_ERR_FUNC;
     }
+    if(!SymTabCheckLocalReturn(&symt)) {
+        // aj void-funkcia musí mať na konci inštrukciu RETURN, pre vrátenie riadenie programu
+        genCode("RETURN", NULL, NULL, NULL);
+    }
     SymTabRemoveLocalBlock(&symt);
 
     SymTabRemoveLocalBlock(&symt); // odstránenie lokálneho bloku s parametrami
 
-    fn->init = true; // funkcia je odteraz definovaná
     parser_inside_fn_def = code_inside_fn_def;
     StrFillWith(&fn_name, "");
     return COMPILATION_OK;
@@ -1143,6 +1140,8 @@ int parseReturn() {
         return SEM_ERR_OTHER;
     }
 
+    bool possible_implicit_int_conversion = false;
+
     TRY_OR_EXIT(nextToken());
     char result_type = SYM_TYPE_UNKNOWN;
     switch (tkn->type)
@@ -1154,7 +1153,7 @@ int parseReturn() {
     case NIL:
     case BRT_RND_L:
         // spracovanie výrazu a zistenie typu návratovej hodnoty v return
-        TRY_OR_EXIT(parseExpression(&result_type));
+        TRY_OR_EXIT(parseExpression(&result_type, &possible_implicit_int_conversion));
         break;
     default:
         // void return
@@ -1163,7 +1162,8 @@ int parseReturn() {
         break;
     }
 
-    TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&fn_name)); // získanie informácii o predpise aktuálnej funkcie
+    // získanie informácii o predpise aktuálnej funkcie
+    TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&fn_name));
 
     if (fn->sig->ret_type == SYM_TYPE_VOID) { // vo vnútri void funkcie
         if (result_type != SYM_TYPE_VOID) { // void funkcia nesmie vraciať hodnotu
@@ -1176,7 +1176,14 @@ int parseReturn() {
             logErrSemanticFn(fn->id, "void return in non-void function");
             return SEM_ERR_RETURN;
         }
-        else if (!isCompatibleAssign(fn->sig->ret_type, result_type)) { // návratový typ nesedí s predpisom funkcie
+        if(possible_implicit_int_conversion && result_type == SYM_TYPE_INT && 
+            (fn->sig->ret_type == SYM_TYPE_DOUBLE || fn->sig->ret_type == SYM_TYPE_DOUBLE_NIL)) {
+            // vo výraze sú celočíselné literály a výsledok má byť priradený do dátového typu Double(?)
+            // musí byť vykonaná implicitná konverzia
+            genCode("INT2FLOATS", NULL, NULL, NULL);
+            result_type = SYM_TYPE_DOUBLE;
+        }
+        if (!isCompatibleAssign(fn->sig->ret_type, result_type)) { // návratový typ nesedí s predpisom funkcie
             logErrSemanticFn(fn->id, "different return type");
             return SEM_ERR_FUNC;
         }
@@ -1239,9 +1246,7 @@ int parseIf() {
         }
 
         // premenná musí byť v samostatnom bloku, kde bude jej typ zmenený na typ nezahrňujúci nil
-        if (!SymTabAddLocalBlock(&symt)) {
-            return COMPILER_ERROR;
-        }
+        SymTabAddLocalBlock(&symt);
         let_variable = SymTabCreateElement(StrRead(&(tkn->atr)));
         if (let_variable == NULL)
         {
@@ -1253,7 +1258,7 @@ int parseIf() {
         let_variable->type = convertNilTypeToNonNil(variable->type);
         StrFillWith(&(let_variable->codename), StrRead(&(variable->codename)));
 
-        if (!SymTabInsertLocal(&symt, let_variable)) return COMPILER_ERROR;
+        SymTabInsertLocal(&symt, let_variable);
 
         genCode("JUMPIFEQ", StrRead(&cond_false), StrRead(&(variable->codename)), "nil@nil");
         break;
@@ -1265,7 +1270,8 @@ int parseIf() {
     case NIL:
         // <COND> ->  exp
         char exp_type = SYM_TYPE_UNKNOWN; // ???
-        TRY_OR_EXIT(parseExpression(&exp_type));
+        bool possible_implicit_int_conversion = false; // nie je využívané v if
+        TRY_OR_EXIT(parseExpression(&exp_type, &possible_implicit_int_conversion));
         if (exp_type != SYM_TYPE_BOOL && exp_type != SYM_TYPE_UNKNOWN) {
             logErrSemantic(tkn, "condition must return a bool");
             return SEM_ERR_TYPE;
@@ -1327,17 +1333,16 @@ int parseWhile() {
     StrInit(&loop_start);
     StrInit(&loop_end);
 
+    genUniqLabel(StrRead(&fn_name), "while", &loop_start);
+    StrFillWith(&loop_end, StrRead(&(loop_start)));
+    StrAppend(&loop_end, '!');
+    genCode("LABEL", StrRead(&loop_start), NULL, NULL);
+
     bool loop_inside_loop = parser_inside_loop; // cyklus v cykle
     if (!loop_inside_loop) {
         StrFillWith(&first_loop_label, StrRead(&loop_start));
     }
     parser_inside_loop = true;
-
-
-    genUniqLabel(StrRead(&fn_name), "while", &loop_start);
-    StrFillWith(&loop_end, StrRead(&(loop_start)));
-    StrAppend(&loop_end, '!');
-    genCode("LABEL", StrRead(&loop_start), NULL, NULL);
 
     TRY_OR_EXIT(nextToken());
     switch (tkn->type) // syntaktická kontrola, či sa v podmienke nachádza výraz
@@ -1356,7 +1361,8 @@ int parseWhile() {
     }
 
     char exp_type = SYM_TYPE_UNKNOWN; // ???
-    TRY_OR_EXIT(parseExpression(&exp_type));
+    bool possible_implicit_int_conversion = false; // nie je využívané vo while
+    TRY_OR_EXIT(parseExpression(&exp_type, &possible_implicit_int_conversion));
     if (exp_type != SYM_TYPE_BOOL && exp_type != SYM_TYPE_UNKNOWN) {
         logErrSemantic(tkn, "condition must return a bool");
         return SEM_ERR_TYPE;
@@ -1436,7 +1442,7 @@ void saveToken() {
 }
 
 bool initializeParser() {
-    if (!SymTabInit(&symt)) return false;
+    SymTabInit(&symt);
 
     loadBuiltInFunctionSignatures();
 
@@ -1487,7 +1493,7 @@ int parse() {
                 logErrSemantic(first_tkn, "%s is unmodifiable and was already initialised", StrRead(&(first_tkn->atr)));
                 return SEM_ERR_OTHER;
             }
-            TRY_OR_EXIT(parseAssignment(&result_type, StrRead(&(variable->codename))));
+            TRY_OR_EXIT(parseAssignment(&result_type, StrRead(&(variable->codename)), variable->type));
             if (!isCompatibleAssign(variable->type, result_type)) {
                 logErrSemantic(first_tkn, "incompatible data types");
                 return SEM_ERR_TYPE;

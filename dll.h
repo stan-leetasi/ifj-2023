@@ -67,34 +67,30 @@ bool DLLstr_GetValue(DLLstr_T* list, str_T* string);
  * @brief Vloží na začiatok zoznamu novo alokovanú kópiu poskytnutého reťazca
  * @param list zoznam
  * @param s reťazec, ktorý má byť vložený do zoznamu
- * @return true v prípade úspechu, inak false
 */
-bool DLLstr_InsertFirst(DLLstr_T* list, char* s);
+void DLLstr_InsertFirst(DLLstr_T* list, char* s);
 
 /**
  * @brief Vloží na koniec zoznamu novo alokovanú kópiu poskytnutého reťazca
  * @param list zoznam
  * @param s reťazec, ktorý má byť vložený do zoznamu
- * @return true v prípade úspechu, inak false
 */
-bool DLLstr_InsertLast(DLLstr_T* list, char* s);
+void DLLstr_InsertLast(DLLstr_T* list, char* s);
 
 /**
  * @brief Vloží za aktívny prvok novo alokovanú kópiu poskytnutého reťazca
  * @param list zoznam
  * @param s reťazec, ktorý má byť vložený do zoznamu
- * @return true v prípade úspechu, inak false
 */
-bool DLLstr_InsertAfter(DLLstr_T* list, char* s);
+void DLLstr_InsertAfter(DLLstr_T* list, char* s);
 
 
 /**
  * @brief Vloží pred aktívny prvok novo alokovanú kópiu poskytnutého reťazca
  * @param list zoznam
  * @param s reťazec, ktorý má byť vložený do zoznamu
- * @return true v prípade úspechu, inak false
 */
-bool DLLstr_InsertBefore(DLLstr_T* list, char* s);
+void DLLstr_InsertBefore(DLLstr_T* list, char* s);
 
 void DLLstr_DeleteFirst(DLLstr_T* list);
 void DLLstr_DeleteLast(DLLstr_T* list);
