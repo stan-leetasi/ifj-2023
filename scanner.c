@@ -186,6 +186,45 @@ int escape_seq_process(char c) {
     return result;
 }
 
+int get_indentation() {
+    int c;
+    int indent = 0;
+    bool go_to_next_line = false;
+    int num_of_quotes = 0;
+    int num_of_readed_characters = 0;
+    
+    // Čtení znaků ze vstupu a hledání prvních trojitých uvozovek
+    while ((c = fgetc(stdin)) != EOF) {
+      if (isblank(c)) {
+        if (go_to_next_line == false)
+            indent++;
+
+      } else if (c == '\n') {
+        go_to_next_line = false;
+        indent = 0;
+      } else if (c == '"' && go_to_next_line == false) {
+        while ((c = fgetc(stdin)) == '"') {
+                num_of_quotes++;
+                num_of_readed_characters++;
+        }
+
+        if (num_of_quotes == END_OF_MULTILINE_STRING - 1) {
+            break;
+        } else {
+            indent = 0;
+            num_of_quotes = 0;
+        }
+      } else {
+        go_to_next_line = true;
+        num_of_quotes = 0;
+        indent = 0;
+      }
+
+      num_of_readed_characters++;
+    }
+    fseek(stdin, -num_of_readed_characters - 2, SEEK_CUR);
+    return indent + 1;
+}
 
 token_T *getToken()
 {
@@ -208,7 +247,7 @@ token_T *getToken()
     int nested_comment_cnt = 0;     //speciální proměnná, která zaznamenává počet vnořených komentářů
     bool add_char_to_tkn = true;    //speciální proměnná, která indikuje jestli se má znak přidat do řetězce v tokenu (tkn->atr)
     int min_multi_line_indentation = 1; //speciální proměnná, která počítá počet nejmenšší počet mezer před prvním znakem na každém řádku multiline řetězce
-
+    int indent = 0;
     //zde bude uložený nový token
     token_T *tkn = NULL;
 
@@ -544,6 +583,7 @@ token_T *getToken()
                 //Tři uvozovky (víceřádkový řetězec) musí být na samostatném řádku
                 if (c == '\n') {
                     state = FIRST_LINE_MULTI_LINE_S;
+                    indent = get_indentation();
                     add_char_to_tkn = false;
                 } else if (isblank(c)) {
                     //Bílé znaky se ignorují
@@ -556,8 +596,9 @@ token_T *getToken()
                 break;
 /*=======================================STATE=======================================*/
             case FIRST_LINE_MULTI_LINE_S:
-                if (isspace(c)) {
+                if (isblank(c)) {
                     min_multi_line_indentation++;
+                    add_char_to_tkn = false;
                     state = FIRST_LINE_MULTI_LINE_S;
                 } else if (c == '\n') {
                     add_char_to_tkn = true;
@@ -580,7 +621,7 @@ token_T *getToken()
                 } else if (c == EOF) {
                     push_to_stream = true;
                     id_token = INVALID;  
-                } else if (isspace(c)) {
+                } else if (isblank(c)) {
                     //přeskakování mezer
                     add_char_to_tkn = false;
                     state = MULTI_LINE_NEW_LINE_S;
@@ -588,6 +629,10 @@ token_T *getToken()
                     if (col < min_multi_line_indentation) {
                         min_multi_line_indentation = col;
                     }
+                    for (int i = 0; i < col - indent; i++) {
+                        StrAppend(&tkn->atr, ' ');
+                    }
+
                     push_to_stream = true;
                     state = MULTI_LINE_STRING_S;
                 }
