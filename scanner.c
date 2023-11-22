@@ -497,8 +497,15 @@ token_T *getToken()
                     //Otevřený řetězec, za kterým následuje EOF
                     push_to_stream = true;
                     id_token = INVALID;
+                } else if (c == '\\') {
+                    is_multi_line_string = false;
+                    state = ESCAPE_SEKV_S;
                 } else {
                     //jednoduchý řetězec
+                    if (c == '\\') {
+                        //Aby se správně zpracovala escape sekvence
+                        push_to_stream = true;
+                    }
                     state = SINGLE_LINE_STRING_S;
                 }
                 

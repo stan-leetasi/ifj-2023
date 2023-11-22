@@ -2,7 +2,7 @@
  * @file generator.h
  * @brief Generátor cieľového kódu
  * @author Michal Krulich (xkruli03)
- * @date 11.11.2023
+ * @date 22.11.2023
  */
 
 #ifndef _GENERATOR_H_
@@ -13,6 +13,42 @@
 #include "decode.h"
 
 #define BOOL_CONST -50  ///< Konštanta - true/false ... Musí byť rôzna od hodnôt token_ids.
+
+// Inštrukcie zapísané ako konštanty, aby sa predišlo chýbam v zápise inštrkucií
+#define INS_MOVE            "MOVE"
+#define INS_CREATEFRAME     "CREATEFRAME"
+#define INS_PUSHFRAME       "PUSHFRAME"
+#define INS_POPFRAME        "POPFRAME"
+#define INS_DEFVAR          "DEFVAR"
+#define INS_CALL            "CALL"
+#define INS_RETURN          "RETURN"
+#define INS_PUSHS           "PUSHS"
+#define INS_POPS            "POPS"
+#define INS_CLEARS          "CLEARS"
+#define INS_ADDS            "ADDS"
+#define INS_SUBS            "SUBS"
+#define INS_MULS            "MULS"
+#define INS_DIVS            "DIVS"
+#define INS_IDIVS           "IDIVS"
+#define INS_LTS             "LTS"
+#define INS_GTS             "GTS"
+#define INS_EQS             "EQS"
+#define INS_NOTS            "NOTS"
+#define INS_INT2FLOATS      "INT2FLOATS"
+#define INS_FLOAT2INTS      "FLOAT2INTS"
+#define INS_READ            "READ"
+#define INS_WRITE           "WRITE"
+#define INS_CONCAT          "CONCAT"
+#define INS_STRLEN          "STRLEN"
+#define INS_LABEL           "LABEL"
+#define INS_JUMP            "JUMP"
+#define INS_JUMPIFEQS       "JUMPIFEQS"
+#define INS_EXIT            "EXIT"
+
+// Pomocné globálne premenné
+#define VAR_TMP1 "GF@!tmp1"
+#define VAR_TMP2 "GF@!tmp2"
+#define VAR_TMP3 "GF@!tmp3"
 
 /**
  * @brief Vygenerovaný kód pre funkcie
@@ -129,6 +165,7 @@ void genDefVarsBeforeLoop(char *label, DLLstr_T *variables);
  *                      zapíše do nich hodnoty zo zásobníka (na vrchole je prvý argument).
  * 
  * Identifikátory parametrov vyzerajú nasledovne "LF@<id>%".
+ * Ak je identifikátor podtržítko '_' => vygeneruje sa len POPS GF@!tmp1
  * 
  * Príklad:
  *      genFnDefBegin("sum", {"a", "b"}),

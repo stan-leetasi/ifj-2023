@@ -2,7 +2,7 @@
  * @file generator.c
  * @brief Generátor cieľového kódu
  * @author Boris Hatala (xhatal02) František Holáň (xholan13@stud.fit.vut.cz)
- * @date 11.11.2023
+ * @date 22.11.2023
  */
 
 #include "generator.h"
@@ -167,6 +167,7 @@ void genDefVarsBeforeLoop(char *label, DLLstr_T *variables) {
         DLLstr_Previous(list);
     }
 
+    StrDestroy(&label_instruction);
     StrDestroy(&instruction);
     StrDestroy(&var);
 }
@@ -187,9 +188,16 @@ void genFnDefBegin(char *fn, DLLstr_T *params) {
 
     while(DLLstr_IsActive(params)) {
         DLLstr_GetValue(params, &fnpar);
-        fnParamIdentificator(StrRead(&fnpar), &idpar);
-        genCode("DEFVAR", StrRead(&idpar), NULL, NULL);
-        genCode("POPS", StrRead(&idpar), NULL, NULL);
+        if(strcmp(StrRead(&fnpar), "_") == 0) {
+            // parameter s identifikátorom '_' nie je využívaný v tele funkcie
+            // Hodnota argumentu na zásobníku je preto zahodená
+            genCode(INS_POPS, VAR_TMP1, NULL, NULL);
+        }
+        else {
+            fnParamIdentificator(StrRead(&fnpar), &idpar);
+            genCode("DEFVAR", StrRead(&idpar), NULL, NULL);
+            genCode("POPS", StrRead(&idpar), NULL, NULL);
+        }
         DLLstr_Next(params);
     }
 
@@ -206,7 +214,7 @@ void genFnCall(char *fn, DLLstr_T *args) {
     //Průchod přes všechny argumenty funkce
     while (DLLstr_IsActive(args)) {
         DLLstr_GetValue(args, &arg);
-        genCode("PUSH", StrRead(&arg), NULL, NULL);
+        genCode("PUSHS", StrRead(&arg), NULL, NULL);
         DLLstr_Previous(args);
     }
     //Vložení na zásobník CALL instrukce
@@ -308,6 +316,14 @@ void genSubstring() {
 
     genCode("RETURN", NULL, NULL, NULL);
     parser_inside_fn_def = previous_parser_in_fn_def_value;
+
+    /* dealokácia pomocných str_T */
+    for (int i = 0; i < num_of_local_vars; i++) {
+        StrDestroy(&uniq_vars[i]);
+    }
+    for (int i = 0; i < num_of_lables; i++) {
+        StrDestroy(&uniq_lables[i]);
+    }
 }
 
 /**

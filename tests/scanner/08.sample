@@ -1,0 +1,21 @@
+"Ahoj\n\"Sve'te \\\u{22}", "\n"
+
+  """
+   Toto 
+   je 
+
+   nejaky 
+   text
+ """
+
+"""
+viceradkovy
+"retezec"
+misto nil vysledku
+"""
+
+") v \"", s2
+
+
+
+write(s1, "\u{20}", s2, "\u{0A}")
