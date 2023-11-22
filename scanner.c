@@ -39,7 +39,9 @@ typedef enum state {
     EXP_NUMBER_SIGN_S,
     PRE_DOUBLE_NUMBER_S,
     SINGLE_LINE_STRING_S,
+    FIRST_LINE_MULTI_LINE_S,
     MULTI_LINE_STRING_S,
+    MULTI_LINE_NEW_LINE_S,
     PRE_MULTI_LINE_STRING_S,
     MULTI_LINE_STRING_END_S,
     EMPTY_STRING_S,
@@ -172,6 +174,8 @@ int escape_seq_process(char c) {
         } else if (c == '}' && num_of_digits >= 1) {
         //Ukončení této sekvence pomocí levé složené závorky
         //Uvnitř složených závorek musí být alespoň jedna hexadecimální číslice
+            num_of_digits = 0;
+            state = 0;
             result = 1;
         } else {
         //Na vstupu je špatný znak
@@ -203,6 +207,7 @@ token_T *getToken()
     bool is_multi_line_string = 0;  //speciální proměnná, která indikuje zda se přešlo do stavu ESCAPE_SEKV_S z víceřádkového řetězce nebo z jednořádkového řetězce
     int nested_comment_cnt = 0;     //speciální proměnná, která zaznamenává počet vnořených komentářů
     bool add_char_to_tkn = true;    //speciální proměnná, která indikuje jestli se má znak přidat do řetězce v tokenu (tkn->atr)
+    int min_multi_line_indentation = 1; //speciální proměnná, která počítá počet nejmenšší počet mezer před prvním znakem na každém řádku multiline řetězce
 
     //zde bude uložený nový token
     token_T *tkn = NULL;
@@ -241,6 +246,7 @@ token_T *getToken()
 
                 col_begin_token = col;
                 line_begin_token = ln;
+                min_multi_line_indentation = 1;
                 add_char_to_tkn = true;
 
                 if (isspace(c)) {
@@ -497,15 +503,8 @@ token_T *getToken()
                     //Otevřený řetězec, za kterým následuje EOF
                     push_to_stream = true;
                     id_token = INVALID;
-                } else if (c == '\\') {
-                    is_multi_line_string = false;
-                    state = ESCAPE_SEKV_S;
                 } else {
-                    //jednoduchý řetězec
-                    if (c == '\\') {
-                        //Aby se správně zpracovala escape sekvence
-                        push_to_stream = true;
-                    }
+                    push_to_stream = true;
                     state = SINGLE_LINE_STRING_S;
                 }
                 
@@ -541,18 +540,57 @@ token_T *getToken()
                 break;
 /*=======================================STATE=======================================*/
             case PRE_MULTI_LINE_STRING_S:
-                add_char_to_tkn = true;
                 //Tři uvozovky (víceřádkový řetězec) musí být na samostatném řádku
                 if (c == '\n') {
-                    state = MULTI_LINE_STRING_S;
+                    state = FIRST_LINE_MULTI_LINE_S;
                     add_char_to_tkn = false;
                 } else if (isblank(c)) {
                     //Bílé znaky se ignorují
                     //Nebudou se do řetězce přidávat
+                    add_char_to_tkn = false;
                     state = PRE_MULTI_LINE_STRING_S;
                 } else {
                     id_token = INVALID;
                 }
+                break;
+/*=======================================STATE=======================================*/
+            case FIRST_LINE_MULTI_LINE_S:
+                if (isspace(c)) {
+                    min_multi_line_indentation++;
+                    state = FIRST_LINE_MULTI_LINE_S;
+                } else if (c == '\n') {
+                    add_char_to_tkn = true;
+                    //Přeskočení prázdného řádku
+                    state = FIRST_LINE_MULTI_LINE_S;
+                } else {
+                    push_to_stream = true;
+                    state = MULTI_LINE_NEW_LINE_S;
+                }
+                break;
+/*=======================================STATE=======================================*/
+            case MULTI_LINE_NEW_LINE_S:
+                add_char_to_tkn = true;
+                if (c == '"') {
+                    //Potenciální ukončení řetězce
+                    push_to_stream = true;
+                    state = MULTI_LINE_STRING_END_S;
+                } else if (c == '\n') {
+                    state = MULTI_LINE_NEW_LINE_S;
+                } else if (c == EOF) {
+                    push_to_stream = true;
+                    id_token = INVALID;  
+                } else if (isspace(c)) {
+                    //přeskakování mezer
+                    add_char_to_tkn = false;
+                    state = MULTI_LINE_NEW_LINE_S;
+                } else {
+                    if (col < min_multi_line_indentation) {
+                        min_multi_line_indentation = col;
+                    }
+                    push_to_stream = true;
+                    state = MULTI_LINE_STRING_S;
+                }
+                
                 break;
 /*=======================================STATE=======================================*/
             case MULTI_LINE_STRING_S:
@@ -560,8 +598,9 @@ token_T *getToken()
                 //Víceřádkový řetězec
                 if (c == '\n') {
                     //Potenciální možnost ukončení řetězce
-                    add_char_to_tkn = false;
-                    state = MULTI_LINE_STRING_END_S;
+                    push_to_stream = true;
+                    state = MULTI_LINE_NEW_LINE_S;
+                    //konec zmeny
                 } else if (c == EOF) {
                     push_to_stream = true;
                     id_token = INVALID;
@@ -573,43 +612,35 @@ token_T *getToken()
                     //Na vstup přichází správné znaky, zůstaň v tomto stavu
                     state = MULTI_LINE_STRING_S;
                 }
-                
                 break;
 /*=======================================STATE=======================================*/
             case MULTI_LINE_STRING_END_S:
             add_char_to_tkn = true;
                 //Řetězec může být ukončen
                 if (c == '"') {
-                    add_char_to_tkn = false;
                     quote_mark_num++;
                     //Abych nemusel přecházet do dalších dvou stavů, je zde pomocná proměnná, která počítá uvozovky
                     if (quote_mark_num == END_OF_MULTILINE_STRING) {
-                        id_token = STRING_CONST;
+                        //Odsazeni na tri ukoncujicich uvozovek musi byt nejmensi nebo rovno
+                        if (min_multi_line_indentation < col - END_OF_MULTILINE_STRING) {
+                            id_token = INVALID;
+                        } else {
+                            id_token = STRING_CONST;
+                        }
                     }
-                    
                     state = MULTI_LINE_STRING_END_S;
                 } else if (c == EOF) {
                     //Neukončený řetězec
                     id_token = INVALID;
                 } else if (c == '\n') {
-                    add_char_to_tkn = false;
                     //Přeskakují se mezery
-                    state = MULTI_LINE_STRING_END_S;
-                } else if (c == '\\') {
-                    //escape sekvence
-                    state = ESCAPE_SEKV_S;
+                    state = MULTI_LINE_NEW_LINE_S;
                 } else {
                     quote_mark_num = 0;
+                    push_to_stream = true;
                     state = MULTI_LINE_STRING_S;
                 }
 
-                if (c != '"' && quote_mark_num < END_OF_MULTILINE_STRING) {
-                    StrAppend(&tkn->atr, '\n');
-                    for (int i = 0; i < quote_mark_num; i++) {
-                        StrAppend(&tkn->atr, '"');
-                    }
-                    quote_mark_num = 0;
-                }
                 break;
 /*=======================================STATE=======================================*/
             case ESCAPE_SEKV_S:
@@ -718,12 +749,18 @@ token_T *getToken()
                 StrFillWith(&tkn->atr, "EOF");
             else 
                 StrAppend(&tkn->atr, c);
-        } else if (add_char_to_tkn == false) {
-            if (state == MULTI_LINE_STRING_END_S && quote_mark_num < END_OF_MULTILINE_STRING && c != '"') {
-                for (int i = 0; i < quote_mark_num; i++) {
-                    StrAppend(&tkn->atr, '"');
-                }
-            }
+        } 
+
+        //Odstraneni uvozovek a noveho radku
+        if (id_token == STRING_CONST && state == MULTI_LINE_STRING_END_S) {
+            //Odstrani se posledni tri uvozovky z multiline stringu
+            tkn->atr.data[strlen(StrRead(&tkn->atr)) - 3] = '\0'; 
+            //Odstrani se posledni znak noveho radku
+            int multi_line_len = strlen(StrRead(&tkn->atr));
+            while (tkn->atr.data[multi_line_len] != '\n') {
+                multi_line_len--;
+            } 
+            tkn->atr.data[multi_line_len] = '\0';
         }
 
         if (id_token != -1) {

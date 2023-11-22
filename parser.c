@@ -782,6 +782,7 @@ int parseVariableDecl() {
             case SYM_TYPE_STRING_NIL:
                 // implicitne inicializované na nil v prípade dátového typu zahrňujúceho nil
                 variable->init = true;
+                genCode(INS_MOVE, StrRead(&(variable->codename)), "nil@nil", NULL);
                 break;
             default:
                 break;
