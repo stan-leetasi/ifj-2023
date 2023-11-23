@@ -49,11 +49,11 @@ void genUniqLabel(char *fn, char *sub, str_T *label){
 
 void genConstVal(int const_type, char *value, str_T *cval) {
     switch (const_type) {
-        case 8:
+        case 8:;
             StrCatString(cval, "int@");
             StrCatString(cval, value);
             break;
-        case 9: // double
+        case 9:; // double
             StrCatString(cval, "float@");
             char p[100];
             double d;
@@ -61,15 +61,15 @@ void genConstVal(int const_type, char *value, str_T *cval) {
             sprintf(p, "%a", d);
             StrCatString(cval, p);
             break;
-        case 18:
+        case 18:;
             StrCatString(cval, "nil@nil");
             break;
-        case 10:
+        case 10:;
             str_T decoded_value = strEncode(value);
             StrCatString(cval, StrRead(&decoded_value));            
             StrDestroy(&decoded_value);
             break;
-        case -50:
+        case -50:;
             if (strcmp(value, "true") == 0) {
                 StrFillWith(cval, "bool@true");
             } else {
