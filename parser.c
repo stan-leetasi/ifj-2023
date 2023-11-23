@@ -135,7 +135,7 @@ bool isBuiltInFunction(char* function_name) {
 /**
  * @brief Určí či je potrebné pri volaní určitej funkcie pop-núť lokálny rámec
 */
-bool shouldPopFrame(char *function_name) {
+bool shouldPopFrame(char* function_name) {
     return !isBuiltInFunction(function_name) || strcmp(function_name, "substring") == 0;
 }
 
@@ -195,7 +195,7 @@ void loadBuiltInFunctionSignatures() {
  *          {"write", "Int2Double", "Double2Int", "length", "ord", "chr"},
  *          inak false
 */
-bool biFnGenInstruction(char *bif_name, char *arg_codename) {
+bool biFnGenInstruction(char* bif_name, char* arg_codename) {
     if (strcmp(bif_name, "write") == 0) {
         genCode(INS_WRITE, arg_codename, NULL, NULL);
         return true;
@@ -297,10 +297,10 @@ int parseDataType(char* data_type) {
  * @param term_codename Tvar termu v cieľovom kóde
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseTerm(char* term_type, str_T *term_codename) {
+int parseTerm(char* term_type, str_T* term_codename) {
     switch (tkn->type)
     {
-    case ID: // premenná
+    case ID:; // premenná
         TSData_T* variable = SymTabLookup(&symt, StrRead(&(tkn->atr)));
         if (variable == NULL) {
             // v TS nie je záznam s daným identifikátorom => nedeklarovaná premenná
@@ -358,7 +358,7 @@ int parseTerm(char* term_type, str_T *term_codename) {
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFnArg(str_T* par_name, char* term_type, char* bif_name,
-        DLLstr_T *used_args) {
+    DLLstr_T* used_args) {
     // <PAR_IN>        ->  id : term
     // <PAR_IN>        ->  term
     str_T arg_codename; // Tvar argumentu v cieľovom kóde
@@ -412,7 +412,7 @@ int parseFnArg(str_T* par_name, char* term_type, char* bif_name,
         return SYN_ERR;
     }
 
-    if(!biFnGenInstruction(bif_name == NULL ? "" : bif_name, StrRead(&arg_codename))) {
+    if (!biFnGenInstruction(bif_name == NULL ? "" : bif_name, StrRead(&arg_codename))) {
         DLLstr_InsertLast(used_args, StrRead(&arg_codename));
     }
     StrDestroy(&arg_codename);
@@ -434,7 +434,7 @@ int parseFnArg(str_T* par_name, char* term_type, char* bif_name,
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
-    char* bif_name, DLLstr_T *used_args) {
+    char* bif_name, DLLstr_T* used_args) {
     // <PAR_LIST>      ->  <PAR_IN> <PAR_IN_NEXT>
     // <PAR_LIST>      ->  €
     // <PAR_IN_NEXT>   ->  , <PAR_IN> <PAR_IN_NEXT>
@@ -612,26 +612,26 @@ int parseFnCall(char* result_type) {
     DLLstr_Init(&args_codenames);
     TRY_OR_EXIT(parseFnCallArgs(fn->init, called_before, fn->sig, built_in_fn ? fn->id : NULL, &args_codenames));
 
-    if(strcmp(fn->id, "substring") == 0) {
+    if (strcmp(fn->id, "substring") == 0) {
         // bude potrebné vložiť kód funkcie substring
         bifn_substring_called = true;
     }
 
     // Generovanie cieľového kódu
-    if(!built_in_fn || strcmp(fn->id, "substring") == 0) {
+    if (!built_in_fn || strcmp(fn->id, "substring") == 0) {
         // generovanie vloženia argumentov na zásobník a volania funkcie
         genFnCall(fn->id, &args_codenames);
     }
     // špeciálne prípady generovania kódu pri týchto vstavaných funkciách
-    else if(strcmp(fn->id, "readString") == 0) {
+    else if (strcmp(fn->id, "readString") == 0) {
         genCode(INS_READ, VAR_TMP1, "string", NULL);
         genCode(INS_PUSHS, VAR_TMP1, NULL, NULL);
     }
-    else if(strcmp(fn->id, "readInt") == 0) {
+    else if (strcmp(fn->id, "readInt") == 0) {
         genCode(INS_READ, VAR_TMP1, "int", NULL);
         genCode(INS_PUSHS, VAR_TMP1, NULL, NULL);
     }
-    else if(strcmp(fn->id, "readDouble") == 0) {
+    else if (strcmp(fn->id, "readDouble") == 0) {
         genCode(INS_READ, VAR_TMP1, "float", NULL);
         genCode(INS_PUSHS, VAR_TMP1, NULL, NULL);
     }
@@ -653,7 +653,7 @@ int parseFnCall(char* result_type) {
  * @param target_type Dátový typ premennej, ktorej je hodnota priraďovaná. Slúži len pre potreby implicitnej konverzie literálu Int na Double
  * @return 0 v prípade úspechu, inak číslo chyby
 */
-int parseAssignment(char* result_type, char *result_codename, char target_type) {
+int parseAssignment(char* result_type, char* result_codename, char target_type) {
     bool possible_implicit_int_conversion = false;
     TRY_OR_EXIT(nextToken());
     token_T* first_tkn;
@@ -681,7 +681,7 @@ int parseAssignment(char* result_type, char *result_codename, char target_type) 
             tkn = first_tkn;
             bool popframe = shouldPopFrame(StrRead(&(tkn->atr)));
             TRY_OR_EXIT(parseFnCall(result_type));
-            if(popframe) genCode(INS_POPFRAME, NULL, NULL, NULL);
+            if (popframe) genCode(INS_POPFRAME, NULL, NULL, NULL);
         }
         else {
             saveToken();
@@ -694,7 +694,7 @@ int parseAssignment(char* result_type, char *result_codename, char target_type) 
         return SYN_ERR;
     }
 
-    if(possible_implicit_int_conversion && *result_type == SYM_TYPE_INT && 
+    if (possible_implicit_int_conversion && *result_type == SYM_TYPE_INT &&
         (target_type == SYM_TYPE_DOUBLE || target_type == SYM_TYPE_DOUBLE_NIL)) {
         // vo výraze sú celočíselné literály a výsledok má byť priradený do dátového typu Double(?)
         // musí byť vykonaná implicitná konverzia
@@ -923,7 +923,7 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
             }
             DLLstr_InsertLast(&(sig->par_ids), StrRead(&(tkn->atr)));
         }
-        else if(tkn->type == UNDERSCORE) {
+        else if (tkn->type == UNDERSCORE) {
             DLLstr_InsertLast(&(sig->par_ids), "_");
         }
         else {
@@ -1088,7 +1088,7 @@ int parseFunction() {
     StrInit(&par_id);
     for (size_t i = 0; StrRead(&(fn->sig->par_types))[i] != '\0'; i++) {
         DLLstr_GetValue(&(fn->sig->par_ids), &par_id);
-        if(strcmp(StrRead(&par_id), "_") == 0 ) { // parametre s identifikátorom '_' sa nepoužívajú vo vnútri funkcie
+        if (strcmp(StrRead(&par_id), "_") == 0) { // parametre s identifikátorom '_' sa nepoužívajú vo vnútri funkcie
             DLLstr_Next(&(fn->sig->par_ids));
             continue;
         }
@@ -1121,7 +1121,7 @@ int parseFunction() {
         logErrSemanticFn(fn->id, "it is possible to exit function without return value");
         return SEM_ERR_FUNC;
     }
-    if(!SymTabCheckLocalReturn(&symt)) {
+    if (!SymTabCheckLocalReturn(&symt)) {
         // aj void-funkcia musí mať na konci inštrukciu RETURN, pre vrátenie riadenie programu
         genCode(INS_RETURN, NULL, NULL, NULL);
     }
@@ -1184,7 +1184,7 @@ int parseReturn() {
             logErrSemanticFn(fn->id, "void return in non-void function");
             return SEM_ERR_RETURN;
         }
-        if(possible_implicit_int_conversion && result_type == SYM_TYPE_INT && 
+        if (possible_implicit_int_conversion && result_type == SYM_TYPE_INT &&
             (fn->sig->ret_type == SYM_TYPE_DOUBLE || fn->sig->ret_type == SYM_TYPE_DOUBLE_NIL)) {
             // vo výraze sú celočíselné literály a výsledok má byť priradený do dátového typu Double(?)
             // musí byť vykonaná implicitná konverzia
@@ -1228,7 +1228,7 @@ int parseIf() {
 
     switch (tkn->type) // rozlíšenie obyčajnej podmienky v tvare výrazu alebo test premennej na nil "let <premenná>"
     {
-    case LET:
+    case LET:;
         //  <COND> ->  let id
         TRY_OR_EXIT(nextToken());   // identifikátor testovanej premennej
         if (tkn->type != ID) {
@@ -1270,12 +1270,12 @@ int parseIf() {
 
         genCode("JUMPIFEQ", StrRead(&cond_false), StrRead(&(variable->codename)), "nil@nil");
         break;
-    case ID:    // v podminke je obyčajný výraz
-    case BRT_RND_L:
-    case INT_CONST:
-    case DOUBLE_CONST:
-    case STRING_CONST:
-    case NIL:
+    case ID:;    // v podminke je obyčajný výraz
+    case BRT_RND_L:;
+    case INT_CONST:;
+    case DOUBLE_CONST:;
+    case STRING_CONST:;
+    case NIL:;
         // <COND> ->  exp
         char exp_type = SYM_TYPE_UNKNOWN; // ???
         bool possible_implicit_int_conversion = false; // nie je využívané v if
@@ -1288,7 +1288,7 @@ int parseIf() {
         genCode(INS_PUSHS, "bool@false", NULL, NULL);
         genCode(INS_JUMPIFEQS, StrRead(&cond_false), NULL, NULL);
         break;
-    default:
+    default:;
         logErrSyntax(tkn, "let or an expression");
         return SYN_ERR;
         break;
@@ -1355,12 +1355,12 @@ int parseWhile() {
     TRY_OR_EXIT(nextToken());
     switch (tkn->type) // syntaktická kontrola, či sa v podmienke nachádza výraz
     {
-    case ID:
-    case BRT_RND_L:
-    case INT_CONST:
-    case DOUBLE_CONST:
-    case STRING_CONST:
-    case NIL:
+    case ID:;
+    case BRT_RND_L:;
+    case INT_CONST:;
+    case DOUBLE_CONST:;
+    case STRING_CONST:;
+    case NIL:;
         // začiatok výrazu potvrdený
         break;
     default:
@@ -1406,9 +1406,9 @@ bool isCompatibleAssign(char dest, char src) {
     if (src == SYM_TYPE_NIL) {
         switch (dest) // samotný nil je možné priradiť len do dátového typu zahrňujúceho nil
         {
-        case SYM_TYPE_INT_NIL:
-        case SYM_TYPE_DOUBLE_NIL:
-        case SYM_TYPE_STRING_NIL:
+        case SYM_TYPE_INT_NIL:;
+        case SYM_TYPE_DOUBLE_NIL:;
+        case SYM_TYPE_STRING_NIL:;
             return true;
         default:
             return false;
@@ -1469,11 +1469,11 @@ bool initializeParser() {
 int parse() {
     switch (tkn->type)
     {
-    case LET:
-    case VAR:
+    case LET:;
+    case VAR:;
         TRY_OR_EXIT(parseVariableDecl());
         break;
-    case ID:
+    case ID:;
         // <STAT>   ->  <CALL_FN>
         // <STAT>   ->  id = <ASSIGN>
         // TODO podobné parseAssignment => refaktorizacia ???
@@ -1487,7 +1487,7 @@ int parse() {
             tkn = first_tkn;
             bool popframe = shouldPopFrame(StrRead(&(tkn->atr)));
             TRY_OR_EXIT(parseFnCall(&result_type));
-            if(popframe) genCode(INS_POPFRAME, NULL, NULL, NULL);
+            if (popframe) genCode(INS_POPFRAME, NULL, NULL, NULL);
             genCode(INS_CLEARS, NULL, NULL, NULL); // volaná funkcia môže zanechať návratovú hodnotu na zásobníku
         }
         else if (tkn->type == ASSIGN) {
@@ -1514,29 +1514,29 @@ int parse() {
             return SYN_ERR;
         }
         break;
-    case BRT_CUR_L:
+    case BRT_CUR_L:;
         // <STAT>  ->  { <PROG> }
         bool block_had_return;
         TRY_OR_EXIT(parseStatBlock(&block_had_return));
         if (block_had_return) SymTabModifyLocalReturn(&symt, block_had_return);
         break;
-    case FUNC:
+    case FUNC:;
         // <STAT> ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
         TRY_OR_EXIT(parseFunction());
         break;
-    case RETURN:
+    case RETURN:;
         // <STAT>      ->  return <RET_VAL>
         TRY_OR_EXIT(parseReturn());
         break;
-    case IF:
+    case IF:;
         // <STAT>      ->  if <COND> { <PROG> } else { <PROG> }
         TRY_OR_EXIT(parseIf());
         break;
-    case WHILE:
+    case WHILE:;
         // <STAT>      ->  while exp { <PROG> }
         TRY_OR_EXIT(parseWhile());
         break;
-    default:
+    default:;
         logErrSyntax(tkn, "beginning of a statement");
         return SYN_ERR;
         break;
@@ -1567,7 +1567,7 @@ void printOutCompiledCode() {
     printf("DEFVAR %s\n", VAR_TMP3);
     printf("JUMP !main\n");
 
-    if(bifn_substring_called) genSubstring();
+    if (bifn_substring_called) genSubstring();
 
     DLLstr_printContent(&code_fn);
 

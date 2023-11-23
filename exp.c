@@ -82,7 +82,7 @@ int stack_push_ptoken(stack_t *stack, ptoken_T *token){
         stack->capacity = stack->capacity*2; // Zdvojnásobenie kapacity
         stack->array = realloc(stack->array, stack->capacity*sizeof(token_T));
         if(stack->array == NULL){ // Realokácia pamäte zlyhala
-            fprintf(stderr, "memory allocation error\n");
+            fprintf(stderr, "memory reallocation error\n");
             return COMPILER_ERROR;
         }
     }
@@ -605,6 +605,7 @@ int parseExpression(char* result_type, bool *literal) {
                 }
                 
                 if(infix2postfix(&stack, &postfixExpr, NULL) == COMPILER_ERROR){ // Signalizuje ukončenie postfix výrazu
+                    endParse_syn(&stack, &postfixExpr); // Upratenie pred ukončením
                     return COMPILER_ERROR; // Nastala chyba pri malloc/realloc
                 }
                 saveToken(); // Vloženie tokenu späť do input streamu
@@ -637,6 +638,7 @@ int parseExpression(char* result_type, bool *literal) {
                     else
                     {
                         if(infix2postfix(&stack, &postfixExpr, NULL) == COMPILER_ERROR){ // Signalizuje ukončenie postfix výrazu
+                            endParse_syn(&stack, &postfixExpr); // Upratenie pred ukončením
                             return COMPILER_ERROR; // Nastala chyba pri malloc/realloc
                         }
                         saveToken(); // Vloženie tokenu späť do input streamu
@@ -659,12 +661,15 @@ int parseExpression(char* result_type, bool *literal) {
         }
         if(tkn->type == BRT_RND_R) // Pravá zátvorka
         {
-            if(is_binary_operator(prevTokenType) || bracketCount == 0) // Predošlý token je binárny operátor alebo vo výraze nie je otvorená zátvorka
+            if(is_binary_operator(prevTokenType) || bracketCount == 0 || prevTokenType == BRT_RND_L) // Predošlý token je binárny operátor, ľavá zátvorka, alebo vo výraze nie je otvorená zátvorka
             {
                 if(bracketCount == 0){
                     logErrCodeAnalysis(SYN_ERR, tkn->ln, tkn->col,"expected an opened left bracket");
                 }
-                else{
+                if(prevTokenType == BRT_RND_L){
+                    logErrCodeAnalysis(SYN_ERR, tkn->ln, tkn->col,"brackets without an operand");
+                }
+                if(is_binary_operator(prevTokenType)){
                     logErrCodeAnalysis(SYN_ERR, tkn->ln, tkn->col,"expected an operand before right bracket");
                 }
                 prevTokenType = NO_PREV;
@@ -695,13 +700,14 @@ int parseExpression(char* result_type, bool *literal) {
         prevTokenType = tkn->type; // Uloženie typu predošlého tokenu
         status = nextToken(); // Požiadanie o ďalší token z výrazu
         if(status == COMPILER_ERROR){ // nextToken vrátil compiler error
-            fprintf(stderr, "memory allocation error\n");
+            fprintf(stderr, "nextToken: memory allocation error\n");
+            endParse_syn(&stack, &postfixExpr); // Upratanie pred skončením funkcie
             return COMPILER_ERROR; // Vrátenie compiler error
         }
         if(status == LEX_ERR){
+            endParse_syn(&stack, &postfixExpr); // Upratanie pred skončením funkcie
             return LEX_ERR; // Vrátenie lexical error
         }
-
     }
 
     if(prevTokenType == NO_PREV) // Symbolizuje chybnú syntax
