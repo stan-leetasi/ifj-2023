@@ -136,16 +136,16 @@ int escape_seq_process(char c) {
     int result = 0; //Výsledek procesu (zpracování escape sekvence), 0 = false, 1 = true, -1 = je v procesu
     switch (state)
     {
-    case 0: //jednoduché (jednoznakové) escape sekvence
+    case 0: ;//jednoduché (jednoznakové) escape sekvence
         switch (c) {
-            case '"':
-            case '\\':
-            case 'n':
-            case 'r':
-            case 't': 
+            case '"': ;
+            case '\\': ;
+            case 'n': ;
+            case 'r': ;
+            case 't': ;
                 result = 1; //Vše je v pořádku vrací se true
                 break;
-            case 'u':
+            case 'u': ;
                 //unicode escape sekvence
                 state = 1;
                 result = -1;
@@ -156,7 +156,7 @@ int escape_seq_process(char c) {
                 break;
         }
         break;
-    case 1: //na vstupu je levá složená závorka
+    case 1: ;//na vstupu je levá složená závorka
         if (c == '{') {
             state = 2;
             result = -1;
@@ -164,7 +164,7 @@ int escape_seq_process(char c) {
             result = 0;  
         }
         break;
-    case 2: 
+    case 2: ;
         if (isxdigit(c) && num_of_digits < 8) {
         //Na vstupu může být jakékoliv hexadecimální číslo, ale může jich být pouze 8
             state = 2;
@@ -294,7 +294,7 @@ token_T *getToken()
 
         switch (state) {
 /*=======================================STATE=======================================*/
-            case INIT_STATE_S:
+            case INIT_STATE_S: ;
 
                 col_begin_token = col;
                 line_begin_token = ln;
@@ -364,14 +364,14 @@ token_T *getToken()
                     id_token = INVALID;
                 break;
 /*=======================================STATE=======================================*/
-            case COMMENT_SLASH_S:
+            case COMMENT_SLASH_S: ;
                 switch(c) {
                     //blokový komentář
-                    case '*':
+                    case '*': ;
                         state = COMMENT_BLOCK_S;
                         break;
                     //řádkový komentář
-                    case '/':
+                    case '/': ;
                         state = COMMENT_LINE_S;
                         break;
                     //na vstupu není ani * ani / => jedná se o operátor děleno
@@ -383,18 +383,18 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/               
-            case COMMENT_BLOCK_S:
+            case COMMENT_BLOCK_S: ;
                 switch (c)
                 {
-                    case '*':
+                    case '*': ;
                         //Komentář může být ukončen
                         state = COMMENT_BLOCK_END_S;
                         break;
-                    case '/':
+                    case '/': ;
                         //Může začít vnořený komentář
                         state = NESTED_COMMENT_S;
                         break;
-                    case EOF:
+                    case EOF: ;
                         //Neukončený blokový komentář
                         id_token = INVALID;
                         break;
@@ -406,7 +406,7 @@ token_T *getToken()
 
                 break;
 /*=======================================STATE=======================================*/
-            case NESTED_COMMENT_S:
+            case NESTED_COMMENT_S: ;
                 //Vnořený komentář
                 if (c == '*') {
                     //Jedná se o vnořený komentář, inkrementuj čítač
@@ -416,7 +416,7 @@ token_T *getToken()
                 state = COMMENT_BLOCK_S;
                 break;
 /*=======================================STATE=======================================*/ 
-            case COMMENT_BLOCK_END_S:
+            case COMMENT_BLOCK_END_S: ;
                 if (c == '/') {
                     //blokový komentář je ukončen
                     if (nested_comment_cnt == 0) {
@@ -434,7 +434,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/ 
-            case COMMENT_LINE_S:
+            case COMMENT_LINE_S: ;
                 if (c == '\n') {
                     //řádkový komentář zahrnuje vše až do konce řádku
                     state = INIT_STATE_S;
@@ -447,7 +447,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case INT_NUMBER_S:
+            case INT_NUMBER_S: ;
                 if (isdigit(c)) {
                     //Na vstupu jsou čísla = zůstává se ve stavu celé číslo
                     state = INT_NUMBER_S;
@@ -466,7 +466,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case PRE_DOUBLE_NUMBER_S:
+            case PRE_DOUBLE_NUMBER_S: ;
                 if (isdigit(c)) {
                     //desetinné číslo s tečkou
                     state = DOUBLE_NUMBER_S;
@@ -477,7 +477,7 @@ token_T *getToken()
                 
                 break;
 /*=======================================STATE=======================================*/
-            case DOUBLE_NUMBER_S:
+            case DOUBLE_NUMBER_S: ;
                 if (isdigit(c)) {
                     //zůstaň v tomto stavu (na vstupu jsou čísla)
                     state = DOUBLE_NUMBER_S;
@@ -492,7 +492,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case EXP_NUMBER_S:
+            case EXP_NUMBER_S: ;
                 if (isdigit(c)) {
                     state = DOUBLE_NUMBER_S;
                 } else if (c == '+' || c == '-') {
@@ -505,7 +505,7 @@ token_T *getToken()
                 
                 break;
 /*=======================================STATE=======================================*/
-            case EXP_NUMBER_SIGN_S:
+            case EXP_NUMBER_SIGN_S: ;
                 //Cislo ve tvaru XeY - tedy s "eckem"
                 if (isdigit(c)) {
                     state = DOUBLE_NUMBER_S;
@@ -515,7 +515,7 @@ token_T *getToken()
                 
                 break;
 /*=======================================STATE=======================================*/
-            case ID_S:
+            case ID_S: ;
                 int keyw;
                 //Součástí názvu identifikátoru může být jakýkoliv alfanumerický znak a podtržítko
                 if (isalnum(c) || c == '_') {
@@ -532,7 +532,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case UNDERSCORE_S:
+            case UNDERSCORE_S: ;
                 if (isalnum(c) || c == '_') {
                     //Bude se jednat o identifikátor začínající podtržítkem
                     state = ID_S;
@@ -544,7 +544,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case STRING_S:
+            case STRING_S: ;
                 add_char_to_tkn = true;
                 if (c == '"') {
                     //prázdný řetězec
@@ -561,7 +561,7 @@ token_T *getToken()
                 
                 break;
 /*=======================================STATE=======================================*/
-            case SINGLE_LINE_STRING_S:
+            case SINGLE_LINE_STRING_S: ;
                 add_char_to_tkn = true;
                 if (c == '"') {
                     id_token = STRING_CONST;
@@ -581,7 +581,7 @@ token_T *getToken()
                 
                 break;
 /*=======================================STATE=======================================*/
-            case EMPTY_STRING_S:
+            case EMPTY_STRING_S: ;
                 //Toto je přechodový stav mezi víceřádkovým řetězcem a jednořádkovým řetězcem
                 if (c == '"') {
                     state = PRE_MULTI_LINE_STRING_S;
@@ -591,7 +591,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case PRE_MULTI_LINE_STRING_S:
+            case PRE_MULTI_LINE_STRING_S: ;
                 //Tři uvozovky (víceřádkový řetězec) musí být na samostatném řádku
                 if (c == '\n') {
                     state = MULTI_LINE_NEW_LINE_S;
@@ -609,7 +609,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case MULTI_LINE_NEW_LINE_S:
+            case MULTI_LINE_NEW_LINE_S: ;
                 add_char_to_tkn = true;
                 if (c == '"') {
                     //Potenciální ukončení řetězce
@@ -641,7 +641,7 @@ token_T *getToken()
                 
                 break;
 /*=======================================STATE=======================================*/
-            case MULTI_LINE_STRING_S:
+            case MULTI_LINE_STRING_S: ;
                 add_char_to_tkn = true;
                 //Víceřádkový řetězec
                 if (c == '\n') {
@@ -662,7 +662,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case MULTI_LINE_STRING_END_S:
+            case MULTI_LINE_STRING_END_S: ;
             add_char_to_tkn = true;
                 //Řetězec může být ukončen
                 if (c == '"') {
@@ -686,7 +686,7 @@ token_T *getToken()
 
                 break;
 /*=======================================STATE=======================================*/
-            case ESCAPE_SEKV_S:
+            case ESCAPE_SEKV_S: ;
                 //Zde se zpracovává escape sekvence v řetězci
                 int esc_seq_proc = escape_seq_process(c);
                 if (esc_seq_proc == -1) {
@@ -706,7 +706,7 @@ token_T *getToken()
                 
                 break;
 /*=======================================STATE=======================================*/
-            case DASH_MINUS_S:
+            case DASH_MINUS_S: ;
                 
                 //Přečtený znak je '>': výsledný token: ->
                 if (c == '>') {
@@ -718,7 +718,7 @@ token_T *getToken()
                 } 
                 break;
 /*=======================================STATE=======================================*/
-            case EQ_S:
+            case EQ_S: ;
                 //přiřazení nebo porovnání
                 if (c == '=') {
                     id_token = EQ;
@@ -729,7 +729,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case GT_S:
+            case GT_S: ;
 
                 //větší nebo větší rovno
                 if (c == '=') {
@@ -740,7 +740,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case LT_S:
+            case LT_S: ;
 
                 //menší nebo menší rovno
                 if (c == '=') {
@@ -752,7 +752,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case EXCL_S:
+            case EXCL_S: ;
 
                 if (c == '=') {
                     //Negace porovnání
@@ -763,7 +763,7 @@ token_T *getToken()
                 }
                 break;
 /*=======================================STATE=======================================*/
-            case QUEST_MARK_S:
+            case QUEST_MARK_S: ;
 
                 if (c == '?') {
                     //Operátor ??

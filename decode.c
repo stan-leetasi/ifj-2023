@@ -80,57 +80,57 @@ str_T strEncode(char * string) {
     while((c = string[i]) != '\0') {
 
         switch (state) {
-            case INIT_S:
+            case INIT_S: ;
                 switch(c) {
-                    case ' ':
+                    case ' ': ;
                         //mezera
                         strAdd(&decoded_string, string_codes[SPACE]);
                         break;
-                    case '\\':
+                    case '\\': ;
                         //Zpětné lomítko
                         state = BACKSLASH_S;
                         break;
-                    case '#':
+                    case '#': ;
                         //Hashtag
                         strAdd(&decoded_string, string_codes[HASHTAG]);
                         break;
-                    case '\n':
+                    case '\n': ;
                         //Byl přečteny novy radek (pro multiline retezce)
                         strAdd(&decoded_string, string_codes[NEW_LINE]);
                         break;
-                    default:
+                    default: ;
                         //Cokoli jineho
                         StrAppend(&decoded_string, c);
                         break;
                 }
                 break;
-            case BACKSLASH_S:
+            case BACKSLASH_S: ;
                 state = INIT_S;
                 
                 switch (c) {
-                    case 'n':
+                    case 'n': ;
                         //Novy radek
                         strAdd(&decoded_string, string_codes[NEW_LINE]);
                         break;
-                    case '\\':
+                    case '\\': ;
                         strAdd(&decoded_string, string_codes[BACKSLASH]);
                         break;
-                    case 't':
+                    case 't': ;
                         strAdd(&decoded_string, string_codes[TAB]);
                         break;
-                    case 'r':
+                    case 'r': ;
                         strAdd(&decoded_string, string_codes[CARRIAGE_RETURN]);
                         break;
-                    case '"':
+                    case '"': ;
                         StrAppend(&decoded_string, c);
                         break;
-                     case 'u':
+                     case 'u': ;
                         state = UNICODE_S;
                         break;
                 }
 
                 break;
-            case UNICODE_S:
+            case UNICODE_S: ;
                 //Zpracování unicode sekvence
                 if (c == '{') {
                     state = UNICODE_S;
