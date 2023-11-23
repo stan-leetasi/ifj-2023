@@ -1,0 +1,4 @@
+let s : String?
+var t : String? = s
+/* invalid escape sequence */
+t = "\u{fp}"

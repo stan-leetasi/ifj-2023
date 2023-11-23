@@ -1,0 +1,6 @@
+/* if */
+let x : Double? = nil
+if let x
+    var b : Double
+}
+else {}
