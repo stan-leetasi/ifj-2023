@@ -41,7 +41,8 @@ int main() {
     TRY_OR_EXIT(nextToken());
 
     char result_type;
-    int ret_code = parseExpression(&result_type);
+    bool literal; 
+    int ret_code = parseExpression(&result_type, &literal);
 
     if (tkn != NULL && ret_code == COMPILATION_OK) {
         fprintf(stderr, "test.c: tkn must remain NULL after parseExpression\n");
