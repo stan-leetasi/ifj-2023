@@ -1,0 +1,10 @@
+/* neda sa odvodit typ - sekcia 4.4 Definicia premennej */
+var a = readInt()
+let d = nil
+var s = readString()
+
+if let d {
+    write(a, " ", s, "\n")
+}
+else {}
+

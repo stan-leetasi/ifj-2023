@@ -39,3 +39,23 @@ if [ ${DIFF} -eq 0 ]; then
 else
     echo "[FAIL]"
 fi
+
+echo -e "\nValgrind check running, this may take a while"
+valgrind_ok=true
+
+for f in *.sample
+do
+    test_sample=${f%.*}
+    valgrind --error-exitcode=1 --exit-on-first-error=yes ./main.out <"${test_sample}.sample" >"/dev/null" 2>"/dev/null"
+    result=$?
+    if [ ${result} -eq 1 ]; then 
+        echo -e "VALGRIND found errors with \t\t${f}"
+        valgrind_ok=false
+    else 
+        echo -n "."
+    fi
+done
+
+if ${valgrind_ok} ; then
+    echo "[VALGRIND PASS]"
+fi
