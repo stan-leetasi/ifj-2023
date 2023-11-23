@@ -199,7 +199,12 @@ int get_indentation() {
     
     // Čtení znaků ze vstupu a hledání prvních trojitých uvozovek
     while ((c = fgetc(stdin)) != EOF) {
-        
+        if (c == EOF) {
+            indent = 0;
+            break;
+        }
+    num_of_readed_characters++;
+      
       if (isblank(c)) {
         if (possibility_to_find == true)
             indent++;
@@ -213,8 +218,9 @@ int get_indentation() {
 
             while ((c = fgetc(stdin)) == '"') {
                 num_of_quotes++;
-                num_of_readed_characters++;
             }
+
+            num_of_readed_characters += num_of_quotes;
 
             if (num_of_quotes == END_OF_MULTILINE_STRING) {
                 break;
@@ -228,10 +234,8 @@ int get_indentation() {
         num_of_quotes = 0;
         indent = 0;
       }
-
-      num_of_readed_characters++;
     }
-    fseek(stdin, -num_of_readed_characters - 2, SEEK_CUR);
+    fseek(stdin, -num_of_readed_characters, SEEK_CUR);
     return indent + 1;
 }
 
@@ -256,6 +260,7 @@ token_T *getToken()
     int nested_comment_cnt = 0;     //speciální proměnná, která zaznamenává počet vnořených komentářů
     bool add_char_to_tkn = true;    //speciální proměnná, která indikuje jestli se má znak přidat do řetězce v tokenu (tkn->atr)
     int indent = 0;                 //speciální proměnná, kde bude uloženo, jaké odsazení má ukončovací """ v multiline řetězci
+    
     //zde bude uložený nový token
     token_T *tkn = NULL;
 
@@ -593,6 +598,7 @@ token_T *getToken()
                     add_char_to_tkn = false;
                     //Nyni se vypocita, jake odsazeni maji posledni ukoncovaci uvozovky
                     indent = get_indentation();
+                    
                 } else if (isblank(c)) {
                     //Bílé znaky se ignorují
                     //Nebudou se do řetězce přidávat
@@ -610,7 +616,6 @@ token_T *getToken()
                     push_to_stream = true;
                     state = MULTI_LINE_STRING_END_S;
                 } else if (c == '\n') {
-                    
                     state = MULTI_LINE_NEW_LINE_S;
                 } else if (c == EOF) {
                     push_to_stream = true;
@@ -622,13 +627,12 @@ token_T *getToken()
                 } else {
                     //Dalsi mezery se pridaji
                     int indentation = col - indent;
-
                     //Kontrola spravneho odsazeni
                     if (indentation < 0) {
                         id_token = INVALID;
                     } else {
-                        for (int i = 0; i < col - indent; i++) {
-                            StrAppend(&tkn->atr, ' ');
+                        for (int i = 0; i < indentation; i++) {
+                            StrAppend(&tkn->atr, ' '); 
                         }
                     }
                     push_to_stream = true;
@@ -770,7 +774,6 @@ token_T *getToken()
                 }
                 break;
         }
-
         if (push_to_stream) {
             //Vraceny znak do streamu se nebude pridavat do retezce
             add_char_to_tkn = false;
