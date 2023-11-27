@@ -2,8 +2,7 @@
  * @file dll.h
  * @brief Double linked list, dvojsmerný zoznam na generované inštrukcie
  * @author Michal Krulich (xkruli03)
- * @date 17.11.2023
- * @todo Pridať doxygen komentáre
+ * @date 27.11.2023
  */
 
 #ifndef _DLL_H_
@@ -26,17 +25,51 @@ typedef struct DLLstr_element {
 */
 typedef struct DLL_str_struct {
     DLLstr_el_ptr first;     ///< prvý prvok
-    DLLstr_el_ptr active;
-    DLLstr_el_ptr last;
+    DLLstr_el_ptr active;    ///< aktívny prvok
+    DLLstr_el_ptr last;      ///< posledný prvok
 } DLLstr_T;
 
+/**
+ * @brief Dealokuje prvok zoznamu
+ * @param elem ukazateľ na prvok
+*/
 void DLLstr_ElementDestroy(DLLstr_el_ptr elem);
 
+/**
+ * @brief Inicializuje zoznam
+ * @param list dll zoznam
+*/
 void DLLstr_Init(DLLstr_T* list);
+
+/**
+ * @brief Zistí, či je zoznam aktívny
+ * @param list dll zoznam
+ * @return true ak je zoznam aktívny, inak false
+*/
 bool DLLstr_IsActive(DLLstr_T* list);
+
+/**
+ * @brief Nastaví aktivitu zoznamu na prvý prvok, v prípade prázdneho zoznamu, zoznam ostáva neaktívny
+ * @param list dll zoznam
+*/
 void DLLstr_First(DLLstr_T* list);
+
+/**
+ * @brief Nastaví aktivitu zoznamu na posledný prvok, v prípade prázdneho zoznamu, zoznam ostáva neaktívny
+ * @param list dll zoznam
+*/
 void DLLstr_Last(DLLstr_T* list);
+
+/**
+ * @brief Nastaví aktivitu zoznamu na nasledujúci prvok
+ * @param list dll zoznam
+*/
 void DLLstr_Next(DLLstr_T* list);
+
+/**
+ * @brief Nastaví aktivitu zoznamu na predchádzajúci prvok
+ * @param list dll zoznam
+*/
 void DLLstr_Previous(DLLstr_T* list);
 
 /**
@@ -84,7 +117,6 @@ void DLLstr_InsertLast(DLLstr_T* list, char* s);
 */
 void DLLstr_InsertAfter(DLLstr_T* list, char* s);
 
-
 /**
  * @brief Vloží pred aktívny prvok novo alokovanú kópiu poskytnutého reťazca
  * @param list zoznam
@@ -92,10 +124,34 @@ void DLLstr_InsertAfter(DLLstr_T* list, char* s);
 */
 void DLLstr_InsertBefore(DLLstr_T* list, char* s);
 
+/**
+ * @brief Vymaže prvý prvok zo zoznamu, v prípade prázdneho zoznamu bez efektu
+ * @param list zoznam
+*/
 void DLLstr_DeleteFirst(DLLstr_T* list);
+
+/**
+ * @brief Vymaže posledný prvok zo zoznamu, v prípade prázdneho zoznamu bez efektu
+ * @param list zoznam
+*/
 void DLLstr_DeleteLast(DLLstr_T* list);
+
+/**
+ * @brief Vymaže prvok za aktívnym prvkom zoznamu, v prípade neaktívneho zoznamu bez efektu
+ * @param list zoznam
+*/
 void DLLstr_DeleteAfter(DLLstr_T* list);
+
+/**
+ * @brief Vymaže prvok pred aktívnym prvkom zoznamu, v prípade neaktívneho zoznamu bez efektu
+ * @param list zoznam
+*/
 void DLLstr_DeleteBefore(DLLstr_T* list);
+
+/**
+ * @brief Vyprázdni zoznam a inicializuje ho na prázdny.
+ * @param list zoznam
+*/
 void DLLstr_Dispose(DLLstr_T* list);
 
 /**

@@ -14,11 +14,9 @@
 #define SHOW_DLL_ERROR() fprintf(stderr, "[COMPILER ERROR] DLL: memory allocation failure.\n")
 
  /**
-  * @brief Makro pre alokáciu novej kópie reťazca do dst
+  * @brief Makro pre alokáciu novej kópie reťazca do dst, ak alokácia zlyhá, program je ukončený s chybou 99
   * @param dest Deklarovaná premenná typu char*
   * @param src Reťazec, ktorého kópia sa bude vytvárať
-  * @param in_case_of_failure Príkaz, ktorý sa vykonáva v prípade zlyhania alokácie pamäte
-  * @return Vracia false ak zlyhá alokácia
  */
 #define TRY_DEEPCOPY_STRING(dest, src) 						\
 	do { 													\
