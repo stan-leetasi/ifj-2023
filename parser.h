@@ -42,7 +42,7 @@
 extern token_T* tkn;
 
 /**
- * @brief Tabuľka symbolov
+ * @brief Tabuľka symbolov (TS)
 */
 extern SymTab_T symt;
 
@@ -54,6 +54,9 @@ extern bool parser_inside_fn_def;
 
 /**
  * @brief Zistí kompatibilitu priradenia dvoch typov
+ * @param dest dátový typ cieľa
+ * @param src dátový typ priraďovanej hodnoty
+ * @return true ak je priradenie validné, inak false
 */
 bool isCompatibleAssign(char dest, char src);
 

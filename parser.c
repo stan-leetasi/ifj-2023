@@ -48,16 +48,10 @@ static bool bifn_substring_called = false;
 
 /* ----------- PRIVATE FUNKCIE ----------- */
 
-#define PERFORM_RISKY_OP(operation)         \
-    do {               \
-        if(!(operation)) { \
-            logErrCompilerMemAlloc(); \
-            return COMPILER_ERROR;\
-        }\
-    } while (0)
-
 /**
  * @brief Prekonvertuje dátový typ zahrňujúci nil na dátový typ nezahrňujúci nil.
+ * @param nil_type dátový typ
+ * @return dátový typ nezahrňujúci nil
 */
 char convertNilTypeToNonNil(char nil_type) {
     switch (nil_type)
@@ -117,7 +111,13 @@ bool listHasUniqueValues(DLLstr_T* list, bool* is_unique) {
 }
 
 /**
+ * Vstavané funkcie:
+ *      "readString", "readInt", "readDouble",
+ *      "write", "Int2Double", "Double2Int",
+ *      "length", "substring", "ord", "chr"
  * @brief Zistí či funkcia je vstavaná.
+ * @param function_name názov testovanej funkcie
+ * @return true ak funkcia je vstavaná, inak false
 */
 bool isBuiltInFunction(char* function_name) {
     static size_t total_num_of_bif = 10;
@@ -133,7 +133,12 @@ bool isBuiltInFunction(char* function_name) {
 }
 
 /**
+ * Vlastný lokálny rámec si vytvárajú všetky uživateľom definované funkcie a vstavaná funkcia substring.
+ * Pri ostatných vstavaných funkciach nie je potrebné popovať lokálny rámec
+ * 
  * @brief Určí či je potrebné pri volaní určitej funkcie pop-núť lokálny rámec
+ * @param function_name Názov testovanej funkcie
+ * @return true ak je potrebné zavolať popframe po vykonaní funkcie, inak false
 */
 bool shouldPopFrame(char* function_name) {
     return !isBuiltInFunction(function_name) || strcmp(function_name, "substring") == 0;
@@ -188,6 +193,9 @@ void loadBuiltInFunctionSignatures() {
 }
 
 /**
+ * Táto funkcia je používaná pre generovanie inštrukcií pre vstavané funkcie:
+ *      "write", "Int2Double", "Double2Int", "length", "ord", "chr"
+ * 
  * @brief Vygeneruje cieľovú inštrukciu príslušnej vstavanej funkcie s argumentom v cieľovom kóde
  * @param bif_name
  * @param arg_codename
@@ -197,25 +205,48 @@ void loadBuiltInFunctionSignatures() {
 */
 bool biFnGenInstruction(char* bif_name, char* arg_codename) {
     if (strcmp(bif_name, "write") == 0) {
+        /*
+            WRITE <arg>
+        */
         genCode(INS_WRITE, arg_codename, NULL, NULL);
         return true;
     }
     else if (strcmp(bif_name, "Int2Double") == 0) {
+        /*
+            PUSHS <arg>
+            INT2FLOATS
+        */
         genCode(INS_PUSHS, arg_codename, NULL, NULL);
         genCode(INS_INT2FLOATS, NULL, NULL, NULL);
         return true;
     }
     else if (strcmp(bif_name, "Double2Int") == 0) {
+        /*
+            PUSHS <arg>
+            FLOAT2INTS 
+        */
         genCode(INS_PUSHS, arg_codename, NULL, NULL);
         genCode(INS_FLOAT2INTS, NULL, NULL, NULL);
         return true;
     }
     else if (strcmp(bif_name, "length") == 0) {
+        /*
+            STRLEN GF@!tmp1 <arg>
+            PUSHS GF@!tmp1
+        */
         genCode(INS_STRLEN, VAR_TMP1, arg_codename, NULL);
         genCode(INS_PUSHS, VAR_TMP1, NULL, NULL);
         return true;
     }
     else if (strcmp(bif_name, "ord") == 0) {
+        /*
+            MOVE    GF@!tmp1    int@0
+            STRLEN  GF@!tmp2    <arg>
+            JUMPIFEQ  <label_empty_str> GF@!tmp2 int@0
+            STR2INT GF@!tmp1    <arg>
+            LABEL     <label_empty_str>
+            PUSHS   GF@!tmp1
+        */
         str_T label_empty_string;
         StrInit(&label_empty_string);
         genUniqLabel(StrRead(&fn_name), "ord", &label_empty_string);
@@ -230,6 +261,10 @@ bool biFnGenInstruction(char* bif_name, char* arg_codename) {
         return true;
     }
     else if (strcmp(bif_name, "chr") == 0) {
+        /*
+            PUSHS <arg>
+            INT2CHARS 
+        */
         genCode(INS_PUSHS, arg_codename, NULL, NULL);
         genCode("INT2CHARS", NULL, NULL, NULL);
         return true;
@@ -349,6 +384,10 @@ int parseTerm(char* term_type, str_T* term_codename) {
  * Stav tkn:
  *  - pred volaním: prvý token argumentu
  *  - po volaní:    NULL alebo term
+ * 
+ * Generuje cieľový kód pre vstavané funkcie:
+ *      "write", "Int2Double", "Double2Int", "length", "ord", "chr",
+ *  v ostatných prípadoch negeneruje inštrukcie, ale zapisuje argumenty v cieľovom kóde cez ukazateľ na inicializovaný zoznam.
  *
  * @brief Pravidlo pre spracovanie argumentu volanej funkcie, pričom cez svoje parametre vráti informácie o načítanom argumente.
  * @param par_name  načítaný názov parametru
@@ -373,14 +412,17 @@ int parseFnArg(str_T* par_name, char* term_type, char* bif_name,
             // term je premenná a funkcia nemá názov pre parameter
             TSData_T* variable = SymTabLookup(&symt, StrRead(par_name));
             if (variable == NULL) {
+                // v TS nie je záznam s daným identifikátorom => nedeklarovaná premenná
                 logErrSemantic(tkn, "%s was undeclared", StrRead(par_name));
                 return SEM_ERR_UNDEF;
             }
             if (variable->type == SYM_TYPE_FUNC) {
+                // identifikátor označuje funkciu
                 logErrSemantic(tkn, "%s is a function", StrRead(par_name));
                 return SEM_ERR_RETURN;
             }
             if (!(variable->init)) {
+                // premenná nebola inicializovaná
                 logErrSemantic(tkn, "%s was uninitialized", StrRead(par_name));
                 return SEM_ERR_UNDEF;
             }
@@ -400,7 +442,7 @@ int parseFnArg(str_T* par_name, char* term_type, char* bif_name,
             return SYN_ERR;
         }
         break;
-    case INT_CONST: // <PAR_IN> ->  term , kde term je konštanta
+    case INT_CONST: // <PAR_IN> ->  term, kde term je konštanta
     case DOUBLE_CONST:
     case STRING_CONST:
     case NIL:
@@ -412,7 +454,9 @@ int parseFnArg(str_T* par_name, char* term_type, char* bif_name,
         return SYN_ERR;
     }
 
+    // generácia inštrukcií pre niektoré vstavané funkcie
     if (!biFnGenInstruction(bif_name == NULL ? "" : bif_name, StrRead(&arg_codename))) {
+        // inak je predaný identifikátor argumentu v cieľovom kóde naspäť volajúcemu
         DLLstr_InsertLast(used_args, StrRead(&arg_codename));
     }
     StrDestroy(&arg_codename);
@@ -566,6 +610,8 @@ int parseFnCallArgs(bool defined, bool called_before, func_sig_T* sig,
  * Stav tkn:
  *  - pred volaním: identifikátor volanej funkcie
  *  - po volaní:    BRT_RND_R
+ * 
+ * Generuje cieľový kód pre uživateľom definované funkcie a vstavané funkcie.
  *
  * @brief Pravidlo pre spracovanie volania funkcie
  * @param result_type návratový typ funkcie
@@ -577,7 +623,7 @@ int parseFnCall(char* result_type) {
     // získanie informácii o funkcii z TS
     TSData_T* fn = SymTabLookupGlobal(&symt, StrRead(&(tkn->atr)));
     bool called_before = fn != NULL;
-    bool built_in_fn = false;
+    bool built_in_fn = false;   // funkcia je vstavaná
     if (fn == NULL) // funkcia nebola definovaná a ani volaná
     {
         // vytvorí sa o nej záznam do TS
@@ -646,6 +692,10 @@ int parseFnCall(char* result_type) {
  * Stav tkn:
  *  - pred volaním: ´=´
  *  - po volaní:    NULL
+ * 
+ * Generuje cieľový kód priradenia:
+ *      { kód vygenerovaný vo funkciach parseFnCall alebo parseExpression }
+ *      POPS <identifikátor premennej v IFJcode>
  *
  * @brief Pravidlo pre spracovanie priradenia
  * @param result_type Dátový typ výsledku
@@ -679,7 +729,7 @@ int parseAssignment(char* result_type, char* result_codename, char target_type) 
             // <ASSIGN>  ->  <CALL_FN>
             saveToken();
             tkn = first_tkn;
-            bool popframe = shouldPopFrame(StrRead(&(tkn->atr)));
+            bool popframe = shouldPopFrame(StrRead(&(tkn->atr))); // je potrebné zbaviť sa lokálneho rámca vytvoreného volanou funkciou
             TRY_OR_EXIT(parseFnCall(result_type));
             if (popframe) genCode(INS_POPFRAME, NULL, NULL, NULL);
         }
@@ -711,6 +761,10 @@ int parseAssignment(char* result_type, char* result_codename, char target_type) 
  * Stav tkn:
  *  - pred volaním: LET alebo VAR
  *  - po volaní:    NULL
+ * 
+ * Generuje cieľový kód priradenia:
+ *      DEFVAR <identifikátor premennej v IFJcode>
+ *      { kód vygenerovaný vo funkcii parseAssignment }
  *
  * @brief Pravidlo pre spracovanie deklarácie/definície premennej
  * @return 0 v prípade úspechu, inak číslo chyby
@@ -748,6 +802,7 @@ int parseVariableDecl() {
         DLLstr_InsertLast(&variables_declared_inside_loop, StrRead(&(variable->codename)));
     }
     else {
+        // deklarácia premennej nie je v cykle, čiže môže byť hneď zapísaná
         genCode(INS_DEFVAR, StrRead(&(variable->codename)), NULL, NULL);
     }
 
@@ -857,6 +912,7 @@ int parseStatBlock(bool* had_return) {
  *
  * @brief Pravidlo pre spracovanie definície parametrov funkcie, končí načítaním pravej zátvorky
  * @param compare_and_update Keď true: režim porovnávania s aktuálne zaznamenanou signatúrou volania, inak vytvára novú signatúru.
+ * @param sig ukazateľ na dátovú štruktúru signatúry funkcie, kam sa zapíšu zistené informácie
  * @return 0 v prípade úspechu, inak číslo chyby
 */
 int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
@@ -1007,6 +1063,11 @@ int parseFunctionSignature(bool compare_and_update, func_sig_T* sig) {
  * Stav tkn:
  *  - pred volaním: FUNC
  *  - po volaní:    BRT_CUR_R
+ * 
+ * Generuje cieľový kód uživateľskej funkcie:
+ *      LABEL <fn_label>
+ *      ...
+ *      RETURN
  *
  * @brief Pravidlo pre spracovanie definície funkcie
  * @details Očakáva, že v globálnej premennej tkn je už načítaný token FUNC
@@ -1101,6 +1162,9 @@ int parseFunction() {
         par->init = true;
         par->let = true;
         par->type = StrRead(&(fn->sig->par_types))[i];
+        /*
+            Ak je identifikátor parametra napr. "a", v cieľovom kóde bude mať tvar "LF@%a".
+        */
         StrFillWith(&(par->codename), "LF@");
         StrCatString(&(par->codename), par->id);
         StrAppend(&(par->codename), '%');
@@ -1108,6 +1172,7 @@ int parseFunction() {
     }
     StrDestroy(&par_id);
 
+    // vygenerovanie inštrukcií začiatku funkcie (náveštie, deklarácie parametrov a ich inicializácia)
     genFnDefBegin(StrRead(&fn_name), &(fn->sig->par_ids));
 
     // Spracovanie tela funkcie
@@ -1138,6 +1203,10 @@ int parseFunction() {
  * Stav tkn:
  *  - pred volaním: RETURN
  *  - po volaní:    NULL
+ * 
+ * Generuje cieľový kód:
+ *      { kód vygenerovaný v funkcii parseExpression }
+ *      RETURN
  *
  * @brief Pravidlo pre spracovanie vrátenia návratovej hodnoty funkcie - return
  * @return 0 v prípade úspechu, inak číslo chyby
@@ -1199,7 +1268,7 @@ int parseReturn() {
 
     SymTabModifyLocalReturn(&symt, true); // zapísať informáciu o prítomnosti return v aktuálnom bloku
 
-    genCode(INS_RETURN, NULL, NULL, NULL);
+    genCode(INS_RETURN, NULL, NULL, NULL); // vloženie inštrukcie RETURN
 
     return COMPILATION_OK;
 }
@@ -1208,6 +1277,14 @@ int parseReturn() {
  * Stav tkn:
  *  - pred volaním: IF
  *  - po volaní:    BRT_CUR_R
+ * 
+ * Generuje cieľový kód podmieneného bloku kódu:
+ *      JUMPIFEQ/S  <if&XX!> 
+ *      ... { kód pre if } ...
+ *      JUMP        <if&XX*>
+ *      LABEL       <if&XX!>
+ *      ... { kód pre else } ...
+ *      LABEL       <if&XX*>
  *
  * @brief Pravidlo pre spracovanie podmieneného bloku kódu
  * @return 0 v prípade úspechu, inak číslo chyby
@@ -1331,6 +1408,15 @@ int parseIf() {
  *  - pred volaním: WHILE
  *  - po volaní:    BRT_CUR_R
  *
+ * Generuje cieľový kód cyklu:
+ *      LABEL   <while&XX>
+ *      PUSHS   <výsledok podmienky>
+ *      PUSHS   bool@false
+ *      JUMPIFEQS <while&XX!>
+ *      ... { kód cyklu } ...
+ *      JUMP    <while&XX>
+ *      LABEL   <while&XX!>
+ * 
  * @brief Pravidlo pre spracovanie cyklu while
  * @return 0 v prípade úspechu, inak číslo chyby
 */
@@ -1476,7 +1562,6 @@ int parse() {
     case ID:;
         // <STAT>   ->  <CALL_FN>
         // <STAT>   ->  id = <ASSIGN>
-        // TODO podobné parseAssignment => refaktorizacia ???
         char result_type;
         token_T* first_tkn = tkn;
         tkn = NULL;
@@ -1494,15 +1579,18 @@ int parse() {
             // <STAT>   ->  id = <ASSIGN>
             TSData_T* variable = SymTabLookup(&symt, StrRead(&(first_tkn->atr)));
             if (variable == NULL) {
+                // v TS nie je záznam s daným identifikátorom => nedeklarovaná premenná
                 logErrSemantic(first_tkn, "%s was undeclared", StrRead(&(first_tkn->atr)));
                 return SEM_ERR_UNDEF;
             }
             if (variable->init && variable->let) {
+                // nemodifikovateľná premenná
                 logErrSemantic(first_tkn, "%s is unmodifiable and was already initialised", StrRead(&(first_tkn->atr)));
                 return SEM_ERR_OTHER;
             }
             TRY_OR_EXIT(parseAssignment(&result_type, StrRead(&(variable->codename)), variable->type));
             if (!isCompatibleAssign(variable->type, result_type)) {
+                // nekompatibilný typ výsledku a premennej
                 logErrSemantic(first_tkn, "incompatible data types");
                 return SEM_ERR_TYPE;
             }
@@ -1562,15 +1650,20 @@ int checkIfAllFnDef() {
 
 void printOutCompiledCode() {
     printf(".IFJcode23\n"); // povinná hlavička
+    
+    // pomocné premenné
     printf("DEFVAR %s\n", VAR_TMP1);
     printf("DEFVAR %s\n", VAR_TMP2);
     printf("DEFVAR %s\n", VAR_TMP3);
-    printf("JUMP !main\n");
 
+    printf("JUMP !main\n"); // skok do hlavného tela programu
+
+    // dogenerovať inštrukcie pre vstavanú funkciu substring pokiaľ bola použitá
     if (bifn_substring_called) genSubstring();
 
-    DLLstr_printContent(&code_fn);
+    DLLstr_printContent(&code_fn); // kód uživateľských funkcií
 
+    // hlavné telo programu
     printf("LABEL !main\n");
     DLLstr_printContent(&code_main);
     printf("EXIT int@0\n");
