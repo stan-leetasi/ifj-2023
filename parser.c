@@ -1223,7 +1223,22 @@ int parseReturn() {
     char result_type = SYM_TYPE_UNKNOWN;
     switch (tkn->type)
     {
-    case ID:
+    case ID: // id môže byť začiatok výrazu alebo sa za return môže nachádzať volanie funkcie
+        TSData_T *id_data = SymTabLookup(&symt, StrRead(&(tkn->atr)));
+        if(id_data == NULL) { // za return je funkcia, ktorá nebola ešte volaná
+            saveToken();
+            result_type = SYM_TYPE_VOID;
+        }
+        else {
+            if(id_data->type == SYM_TYPE_FUNC) { // za return je funkcia
+                saveToken();
+                result_type = SYM_TYPE_VOID;
+            }
+            else { // za return je výraz začínajúci premennou
+                TRY_OR_EXIT(parseExpression(&result_type, &possible_implicit_int_conversion));
+            }
+        }
+        break;
     case INT_CONST:
     case DOUBLE_CONST:
     case STRING_CONST:

@@ -10,3 +10,5 @@
 *.prog
 # Zip files
 *.zip
+# Local testing environment
+tests/custom
