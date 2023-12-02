@@ -1,8 +1,8 @@
-let multiline = // kazdy riadok je odsazeny o 2 medzery
+let multiline = 
   """
   abc
    def
     ghi
   """ // + dalsie 2 medzery pre kazdy riadok
 
-write(multiline) // celkovo 4 medzery na kazdy riadok
+write(multiline) 
