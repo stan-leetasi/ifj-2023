@@ -550,7 +550,7 @@ token_T *getToken()
                     //prázdný řetězec
                     state = EMPTY_STRING_S;
                     add_char_to_tkn = false;
-                } else if (c == EOF) {
+                } else if (c == EOF || c == '\n') {
                     //Otevřený řetězec, za kterým následuje EOF
                     push_to_stream = true;
                     id_token = INVALID;
@@ -563,22 +563,29 @@ token_T *getToken()
 /*=======================================STATE=======================================*/
             case SINGLE_LINE_STRING_S: ;
                 add_char_to_tkn = true;
-                if (c == '"') {
-                    id_token = STRING_CONST;
-                    //Nebude se přidávat uvozovka, jakožto konec řetězce, do tokenu
-                    add_char_to_tkn = false;
-                } else if (c == EOF) {
-                    //Neukončený řetězec
-                    push_to_stream = true;
-                    id_token = INVALID;
-                } else if (c == '\\') {
-                    //Escape sekvence
-                    is_multi_line_string = false;
-                    state = ESCAPE_SEKV_S;
-                } else {
-                    state = SINGLE_LINE_STRING_S;
+
+                switch (c)
+                {
+                    case '"': ;
+                        id_token = STRING_CONST;
+                        //Nebude se přidávat uvozovka, jakožto konec řetězce, do tokenu
+                        add_char_to_tkn = false;
+                        break;
+                    case '\\': ;
+                        //Escape sekvence
+                        is_multi_line_string = false;
+                        state = ESCAPE_SEKV_S;
+                        break;
+                    case '\n': ;
+                    case EOF: ;
+                        //Neukončený řetězec
+                        push_to_stream = true;
+                        id_token = INVALID;
+                        break;
+                    default: ;
+                        state = SINGLE_LINE_STRING_S;
+                        break;
                 }
-                
                 break;
 /*=======================================STATE=======================================*/
             case EMPTY_STRING_S: ;

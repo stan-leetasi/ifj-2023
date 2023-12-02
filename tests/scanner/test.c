@@ -62,9 +62,13 @@ int main()
     }
     if(tkn != NULL)
     {
-        printf("%s\n", tkn_ids[EOF_TKN]);
+        if (tkn->type == INVALID) {
+            printf("%s\n", tkn_ids[INVALID]);
+        } else {
+            printf("%s\n", tkn_ids[EOF_TKN]);
+        }
         destroyToken(tkn);
-    }
+    } 
 
     return 0;
 }
