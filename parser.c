@@ -1106,7 +1106,7 @@ int parseFunction() {
         }
         if (fn->init) { // funkcia už bola definovaná
             logErrSemantic(tkn, "function was already defined");
-            return SEM_ERR_OTHER;
+            return SEM_ERR_REDEF;
         }
         // v ostatných prípadoch záznam o funkcii existuje preto, lebo bola už volaná 
     }
