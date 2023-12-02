@@ -20,7 +20,7 @@ func _nil_fn() -> Double?
 
 let d = _nil_fn()
 
-if let d { hello("not niL) } // neukonceny retazec vo volani funkcie
+if let d { hello("not niL" } // neukoncena zatvorka vo volani funkcie
 else { hello(  "is NIL"
   ) }
   
