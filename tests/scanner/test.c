@@ -50,13 +50,15 @@ char *tkn_ids[] = {
 int main()
 {
     token_T *tkn = NULL;
-    while ((tkn = getToken())->type != EOF_TKN)
+    tkn = getToken();
+    while (tkn->type != EOF_TKN && tkn->type != INVALID)
     {
         if (tkn != NULL)
         {
             printf("%s\n", tkn_ids[tkn->type]);
             destroyToken(tkn);
         }
+        tkn = getToken();
     }
     if(tkn != NULL)
     {

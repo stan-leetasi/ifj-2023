@@ -1,0 +1,14 @@
+var x = """
+hromada textu
+hromada textu
+hromada textu
+hromada textu
+
+
+
+hromada textu
+hromada textu
+hromada textu
+hromada textu
+""
+var dfg = 5 + 6
