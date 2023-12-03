@@ -3,12 +3,11 @@
  * @brief Tabuľka symbolov
  * @author Boris Hatala
  * @date 19.11.2023
- * 
- * @todo exit(99), chybové hlášky, komentáre
  */
 
 #include "symtable.h"
 
+//djb2 hash function
 unsigned long hashOne(const char *str)
 {
     unsigned long hash = 5381;
@@ -37,6 +36,7 @@ func_sig_T *SymTabCreateFuncSig() {
         fprintf(stderr, "SymTabCreateFuncSig() - memory allocation error\n");
         exit(99);
     }
+    //inicilizacia
     f->ret_type = SYM_TYPE_UNKNOWN;
     StrInit(&(f->par_types));
     DLLstr_Init(&(f->par_names));
@@ -57,6 +57,7 @@ TSData_T *SymTabCreateElement(char *key)
         fprintf(stderr, "SymTabCreateElement() - memory allocation error\n");
         exit(99);
     }
+    //inicializacia
     elem->type = SYM_TYPE_UNKNOWN;
     strcpy(elem->id, key);
     StrInit(&(elem->codename));
@@ -65,6 +66,7 @@ TSData_T *SymTabCreateElement(char *key)
 
 void SymTabDestroyElement(TSData_T *elem) {
     if(elem != NULL) {
+        //ak je to funkcia, treba uvolniť aj jej signatúru
         if(elem->type == SYM_TYPE_FUNC) {
             StrDestroy(&(elem->sig->par_types));
             DLLstr_Dispose(&(elem->sig->par_names));
@@ -86,6 +88,7 @@ void SymTabInit(SymTab_T *st) {
         exit(99);
     }
 
+    //inicializacia
     st -> global -> used = 0;
     st -> global -> prev = NULL;
     st -> global -> next = NULL;
@@ -118,6 +121,7 @@ void SymTabAddLocalBlock(SymTab_T *st) {
         newBlock -> array[i] = NULL;
     }
 
+    //pridanie noveho bloku do zoznamu blokov
     if(st -> local != NULL) {
         st -> local -> next = newBlock;
     }
@@ -133,6 +137,7 @@ void SymTabRemoveLocalBlock(SymTab_T *st) {
     TSBlock_T *currentLocal = st->local;
     st->local = currentLocal->prev;
 
+    //uvolnenie bloku a kazdeho prvku v nom
     for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
         TSData_T *data = currentLocal->array[i];
         if(data != NULL) {
@@ -144,6 +149,7 @@ void SymTabRemoveLocalBlock(SymTab_T *st) {
 }
 
 void SymTabDestroy(SymTab_T *st) {
+    //uvolnenie vsetkych blokov az po globalny
     while (st->local != NULL) {
         SymTabRemoveLocalBlock(st);
     }
@@ -157,6 +163,7 @@ TSData_T *SymTabLookup(SymTab_T *st, char *key) {
         return NULL;
     }
 
+    //hladanie od posledneho lokalneho az po globalny
     TSBlock_T *currentBlock = st->local;
     TSData_T *result = NULL;
     while (currentBlock != NULL) {
@@ -170,12 +177,6 @@ TSData_T *SymTabLookup(SymTab_T *st, char *key) {
     return NULL;
 }
 
-/**
- * @brief Vyhľadá len v globálnom bloku tabuľky symbolov položku s daným kľúčom/symbolom.
- * @param st tabuľka symbolov
- * @param key hľadaný klúč/symbol
- * @return položka s daným kľúčom alebo NULL ak sa v tabuľke nenachádza
-*/
 TSData_T *SymTabLookupGlobal(SymTab_T *st, char *key) {
 
     if(st->global == NULL) {
@@ -224,14 +225,17 @@ void SymTabModifyLocalReturn(SymTab_T *st, bool value) {
 
 TSData_T *SymTabBlockLookUp(TSBlock_T *block, char *key) {
 
+    //primarny a sekundarny hash
     size_t h1 = hashOne(key) % SYMTABLE_MAX_SIZE;
     size_t h2 = (hashTwo(key) % (SYMTABLE_MAX_SIZE - 1)) + 1;
     for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++) {
+        //index v tabulke
         size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
         if (block->array[index] == NULL) {
             return NULL;
         }
         else {
+            //ak sa najde zhoda, vratime prvok s danym klucom
             if (strcmp(block->array[index]->id, key) == 0) {
                 return block->array[index];
             }
@@ -248,11 +252,14 @@ void SymTabBlockInsert(TSBlock_T *block, TSData_T *elem) {
         exit(99);
     }
 
+    //primarny a sekundarny hash
     size_t h1 = hashOne(elem->id) % SYMTABLE_MAX_SIZE;
     size_t h2 = (hashTwo(elem->id) % (SYMTABLE_MAX_SIZE - 1)) + 1;
     for (size_t i = 0; i < SYMTABLE_MAX_SIZE; i++)
     {
+        //index v tabulke
         size_t index = (h1 + i * h2) % SYMTABLE_MAX_SIZE;
+        //ak je na danom indexe volne miesto, vlozime tam prvok
         if (block->array[index] == NULL) {
             block->array[index] = elem;
             block->used++;
