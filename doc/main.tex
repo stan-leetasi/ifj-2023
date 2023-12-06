@@ -15,6 +15,7 @@
 \usepackage{indentfirst}
 \usepackage{array}
 \usepackage{enumitem}
+\usepackage{bm}
 
 \begin{document}
 \begin{center}
@@ -87,7 +88,7 @@ Hlavným cieľom implementácie lexikálnej analýzy je funkcia \texttt{getToken
 \subsubsection{Konečný automat}
 Celý lexikálny analyzátor je implementovaný ako deterministický konečný automat obsahujúci ukončujúce a neukončujúce stavy. Tento automat bol naprogramovaný ako jeden \texttt{switch}, kde každé náveštie \texttt{case} reprezentuje jeden stav automatu. Okrem hlavného \texttt{switch} statementu vo funkcii \texttt{getToken()}, je tiež implementovaný podautomat v pomocnej funkcii, ktorý spracováva escape sekvencie v reťazcoch (za účelom sprehľadnenia kódu).
 
-Počas čítania znakov zdrojového kódu zo štandardného vstupu sa prechádza medzi jednotlivými stavmi. Pokiaľ sa automat nachádza v ukončujúcom stave a ďalší načítaný znak už nezodpovedá tokenu, ktorý je reprezentovaný aktuálnym stavom, je vrátený príslušný token. Ak je načítaný znak ktorý nesúhlasí so žiadnym znakom, ktorý by jazyk IFJ23 povoľoval, je vrátený token s hodnotou 0, značiaci chybu počas lexikálnej analýzy. Rovnako tak sa deje, ak sa nachádza automat v neukončujúcom stave a na vstupe je znak, po prečítaní ktorého by výsledná sekvencia načítaných znakov nezodpovedala žiadnemu typu tokenu.
+Počas čítania znakov zdrojového kódu zo štandardného vstupu sa prechádza medzi jednotlivými stavmi. Pokiaľ sa automat nachádza v ukončujúcom stave a ďalší načítaný znak už nezodpovedá tokenu, ktorý je reprezentovaný aktuálnym stavom, je vrátený príslušný token. Ak je načítaný znak ktorý nesúhlasí so žiadnym znakom, ktorý by jazyk IFJ23 povoľoval, je vrátený token s hodnotou \texttt{0}, značiaci chybu počas lexikálnej analýzy. Rovnako tak sa deje, ak sa nachádza automat v neukončujúcom stave a na vstupe je znak, po prečítaní ktorého by výsledná sekvencia načítaných znakov nezodpovedala žiadnemu typu tokenu.
 
 Špecifická je situácia týkajúca sa rozpoznania identifikátorov a kľúčových slov. Automat nezahŕňa žiadny stav pre kľúčové slová, ale iba stav pre identifikátor. Ak nastane ukončenie čítania znakov v stave identifikátora, skontroluje sa, či nie je načítaný reťazec (uložený vždy v príslušnom atribúte tokenu) zhodný s niektorým z kľúčových slov jazyka IFJ23. Takto sa rozpozná, či ide o identifikátor alebo o kľúčové slovo.
 
@@ -123,17 +124,17 @@ Syntaktická analýza programu prebieha dvomi rôznymi technikami, ktoré si med
 \subsubsection{Rekurzívny zostup}
 Rekurzívny zostup sa vykonáva pomocou funkcií definovaných v \texttt{parser.c}, kde každej tejto funkcii náleží jedno pravidlo definovanej LL-gramatiky a nasledujúci zostup je rozhodnutý podľa LL-tabuľky. Špeciálny prístup sa uplatňuje pri volaniach funkcií, keďže rozlíšenie beznávratového volania funkcie od priradenia a volania funkcie od výrazu nie je na základe jedného tokenu možné. V takom prípade je prečítaný ešte jeden token a v prípade nepotvrdenia volania funkcie je tento token vrátený naspäť skeneru.
 
-	Návratová hodnota všetkých funkcií rekurzívneho zostupu je v prípade správneho programu \texttt{0} alebo v prípade nájdenia chyby rovná číslu chyby, pričom chybová hláška je vypísaná v najnižšom rekurzívnom zanorení. Niektoré z týchto funkcií obsahujú zvláštne parametre, ktoré slúžia pre ďalšie sémantické kontroly a generovanie kódu. Pomocné dáta ako aktuálne načítaný token, ukazateľ na tabuľku symbolov, názov aktuálne spracovávanej funkcie či cyklu, alebo zoznam premenných definované v cykle sú používané naprieč všetkými funkciami \textit{top-down} analýzy a preto sú deklarované ako globálne premenné.
+	Návratová hodnota všetkých funkcií rekurzívneho zostupu je v prípade správneho programu \texttt{0} alebo v prípade nájdenia chyby rovná číslu chyby, pričom chybová hláška je vypísaná v najnižšom rekurzívnom zanorení. Niektoré z týchto funkcií obsahujú zvláštne parametre, ktoré slúžia pre ďalšie sémantické kontroly a generovanie kódu. Pomocné dáta ako aktuálne načítaný token, ukazateľ na tabuľku symbolov, názov aktuálne spracovávanej funkcie či cyklu, alebo zoznam premenných definovaných v cykle sú používané naprieč všetkými funkciami \textit{top-down} analýzy a preto sú deklarované ako globálne premenné.
 	
  Počas rekurzívneho zostupu prebieha aj sémantická analýza kódu, pričom je často využívaná tabuľka symbolov, a to pre kontrolu deklarovaných funkcií a premenných, ich signatúr/dátových typov, informácii, či boli definované/inicializované ale aj simuláciu blokov rozsahu a vnorení.
 
 \subsubsection{Precedenčná analýza}
 Analýza výrazov začína syntaktickou kontrolou. Spracovávaný je každý token výrazu, pričom je uchovávaný aj typ predošlého tokenu. Syntaktická analýza nie je implementovaná ako konečný automat, ale skôr ako \uv{filter} syntaktických chýb. Počas syntaktickej analýzy prebieha aj konverzia pôvodného výrazu do postfixovej formy, pričom sa z tabuľky symbolov získavajú ďalšie informácie o premenných a kontroluje sa ich stav deklarácie a inicializácie. Syntaktická analýza úspešne končí, ak spracovávaný token nemôže patriť do výrazu, a doteraz spracovaný výraz je syntakticky správny.
 
-Počas sémantickej analýzy sú spracovávané tokeny z postfixového výrazu, prebieha generácia kódu a na pomocnom zásobníku tokenov je vytváraný finálny dátový typ výrazu, ktorý bude po skončení predaný naspäť pre top-down analýzu. Sémantická analýza taktiež vykonáva konverziu int konštánt na double, ak je to potrebné, a pre \textit{top-down} analýzu vracia späť informáciu, či je finálny výraz možné implicitne prekonvertovať na double.
+Počas sémantickej analýzy sú spracovávané tokeny z postfixového výrazu, prebieha generácia kódu a na pomocnom zásobníku tokenov je vytváraný finálny dátový typ výrazu, ktorý bude po skončení predaný naspäť pre \textit{top-down} analýzu. Sémantická analýza taktiež vykonáva konverziu int konštánt na double, ak je to potrebné, a pre \textit{top-down} analýzu vracia späť informáciu, či je finálny výraz možné implicitne prekonvertovať na double.
 
 \subsection{Generovanie cieľového kódu}
-Cieľové inštrukcie sú generované použitím pomocných funkcií v rozhraní \texttt{generator.h}, ktoré sú v rekurzívnom zostupe volané popri syntaktickej analýze a v precedenčnej analýze popri sémantickej analýze. Vygenerovaný kód je uchovávaný v dvoch zoznamoch, kde \texttt{code\textunderscore fn} uchováva inštrukcie uživateľom definovaných funkcií a \texttt{code\textunderscore main} prestavuje hlavné telo programu. 
+Cieľové inštrukcie sú generované použitím pomocných funkcií v rozhraní \texttt{generator.h}, ktoré sú v rekurzívnom zostupe volané popri syntaktickej analýze a v precedenčnej analýze popri sémantickej analýze. Vygenerovaný kód je uchovávaný v dvoch zoznamoch, kde \texttt{code\textunderscore fn} uchováva inštrukcie užívateľom definovaných funkcií a \texttt{code\textunderscore main} prestavuje hlavné telo programu. 
 
 Výsledný vygenerovaný kód je vytlačený na štandardný výstup pomocou funkcie \texttt{printOutCompiledCode()}. Táto funkcia pridá potrebnú hlavičku .IFJcode23, tri špeciálne pomocné globálne premenné, inštrkuciu skoku do hlávneho programu a následne vytlačí obsah \texttt{code\textunderscore fn} a \texttt{code\textunderscore main} spolu s náveštím na hlavné telo programu.
 
@@ -141,13 +142,13 @@ Výsledný vygenerovaný kód je vytlačený na štandardný výstup pomocou fun
 Pretože nie je možné v interprete medzikódu IFJcode23 používať dočasný rámec a zásobník lokálnych rámcov ako spôsob zanorovania a prekrývania premenných, tak je každému identifikátoru premennej pomocou funkcie \texttt{genUniqVar} pridané unikátne číslo, ktoré zaisťuje rozlíšenie od možných prekrytých premenných. Podobný prístup priraďovania unikátnych čísel je zavedený aj pri náveštiach konštrukcií \texttt{while}, \texttt{if} a operátorov \texttt{??}, kedy je používaná funkcia \texttt{genUniqLabel}.
 
 \subsubsection{Definície funkcií a ich volanie}
-Definície uživateľských funkcií začínajú náveštím s názvom funkcie, vytvorením vlastného lokálneho rámca uloženého na vrchol zásobníka rámcov a spracovaním argumentov, ktoré boli predané cez klasický zásobník. Nasleduje samotný kód funkcie, a vždy končí inštrukciou \texttt{RETURN}. Ak funkcia vracia nejakú hodnotu, tak táto hodnota je vložená na vrchol zásobníka pred samotným \texttt{RETURN}.
+Definície užívateľských funkcií začínajú náveštím s názvom funkcie, vytvorením vlastného lokálneho rámca uloženého na vrchol zásobníka rámcov a spracovaním argumentov, ktoré boli predané cez klasický zásobník. Nasleduje samotný kód funkcie, a vždy končí inštrukciou \texttt{RETURN}. Ak funkcia vracia nejakú hodnotu, tak táto hodnota je vložená na vrchol zásobníka pred samotným \texttt{RETURN}.
 
 Volanie funkcie začína vkladaním argumentov od posledného k prvému (prvý argument bude na vrchole). Následne sa zavolá daná funkcia pomocou inštrukcie \texttt{CALL} a zahodí sa lokálny rámec vytvorený funkciou a prípadne sa získa návratová hodnota zo zásobníka alebo sa zásobník vyprázdni pomocou \texttt{CLEARS}.
 Pretože premenné deklarované v hlavnom tele programu sa nachádzajú v globálnom rámci a každé volanie funkcie vytvára nový lokálny rámec na zásobniku rámcov, tak je zabránené akejkoľvek kolízii pri rekurzívnom volaní. 
 
  \subsubsection{Vstavané funkcie}
- Väčšina vstavaných funkcií je implementovaných pomocou jednej alebo dvoch inštrukcií a nie je preto potrebné pri ich volaní generovať inštrukciu \texttt{CALL} či vytvárať nový lokálny rámec. Výnimku tvorí vstavaná funkcia substring, ktorá je natoľko komplexná, že jej vlastný súbor inštrukcií bude dodatočne vložený k bežným uživateľom definovaným funkciám, pokiaľ bola v priebehu programu aspoň raz volaná.
+ Väčšina vstavaných funkcií je implementovaných pomocou jednej alebo dvoch inštrukcií a nie je preto potrebné pri ich volaní generovať inštrukciu \texttt{CALL} či vytvárať nový lokálny rámec. Výnimku tvorí vstavaná funkcia \texttt{substring}, ktorá je natoľko komplexná, že jej vlastný súbor inštrukcií bude dodatočne vložený k bežným užívateľom definovaným funkciám, pokiaľ bola v priebehu programu aspoň raz volaná.
 
 
 
@@ -182,80 +183,10 @@ Prácu v tíme sme sa snažili rozdeliť čo najrovnomernejšie. Dohodli sme sa,
 
 
 \medskip
-\appendix
-
-
-\section{Precedenčná tabuľka}
-\begin{table}[htbp]
-    \centering
-    \begin{tabular}{|c||*{8}{c|}}
-        \hline
-        \textbf{} & \textbf{!} & \textbf{* /} & \textbf{+ -} & \textbf{id} & \textbf{rel} & \textbf{??} & \textbf{(} & \textbf{)} \\
-        \hline\hline
-        \textbf{!} & & $>$ & $>$ & & $>$ & $>$ &  & $>$ \\
-        \hline
-        \textbf{* /} & $<$ & $>$ & $>$ & $<$ & $>$ & $>$ & $<$ & $>$ \\
-        \hline
-        \textbf{+ -} & $<$ & $<$ & $>$ & $<$ & $>$ & $>$ & $<$ & $>$ \\
-        \hline
-        \textbf{id} & $>$ & $>$ & $>$ & & $>$ & $>$ & & $>$ \\
-        \hline
-        \textbf{rel} & $<$ & $<$ & $<$ & $<$ &  & $>$ & $<$ & $>$ \\
-        \hline
-        \textbf{??} & $<$ & $<$ & $<$ & $<$ & $<$ & $<$ & $<$ & $>$ \\
-        \hline
-        \textbf{(} & $<$ & $<$ & $<$ & $<$ & $<$ & $<$ & $<$ & = \\
-        \hline
-        \textbf{)} & $>$ & $>$ & $>$ &  & $>$ & $>$ &  & $>$ \\
-        \hline
-    \end{tabular}
-    \caption{\textbf{id} - identifikátor, \textbf{rel} - relačné operátory ($$==$$, $<$$=$, \dots)}
-\end{table}
-
-\section{LL tabuľka}
-\begin{table}[htbp]
-
-\tiny
-\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|} 
-\hline
-              & \multicolumn{1}{c|}{id}     & \multicolumn{1}{c|}{:} & \multicolumn{1}{c|}{=} & \multicolumn{1}{c|}{\{} & \multicolumn{1}{c|}{term} & \multicolumn{1}{c|}{return} & \multicolumn{1}{c|}{Integer} & \multicolumn{1}{c|}{Double} & \multicolumn{1}{c|}{String} & \multicolumn{1}{c|}{exp} & \multicolumn{1}{c|}{func} & \multicolumn{1}{c|}{if} & \multicolumn{1}{c|}{let} & \multicolumn{1}{c|}{var} & \multicolumn{1}{c|}{while} & \multicolumn{1}{c|}{?}  & \multicolumn{1}{c|}{\_}     & \multicolumn{1}{c|}{,}  & \multicolumn{1}{c|}{$->$} & \$                     \\ 
-\hline
-$<$stat$>$          & \multicolumn{1}{c|}{10, 12} &                        &                        & \multicolumn{1}{c|}{11} &                           & \multicolumn{1}{c|}{30}     &                              &                             &                             &                          & \multicolumn{1}{c|}{20}   & \multicolumn{1}{c|}{35} & \multicolumn{1}{c|}{2}   & \multicolumn{1}{c|}{3}   & \multicolumn{1}{c|}{38}    &                         &                             &                         &                           & 1                      \\ 
-\hline
-$<$DEF\_VAR$>$      &                             & \multicolumn{1}{c|}{4} & \multicolumn{1}{c|}{5} &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             &                         &                           & \multicolumn{1}{l|}{}  \\ 
-\hline
-$<$INIT\_VAL$>$     &                             &                        & \multicolumn{1}{c|}{6} &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             &                         &                           & 7                      \\ 
-\hline
-$<$ASSIGN$>$        & \multicolumn{1}{c|}{9}      &                        &                        &                         &                           &                             &                              &                             &                             & \multicolumn{1}{c|}{8}   &                           &                         &                          &                          &                            &                         &                             &                         &                           & \multicolumn{1}{l|}{}  \\ 
-\hline
-$<$PAR\_LIST$>$     & \multicolumn{1}{c|}{13}     &                        &                        &                         & \multicolumn{1}{c|}{14}   &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             &                         &                           & 15                     \\ 
-\hline
-$<$PAR\_IN\_NEXT$>$ &                             &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             & \multicolumn{1}{c|}{16} &                           & 17                     \\ 
-\hline
-$<$PAR\_IN$>$       & \multicolumn{1}{c|}{18}     &                        &                        &                         & \multicolumn{1}{c|}{19}   &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             &                         &                           & \multicolumn{1}{l|}{}  \\ 
-\hline
-$<$FN\_SIG$>$       & \multicolumn{1}{c|}{21}     &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         & \multicolumn{1}{c|}{22}     &                         &                           & 23                     \\ 
-\hline
-$<$FN\_PAR\_NEXT$>$ &                             &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             & \multicolumn{1}{c|}{24} &                           & 25                     \\ 
-\hline
-$<$FN\_PAR$>$       & \multicolumn{1}{c|}{26, 28} &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         & \multicolumn{1}{c|}{27, 29} &                         &                           & \multicolumn{1}{l|}{}  \\ 
-\hline
-$<$FN\_RET\_TYPE$>$ &                             &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             &                         & \multicolumn{1}{c|}{30}   & 31                     \\ 
-\hline
-$<$RET\_VAL$>$      &                             &                        &                        &                         &                           &                             &                              &                             &                             & \multicolumn{1}{c|}{33}  &                           &                         &                          &                          &                            &                         &                             &                         &                           & 34                     \\ 
-\hline
-$<$COND$>$          &                             &                        &                        &                         &                           &                             &                              &                             &                             & \multicolumn{1}{c|}{36}  &                           &                         & \multicolumn{1}{c|}{37}  &                          &                            &                         &                             &                         &                           & \multicolumn{1}{l|}{}  \\ 
-\hline
-$<$TYPE$>$          &                             &                        &                        &                         &                           &                             & \multicolumn{1}{c|}{39}      & \multicolumn{1}{c|}{40}     & \multicolumn{1}{c|}{41}     &                          &                           &                         &                          &                          &                            &                         &                             &                         &                           & \multicolumn{1}{l|}{}  \\ 
-\hline
-$<$QUESTMARK$>$     &                             &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            & \multicolumn{1}{c|}{42} &                             &                         &                           & 43                     \\
-\hline
-\end{tabular}
-\end{table}
-
 \newpage
-
-\section{Pravidlá bezkontextovej gramatiky používanej parserom}
+\appendix
+\section{Prílohy}
+\subsection{Pravidlá bezkontextovej gramatiky používanej parserom}
 
 \begin{enumerate}[itemsep=-0.2ex]
     \small
@@ -303,7 +234,82 @@ $<$QUESTMARK$>$     &                             &                        &    
     \item $<$QUESTMARK$>$ $\rightarrow$ ?
     \item $<$QUESTMARK$>$ $\rightarrow$ $\epsilon$
 \end{enumerate}
-\section{Diagram konečného automatu Lexikálnej analýzy}
+
+\subsection{Precedenčná tabuľka}
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|c||*{8}{c|}}
+        \hline
+        \textbf{} & \textbf{!} & \textbf{* /} & \textbf{+ -} & \textbf{id} & \textbf{rel} & \textbf{??} & \textbf{(} & \textbf{)} \\
+        \hline\hline
+        \textbf{!} & & $>$ & $>$ & & $>$ & $>$ &  & $>$ \\
+        \hline
+        \textbf{* /} & $<$ & $>$ & $>$ & $<$ & $>$ & $>$ & $<$ & $>$ \\
+        \hline
+        \textbf{+ -} & $<$ & $<$ & $>$ & $<$ & $>$ & $>$ & $<$ & $>$ \\
+        \hline
+        \textbf{id} & $>$ & $>$ & $>$ & & $>$ & $>$ & & $>$ \\
+        \hline
+        \textbf{rel} & $<$ & $<$ & $<$ & $<$ &  & $>$ & $<$ & $>$ \\
+        \hline
+        \textbf{??} & $<$ & $<$ & $<$ & $<$ & $<$ & $<$ & $<$ & $>$ \\
+        \hline
+        \textbf{(} & $<$ & $<$ & $<$ & $<$ & $<$ & $<$ & $<$ & = \\
+        \hline
+        \textbf{)} & $>$ & $>$ & $>$ &  & $>$ & $>$ &  & $>$ \\
+        \hline
+    \end{tabular}
+    \caption{\textbf{id} - identifikátor, \textbf{rel} - relačné operátory ($$==$$, $<$$=$, \dots)}
+\end{table}
+
+
+\subsection{LL tabuľka}
+\begin{table}[htbp]
+
+\scriptsize
+\setlength{\tabcolsep}{0.51\tabcolsep}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|c||c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+
+\hline
+              & \multicolumn{1}{c|}{\textbf{id}}     & \multicolumn{1}{c|}{\textbf{:}} & \multicolumn{1}{c|}{\textbf{=}} & \multicolumn{1}{c|}{\textbf{\{}} & \multicolumn{1}{c|}{\textbf{term}} & \multicolumn{1}{c|}{\textbf{return}} & \multicolumn{1}{c|}{\textbf{Integer}} & \multicolumn{1}{c|}{\textbf{Double}} & \multicolumn{1}{c|}{\textbf{String}} & \multicolumn{1}{c|}{\textbf{exp}} & \multicolumn{1}{c|}{\textbf{func}} & \multicolumn{1}{c|}{\textbf{if}} & \multicolumn{1}{c|}{\textbf{let}} & \multicolumn{1}{c|}{\textbf{var}} & \multicolumn{1}{c|}{\textbf{while}} & \multicolumn{1}{c|}{\textbf{?}}  & \multicolumn{1}{c|}{\textbf{\textunderscore}}     & \multicolumn{1}{c|}{\textbf{,}}  & \multicolumn{1}{c|}{$\bm{-\!>}$} & \textbf{\$}                     \\ 
+\hline\hline
+\textbf{$<$STAT$>$}          & \multicolumn{1}{c|}{10, 12} &                        &                        & \multicolumn{1}{c|}{11} &                           & \multicolumn{1}{c|}{30}     &                              &                             &                             &                          & \multicolumn{1}{c|}{20}   & \multicolumn{1}{c|}{35} & \multicolumn{1}{c|}{2}   & \multicolumn{1}{c|}{3}   & \multicolumn{1}{c|}{38}    &                         &                             &                         &                           & 1                      \\ 
+\hline
+\textbf{$<$DEF\_VAR$>$}      &                             & \multicolumn{1}{c|}{4} & \multicolumn{1}{c|}{5} &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             &                         &                           & \multicolumn{1}{l|}{}  \\ 
+\hline
+\textbf{$<$INIT\_VAL$>$}     &                             &                        & \multicolumn{1}{c|}{6} &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             &                         &                           & 7                      \\ 
+\hline
+\textbf{$<$ASSIGN$>$}        & \multicolumn{1}{c|}{9}      &                        &                        &                         &                           &                             &                              &                             &                             & \multicolumn{1}{c|}{8}   &                           &                         &                          &                          &                            &                         &                             &                         &                           & \multicolumn{1}{l|}{}  \\ 
+\hline
+\textbf{$<$PAR\_LIST$>$}     & \multicolumn{1}{c|}{13}     &                        &                        &                         & \multicolumn{1}{c|}{14}   &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             &                         &                           & 15                     \\ 
+\hline
+\textbf{$<$PAR\_IN\_NEXT$>$} &                             &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             & \multicolumn{1}{c|}{16} &                           & 17                     \\ 
+\hline
+\textbf{$<$PAR\_IN$>$}       & \multicolumn{1}{c|}{18}     &                        &                        &                         & \multicolumn{1}{c|}{19}   &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             &                         &                           & \multicolumn{1}{l|}{}  \\ 
+\hline
+\textbf{$<$FN\_SIG$>$}       & \multicolumn{1}{c|}{21}     &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         & \multicolumn{1}{c|}{22}     &                         &                           & 23                     \\ 
+\hline
+\textbf{$<$FN\_PAR\_NEXT$>$} &                             &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             & \multicolumn{1}{c|}{24} &                           & 25                     \\ 
+\hline
+\textbf{$<$FN\_PAR$>$}       & \multicolumn{1}{c|}{26, 28} &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         & \multicolumn{1}{c|}{27, 29} &                         &                           & \multicolumn{1}{l|}{}  \\ 
+\hline
+\textbf{$<$FN\_RET\_TYPE$>$} &                             &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            &                         &                             &                         & \multicolumn{1}{c|}{30}   & 31                     \\ 
+\hline
+\textbf{$<$RET\_VAL$>$}      &                             &                        &                        &                         &                           &                             &                              &                             &                             & \multicolumn{1}{c|}{33}  &                           &                         &                          &                          &                            &                         &                             &                         &                           & 34                     \\ 
+\hline
+\textbf{$<$COND$>$}          &                             &                        &                        &                         &                           &                             &                              &                             &                             & \multicolumn{1}{c|}{36}  &                           &                         & \multicolumn{1}{c|}{37}  &                          &                            &                         &                             &                         &                           & \multicolumn{1}{l|}{}  \\ 
+\hline
+\textbf{$<$TYPE$>$}          &                             &                        &                        &                         &                           &                             & \multicolumn{1}{c|}{39}      & \multicolumn{1}{c|}{40}     & \multicolumn{1}{c|}{41}     &                          &                           &                         &                          &                          &                            &                         &                             &                         &                           & \multicolumn{1}{l|}{}  \\ 
+\hline
+\textbf{$<$QUESTMARK$>$}     &                             &                        &                        &                         &                           &                             &                              &                             &                             &                          &                           &                         &                          &                          &                            & \multicolumn{1}{c|}{42} &                             &                         &                           & 43                     \\
+\hline
+\end{tabular}
+\end{table}
+
+\newpage
+
+\subsection{Diagram konečného automatu Lexikálnej analýzy}
 \begin{figure}[H]
 	\centering
 	\includegraphics[scale=0.75]{DKA-IFJ-1.eps}
