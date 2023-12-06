@@ -3,66 +3,67 @@ Pravidlá bezkontextovej gramatiky používanej parserom.
 id = identifikátor
 exp = výraz
 
-// program sa skladá z príkazov
-<PROG>      -> <STAT> <PROG>
-<PROG>      -> €
-
-// statement / príkaz
+// statement - príkaz
+1. <STAT> -> €
 
 // definícia premennej
-<STAT>      ->  {let,var} id <DEF_VAR>          // let a : Int = 4
-<DEF_VAR>   ->  : <TYPE> <INIT_VAL>
-<DEF_VAR>   ->  = <ASSIGN>
-<INIT_VAL>  ->  = <ASSIGN>        // inicializačná hodnota ... priradenie
-<INIT_VAL>  ->  €               // bez inicializácie
+2. <STAT> -> let id <DEF_VAR> <STAT>        // let a : Int = 4
+3. <STAT> -> var id <DEF_VAR> <STAT>
+4. <DEF_VAR> -> : <TYPE> <INIT_VAL>
+5. <DEF_VAR> -> = <ASSIGN> 
+6. <INIT_VAL> -> = <ASSIGN>                 // inicializačná hodnota ... priradenie
+7. <INIT_VAL> -> €                          // bez inicializácie
+
 // priradenie ... "= a + 25"
-<ASSIGN>    ->  exp
-<ASSIGN>    ->  <CALL_FN>
+8. <ASSIGN> -> exp
+9. <ASSIGN> -> id ( <PAR_LIST> )
 
 // priradenie
-<STAT>      ->  id = <ASSIGN>
+10. <STAT> -> id = <ASSIGN> <STAT>
 
 // blok kódu 
-<STAT>      ->  { <PROG> }
+11. <STAT> -> { <STAT> } <STAT>
 
 // volanie funkcie
-<STAT>          ->  <CALL_FN>
-<CALL_FN>       ->  id ( <PAR_LIST> )
-// list vstupných parametrov funkcie
-<PAR_LIST>      ->  <PAR_IN> <PAR_IN_NEXT>
-<PAR_LIST>      ->  €
-<PAR_IN_NEXT>   ->  , <PAR_IN> <PAR_IN_NEXT>
-<PAR_IN_NEXT>   ->  €
-<PAR_IN>        ->  id : term
-<PAR_IN>        ->  term
+12. <STAT> -> id ( <PAR_LIST> ) <STAT>
+13. <PAR_LIST> -> id : term <PAR_IN_NEXT>       // list vstupných parametrov funkcie
+14. <PAR_LIST> -> term <PAR_IN_NEXT>
+15. <PAR_LIST> -> €
+16. <PAR_IN_NEXT> -> , <PAR_IN> <PAR_IN_NEXT>
+17. <PAR_IN_NEXT> -> €
+18. <PAR_IN> -> id : term
+19. <PAR_IN> -> term
 
 // definícia funkcie
-<STAT>          ->  func id ( <FN_SIG> ) <FN_RET_TYPE> { <PROG> }
-// signatúra funkcie ... parametre
-<FN_SIG>        ->  <FN_PAR> <FN_PAR_NEXT>
-<FN_SIG>        ->  €
-<FN_PAR_NEXT>   ->  , <FN_PAR> <FN_PAR_NEXT>
-<FN_PAR_NEXT>   ->  €
-<FN_PAR>        ->  id id : <TYPE>
-<FN_PAR>        ->  _  id : <TYPE>
-// typ návratovej hodnoty funkcie
-<FN_RET_TYPE>   ->  "->" <TYPE>
-<FN_RET_TYPE>   ->  €            // void funkcia
+20. <STAT> -> func id ( <FN_SIG> ) <FN_RET_TYPE> { <STAT> } <STAT>
+21. <FN_SIG> -> id id : <TYPE> <FN_PAR_NEXT>    // signatúra/predpis funkcie
+22. <FN_SIG> -> _ id : <TYPE> <FN_PAR_NEXT>
+23. <FN_SIG> -> €
+24. <FN_PAR_NEXT> -> , <FN_PAR> <FN_PAR_NEXT>
+25. <FN_PAR_NEXT> -> €
+26. <FN_PAR> -> id id : <TYPE>
+27. <FN_PAR> -> _ id : <TYPE>
+28. <FN_PAR> -> id _ : <TYPE>
+29. <FN_PAR> -> _ _ : <TYPE>
+30. <FN_RET_TYPE> -> "->" <TYPE>                // návratový typ funkcie
+31. <FN_RET_TYPE> -> €                          // void funkcia
 
 // vrátenie hodnoty z funkcie
-<STAT>      ->  return <RET_VAL>
-<RET_VAL>   ->  exp
-<RET_VAL>   ->  €
+32. <STAT> -> return <RET_VAL> <STAT>
+33. <RET_VAL> -> exp
+34. <RET_VAL> -> €
 
 // podmienka if
-<STAT>      ->  if <COND> { <PROG> } else { <PROG> }
-<COND>      ->  exp
-<COND>      ->  let id
+35. <STAT> -> if <COND> { <STAT> } else { <STAT> } <STAT>
+36. <COND> -> exp
+37. <COND> → let id
 
 // cyklus
-<STAT>      ->  while exp { <PROG> }
+38. <STAT> -> while exp { <STAT> } <STAT>
 
 // dátový typ
-<TYPE>      ->  {Int, Double, String} <QUESTMARK>
-<QUESTMARK> ->  ?
-<QUESTMARK> ->  €
+39. <TYPE> -> Integer <QUESTMARK>
+40. <TYPE> -> Double <QUESTMARK>
+41. <TYPE> -> String <QUESTMARK>
+42. <QUESTMARK> -> ?
+43. <QUESTMARK> -> €
