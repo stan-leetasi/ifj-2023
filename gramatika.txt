@@ -56,7 +56,7 @@ exp = výraz
 // podmienka if
 35. <STAT> -> if <COND> { <STAT> } else { <STAT> } <STAT>
 36. <COND> -> exp
-37. <COND> → let id
+37. <COND> -> let id
 
 // cyklus
 38. <STAT> -> while exp { <STAT> } <STAT>

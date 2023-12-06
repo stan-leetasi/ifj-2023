@@ -7,8 +7,7 @@
 
 #include "parser.h"
 
-int main()
-{
+int main() {
     if (!initializeParser()) return COMPILER_ERROR; // inicializácia dátových štruktúr parsera
     TRY_OR_EXIT(nextToken()); // načítať prvý token
     while (tkn->type != EOF_TKN)
@@ -16,9 +15,9 @@ int main()
         TRY_OR_EXIT(parse());   // spracovanie základneho príkazu, pravidlo <STAT>
         TRY_OR_EXIT(nextToken());
     }
-    
+
     TRY_OR_EXIT(checkIfAllFnDef()); // zistí, či boli definované všetky volané funkcie
-    
+
     printOutCompiledCode(); // výpis vygenerovaného cieľového kódu
 
     destroyParser(); // dealokácia použitých zdrojov
